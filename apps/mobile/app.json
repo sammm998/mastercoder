@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Forge",
+    "slug": "forge",
+    "scheme": "forge",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0E0D0B",
+    "primaryColor": "#FF7A45",
+    "ios": {
+      "bundleIdentifier": "dev.forge.app",
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      },
+      "associatedDomains": []
+    },
+    "android": {
+      "package": "dev.forge.app",
+      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_MICROPHONE"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "forge", "host": "auth", "pathPrefix": "/magic" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Forge uses the microphone for voice prompts and to record meetings you start. / Forge använder mikrofonen för röstprompter och för att spela in möten som du startar.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "apiUrl": "http://localhost:4000"
+    }
+  }
+}
