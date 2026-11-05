@@ -1,0 +1,86 @@
+/* 3D hero — asymmetric: oversized headline on the left, shader orb bleeding off the right edge. */
+.hero3d {
+  position: relative;
+  isolation: isolate;
+  min-height: min(100svh, 62rem);
+  display: grid;
+  align-items: end;
+  padding: calc(var(--space-9) + var(--space-6)) var(--grid-margin) var(--space-8);
+  overflow: clip;
+}
+.hero3d__stage {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: min(100%, 64rem);
+  z-index: -1;
+  contain: strict;
+}
+.hero3d__poster,
+.hero3d__canvas {
+  position: absolute;
+  inset: 0;
+}
+.hero3d__poster {
+  background:
+    radial-gradient(42% 46% at 68% 42%, color-mix(in oklch, var(--color-accent) 75%, transparent) 0%, transparent 70%),
+    radial-gradient(30% 36% at 82% 66%, color-mix(in oklch, var(--color-accent-2) 70%, transparent) 0%, transparent 72%),
+    radial-gradient(60% 60% at 70% 50%, color-mix(in oklch, var(--color-surface) 90%, transparent) 0%, transparent 100%);
+  filter: saturate(1.1);
+}
+.hero3d__canvas {
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.hero3d__canvas.is-ready {
+  opacity: 1;
+}
+.hero3d__canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.hero3d__content {
+  position: relative;
+  max-width: var(--grid-max);
+  width: 100%;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-5);
+}
+.hero3d__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.hero3d__title {
+  font-family: var(--font-display);
+  font-size: clamp(var(--step-5), 9.5vw, calc(var(--step-5) * 1.6));
+  line-height: 0.92;
+  letter-spacing: var(--tracking-display);
+  max-width: 14ch;
+  text-wrap: balance;
+}
+.hero3d__title em {
+  font-style: italic;
+  color: var(--color-accent);
+}
+.hero3d__lede {
+  font-size: var(--step-1);
+  max-width: 38ch;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+.hero3d__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: center;
+}
+@media (max-width: 47.99em) {
+  .hero3d__stage {
+    inset: 0;
+    width: 100%;
+    opacity: 0.55;
+  }
+}

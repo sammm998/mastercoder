@@ -1,0 +1,32 @@
+/* WebGL distortion: canvas overlays the image only while hovering; the <img> always holds the space. */
+.distort {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-2);
+  background: var(--color-surface);
+}
+.distort__img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.distort__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+.distort[data-gl="on"] .distort__canvas {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .distort__img {
+    transition: transform var(--dur-slow) var(--ease);
+  }
+  a:focus-visible .distort__img,
+  .distort:hover .distort__img {
+    transform: scale(1.03);
+  }
+}

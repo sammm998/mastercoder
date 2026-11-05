@@ -1,0 +1,122 @@
+/* Horizontal scroll: native scroll-snap baseline, transform-only pan when pinned by ScrollTrigger. */
+.hscroll {
+  padding-block: var(--space-9);
+  overflow: clip;
+}
+.hscroll__header {
+  max-width: var(--grid-max);
+  margin: 0 auto var(--space-7);
+  padding-inline: var(--grid-margin);
+  display: grid;
+  gap: var(--space-4);
+}
+.hscroll__title {
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+  max-width: 18ch;
+}
+.hscroll__intro {
+  color: var(--color-muted);
+  max-width: 48ch;
+  font-size: var(--step-1);
+}
+.hscroll__track {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  gap: var(--grid-gutter);
+  padding: var(--space-2) var(--grid-margin) var(--space-5);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--grid-margin);
+  overscroll-behavior-x: contain;
+}
+/* Enhanced: the section is as tall as the pan distance; the sticky stage holds the viewport. */
+.hscroll.is-pinned {
+  height: calc(100vh + var(--hscroll-distance, 0px));
+  padding-block: 0;
+}
+.hscroll.is-pinned .hscroll__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+.hscroll.is-pinned .hscroll__track {
+  overflow: visible;
+  scroll-snap-type: none;
+  will-change: transform;
+}
+.hscroll__item {
+  flex: 0 0 min(82vw, 26rem);
+  scroll-snap-align: start;
+}
+.hscroll__card {
+  height: 100%;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-3);
+}
+.hscroll__visual {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+}
+.hscroll__index {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--color-text);
+  border-top: 2px solid var(--color-accent);
+  padding-top: var(--space-2);
+  justify-self: start;
+}
+.hscroll__card-title {
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-display);
+}
+.hscroll__card-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.hscroll__card-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.hscroll__card {
+  position: relative;
+}
+.hscroll__meta {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--color-muted);
+}
+.hscroll__body {
+  color: var(--color-muted);
+}
+@media (min-width: 56em) {
+  .hscroll__item {
+    flex-basis: clamp(22rem, 34vw, 32rem);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hscroll__card {
+    transition: transform var(--dur-base) var(--ease);
+  }
+  .hscroll__card:hover,
+  .hscroll__card:focus-within {
+    transform: translateY(calc(var(--space-2) * -1));
+  }
+}
