@@ -1,7 +1,9 @@
 # Deploying Forge on Railway
 
 Forge is a monorepo with several services. On Railway each one is its own **service** in one project,
-all built from this repository with config-as-code.
+all built from this repository. Railway deprecated `railway.json` (config-as-code), and a root `railway.json`
+overrides every service, so each service is configured in its own settings instead:
+`RAILWAY_DOCKERFILE_PATH=infra/docker/<api|worker|web>.Dockerfile` (variable) plus the start command below.
 
 | Railway service | Config file (Settings → Config-as-code) | What it runs |
 |---|---|---|
