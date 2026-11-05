@@ -50,9 +50,18 @@ importers:
       '@forge/agents-runtime':
         specifier: workspace:*
         version: link:../../packages/agents-runtime
+      '@forge/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@forge/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@forge/design':
+        specifier: workspace:*
+        version: link:../../packages/design
+      '@forge/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       '@forge/llm':
         specifier: workspace:*
         version: link:../../packages/llm
@@ -65,6 +74,12 @@ importers:
       '@forge/observability':
         specifier: workspace:*
         version: link:../../packages/observability
+      '@forge/quality-gates':
+        specifier: workspace:*
+        version: link:../../packages/quality-gates
+      '@forge/sandbox':
+        specifier: workspace:*
+        version: link:../../packages/sandbox
       '@forge/shared':
         specifier: workspace:*
         version: link:../../packages/shared

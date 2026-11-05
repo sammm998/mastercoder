@@ -26,6 +26,11 @@
     "@forge/meetings": "workspace:*",
     "@forge/speech": "workspace:*",
     "@forge/agents-runtime": "workspace:*",
-    "@forge/abuse": "workspace:*"
+    "@forge/abuse": "workspace:*",
+    "@forge/integrations": "workspace:*",
+    "@forge/billing": "workspace:*",
+    "@forge/sandbox": "workspace:*",
+    "@forge/quality-gates": "workspace:*",
+    "@forge/design": "workspace:*"
   }
 }

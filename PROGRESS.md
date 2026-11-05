@@ -13,7 +13,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 ## Wave 1 — Packages
 - [x] W1-A sandbox + quality-gates — docker (hardened, internal net + egress proxy), e2b, daytona, local; 14 gates incl. built-in semgrep/gitleaks/osv fallbacks, RLS/auth/validation/client-secrets; insecure fixture blocked; 66+18 / 50+2 tests
 - [ ] W1-B templates + app-kit
-- [ ] W1-C design
+- [x] W1-C design — 3 directions w/ contrast, tokens, brand import (logo/Figma), 15 patterns, composer, heuristic + vision critic, Lighthouse; 3/3 benchmark sites QA>=9.5, mobile perf 91-97, a11y 100; 83 tests
 - [x] W1-D media + slides — fal/Replicate/mock, moderation (62 cases), Remotion (renders mp4), MediaJobService; decks/docs, PPTX/PDF/DOCX; 93+4 / 19 tests
 - [x] W1-E speech + meetings — ElevenLabs/Deepgram/Whisper/mock STT, WER, Swedish Piper fixtures; Recall/MeetStream/Vexa/mock bots, consent, calendar, chunked upload, meeting→spec; 49 / 38+1 tests
 - [x] W1-F integrations + billing + intent-router — Composio/Nango/Pipedream/mock, catalog 12 apps, OpenAPI import + typed client, SSRF guard, MCP, envelope vault; plans/pricing/estimates/no-charge-on-agent-error/spend caps/Stripe; sv+en classifier 100% on 93 prompts; 100+2 / 19+1 / 39 tests
@@ -36,7 +36,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] DoD2 benchmark 20 prompts, >=16 succeed
 - [x] DoD3 insecure app blocked by gates (packages/quality-gates fixtures, all 7 static gates block)
 - [ ] DoD4 checkpoint restore restores code + DB data
-- [ ] DoD5 3 benchmark sites with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
+- [x] DoD5 3 benchmark sites (packages/design int test; heuristic critic, 3D shown as poster headless) with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
 - [ ] DoD6 cron user agent asks approval before sending, logs run + cost
 - [ ] DoD7 two browsers edit same project live
 - [x] DoD8 sandbox escape tests (packages/sandbox/test/escape.int.test.ts, real docker)
@@ -44,5 +44,6 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] DoD10 all tests pass + FINAL_REPORT.md
 
 ## Notes
+- Railway deploy: docs/deploy/railway.md, railway.json (api), apps/agent-worker/railway.json; api image verified locally (/health ok)
 - Wave 1 (W1-A..F), W3-C web, W3-D/E admin+mobile running as worktree subagents; merge each when its report arrives.
 - Lead is building agent-core (W2-A) against its own ports so it does not block on wave 1.

@@ -14,3 +14,4 @@ evals/results/*
 !evals/results/.gitkeep
 .data
 .claude/worktrees/
+.proxy-ca.crt
