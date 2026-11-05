@@ -1,0 +1,16 @@
+{
+  "id": "expo",
+  "name": "Expo (React Native, expo-router)",
+  "kind": "mobile",
+  "install": "npm install",
+  "dev": "npx expo start --port 8081",
+  "build": "npm run build:web",
+  "test": "npm test",
+  "typecheck": "npm run typecheck",
+  "lint": "npm run lint",
+  "port": 8081,
+  "containerPort": 8080,
+  "publicRoutes": ["/"],
+  "lighthouse": false,
+  "healthPath": "/healthz"
+}

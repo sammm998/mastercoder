@@ -1,0 +1,15 @@
+{
+  "id": "hono-api",
+  "name": "Hono API (Node, TypeScript)",
+  "kind": "backend",
+  "install": "npm install",
+  "dev": "npm run dev",
+  "build": "npm run build",
+  "test": "npm test",
+  "typecheck": "npm run typecheck",
+  "lint": "npm run lint",
+  "port": 3000,
+  "publicRoutes": ["/health"],
+  "lighthouse": false,
+  "healthPath": "/health"
+}
