@@ -1,4 +1,4 @@
-import type { ZodType } from "zod";
+import type { ZodTypeAny, output } from "zod";
 import { extractJson } from "@forge/shared";
 import type { CompletionRequest, CompletionResponse, ContentBlock, LLMProvider } from "./types.js";
 
@@ -23,12 +23,12 @@ export class StructuredOutputError extends Error {
  * Ask for JSON matching a zod schema. Retries once with the validation error fed back.
  * Returns the parsed value plus the responses (for metering).
  */
-export async function structured<T>(
+export async function structured<S extends ZodTypeAny>(
   llm: LLMProvider,
   req: CompletionRequest,
-  schema: ZodType<T>,
+  schema: S,
   opts: { retries?: number } = {},
-): Promise<{ value: T; responses: CompletionResponse[] }> {
+): Promise<{ value: output<S>; responses: CompletionResponse[] }> {
   const responses: CompletionResponse[] = [];
   const messages = [...req.messages];
   const system = `${req.system ?? ""}\n\nRespond with a single JSON value only. No prose, no markdown fences.`.trim();
@@ -40,7 +40,7 @@ export async function structured<T>(
     const raw = textOf(r);
     try {
       const parsed = schema.safeParse(extractJson(raw));
-      if (parsed.success) return { value: parsed.data, responses };
+      if (parsed.success) return { value: parsed.data as output<S>, responses };
       lastErr = parsed.error.message;
     } catch (e) {
       lastErr = (e as Error).message;

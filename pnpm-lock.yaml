@@ -100,6 +100,27 @@ importers:
         specifier: ^3.0.0
         version: 3.1.0(yjs@13.6.33)
 
+  packages/agent-core:
+    dependencies:
+      '@forge/db':
+        specifier: workspace:*
+        version: link:../db
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      tree-sitter-wasms:
+        specifier: ^0.1.12
+        version: 0.1.13
+      web-tree-sitter:
+        specifier: ^0.24.7
+        version: 0.24.7
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+
   packages/db:
     dependencies:
       drizzle-orm:
@@ -2065,6 +2086,9 @@ packages:
     resolution: {integrity: sha512-m1TdR/rvT7kgGJZhspNtXdsdYk0fddFpJJFlG5s+UkPFo6lkLoZ3YLOaovPYjq1R75NP5JfeTlSHaOsE09peCg==}
     engines: {node: '>=20'}
 
+  tree-sitter-wasms@0.1.13:
+    resolution: {integrity: sha512-wT+cR6DwaIz80/vho3AvSF0N4txuNx/5bcRKoXouOfClpxh/qqrF4URNLQXbbt8MaAxeksZcZd1j8gcGjc+QxQ==}
+
   ts-algebra@2.0.0:
     resolution: {integrity: sha512-FPAhNPFMrkwz76P7cdjdmiShwMynZYN6SgOujD1urY4oNm80Ou9oMdmbR45LotcKOXoy7wSmHkRFE6Mxbrhefw==}
 
@@ -2174,6 +2198,9 @@ packages:
         optional: true
       jsdom:
         optional: true
+
+  web-tree-sitter@0.24.7:
+    resolution: {integrity: sha512-CdC/TqVFbXqR+C51v38hv6wOPatKEUGxa39scAeFSm98wIhZxAYonhRQPSMmfZ2w7JDI0zQDdzdmgtNk06/krQ==}
 
   which@2.0.2:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
@@ -3942,6 +3969,8 @@ snapshots:
 
   toad-cache@3.7.4: {}
 
+  tree-sitter-wasms@0.1.13: {}
+
   ts-algebra@2.0.0: {}
 
   ts-api-utils@2.5.0(typescript@5.9.3):
@@ -4053,6 +4082,8 @@ snapshots:
       - sugarss
       - supports-color
       - terser
+
+  web-tree-sitter@0.24.7: {}
 
   which@2.0.2:
     dependencies:

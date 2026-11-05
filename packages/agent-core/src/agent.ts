@@ -1,0 +1,307 @@
+import type { ChatMessage, LLMProvider } from "@forge/llm";
+import type { IntentKind } from "@forge/shared";
+import { getModels, textOf } from "@forge/llm";
+import type { AgentDeps, BuildInput, GateReportLike, TemplateManifestLike } from "./ports.js";
+import type { Spec } from "./spec.js";
+import { SpecSchema } from "./spec.js";
+import { plan } from "./planner.js";
+import { review } from "./reviewer.js";
+import { LoopGuard, type GuardDecision } from "./loop-guard.js";
+import { pickModel } from "./router.js";
+import { runToolLoop } from "./tool-loop.js";
+import { buildTools, type ToolRuntime } from "./tools.js";
+import { RepoMap } from "./context/repo-map.js";
+import { MemoryVectorIndex, type VectorIndex } from "./context/embeddings.js";
+import { BUILDER_SYSTEM, buildPrompt, fixPrompt, strategyPrompt } from "./prompts.js";
+
+export type BuildStatus = "succeeded" | "failed" | "awaiting_approval" | "cancelled";
+
+export interface BuildOutcome {
+  status: BuildStatus;
+  /** False when the failure was the agent's own (loop guard, gates never passed): the user is not charged. */
+  charged: boolean;
+  reason?: string;
+  blockedOn?: string;
+  spec?: Spec;
+  template?: string;
+  gateReport?: GateReportLike;
+  designScore?: number;
+  checkpoint?: { checkpointId: string; commit: string; snapshotId: string; dbBranchId?: string };
+  previewUrl?: string;
+  summary: string;
+  costUsd: number;
+  fixIterations: number;
+}
+
+export interface BuildAgentOptions {
+  maxFixIterations?: number;
+  sameErrorLimit?: number;
+  designRounds?: number;
+  designThreshold?: number;
+  maxTurnsPerRound?: number;
+  vectorIndex?: VectorIndex;
+}
+
+const CODE_KINDS: IntentKind[] = ["app", "website", "mobile", "backend"];
+
+export function primaryKind(intents: BuildInput["intents"]): Spec["kind"] {
+  const k = intents.find((i) => CODE_KINDS.includes(i.kind))?.kind;
+  return (k as Spec["kind"] | undefined) ?? "app";
+}
+
+function summarizeGates(r: GateReportLike): string {
+  return r.blockers
+    .map((b) => {
+      const finds = b.findings.slice(0, 8).map((f) => `  - ${f.file ? `${f.file}${f.line ? `:${f.line}` : ""} ` : ""}[${f.rule}] ${f.message}`);
+      return `### ${b.gate} FAILED\n${b.details.slice(0, 1500)}\n${finds.join("\n")}${b.fix ? `\nProposed fix: ${b.fix}` : ""}`;
+    })
+    .join("\n\n");
+}
+
+/**
+ * The Forge build agent: PLAN → DESIGN → BUILD → VERIFY → REVIEW → FINISH with a loop guard.
+ * Only code deliverables (app/website/mobile/backend) run here; media/slides/agents are separate pipelines.
+ */
+export class BuildAgent {
+  private readonly o: Required<Omit<BuildAgentOptions, "vectorIndex">> & { vectorIndex?: VectorIndex };
+  constructor(
+    private readonly deps: AgentDeps,
+    opts: BuildAgentOptions = {},
+  ) {
+    this.o = { maxFixIterations: 8, sameErrorLimit: 3, designRounds: 3, designThreshold: 8, maxTurnsPerRound: 40, ...opts };
+  }
+
+  private costOf(llm: LLMProvider): number {
+    return (llm as { totalCostUsd?: number }).totalCostUsd ?? 0;
+  }
+
+  async run(input: BuildInput): Promise<BuildOutcome> {
+    const { deps } = this;
+    const ev = (e: Parameters<AgentDeps["events"]["emit"]>[0]) => deps.events.emit(e);
+    const base = { projectId: input.projectId, taskId: input.taskId };
+    const phaseStart = new Map<string, number>();
+    const phase = (p: "plan" | "design" | "build" | "verify" | "review" | "finish") => {
+      phaseStart.set(p, Date.now());
+      ev({ type: "phase.started", ...base, phase: p });
+    };
+    const phaseDone = (p: string) => ev({ type: "phase.completed", ...base, phase: p, durationMs: Date.now() - (phaseStart.get(p) ?? Date.now()) });
+    let extraCost = 0;
+    const cost = () => this.costOf(deps.llm) || extraCost;
+    const kind = primaryKind(input.intents);
+
+    // ---------- PLAN ----------
+    phase("plan");
+    let spec: Spec;
+    if (input.approvedSpec) {
+      spec = SpecSchema.parse(input.approvedSpec);
+    } else {
+      const hint = input.intents.find((i) => i.hint)?.hint;
+      const templateHint = deps.templates.select(kind, hint);
+      const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, kind, templateHint });
+      spec = p.spec;
+      extraCost += p.costUsd;
+    }
+    phaseDone("plan");
+    if (input.planMode && !input.approvedSpec) {
+      ev({ type: "plan.ready", ...base, spec, requiresApproval: true });
+      return { status: "awaiting_approval", charged: false, spec, summary: "Plan ready for approval.", costUsd: cost(), fixIterations: 0 };
+    }
+    ev({ type: "plan.ready", ...base, spec, requiresApproval: false });
+
+    // ---------- SCAFFOLD ----------
+    const templateId = spec.template ?? deps.templates.select(kind);
+    let manifest: TemplateManifestLike | null = null;
+    try {
+      manifest = deps.templates.manifest(templateId);
+    } catch {
+      manifest = null;
+    }
+    const repoMap = new RepoMap();
+    const index = this.o.vectorIndex ?? new MemoryVectorIndex();
+    const touched = new Set<string>();
+    let previewUrl: string | null = null;
+    if (!input.existingProject) {
+      const written = await deps.templates.scaffold(templateId, { writeFile: (p, c) => deps.sandbox.writeFile(p, c) }, { projectName: spec.title, projectSlug: slug(spec.title) });
+      for (const p of written) ev({ type: "file.changed", ...base, path: p, change: "created" });
+    }
+    const allFiles = await deps.sandbox.listFiles(".", { recursive: true });
+    await repoMap.refresh(allFiles, (p) => deps.sandbox.readFile(p));
+    for (const s of repoMap.symbols()) await index.upsertFile(input.projectId, s.path, await deps.sandbox.readFile(s.path));
+    if (manifest?.install) {
+      const r = await deps.sandbox.exec(manifest.install, { timeoutMs: 900_000 });
+      ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
+    }
+
+    // ---------- DESIGN ----------
+    let designDirection = "";
+    if (deps.design && kind !== "backend") {
+      phase("design");
+      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand });
+      designDirection = d.directionName;
+      const tokenFiles = allFiles.filter((f) => f.endsWith("tokens.css"));
+      for (const f of tokenFiles.length ? tokenFiles : ["src/styles/tokens.css"]) {
+        await deps.sandbox.writeFile(f, d.tokensCss);
+        touched.add(f);
+        await repoMap.update(f, d.tokensCss);
+      }
+      for (const [p, c] of Object.entries(d.files ?? {})) {
+        await deps.sandbox.writeFile(p, c);
+        touched.add(p);
+        await repoMap.update(p, c);
+        await index.upsertFile(input.projectId, p, c);
+      }
+      ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
+      phaseDone("design");
+    }
+
+    const rt: ToolRuntime = { deps, projectId: input.projectId, taskId: input.taskId, repoMap, index, manifest: () => manifest, previewUrl: () => previewUrl, touched };
+    const tools = buildTools(rt);
+    const guard = new LoopGuard(this.o.maxFixIterations, this.o.sameErrorLimit);
+    const history: ChatMessage[] = [];
+    const round = async (userText: string, step: Parameters<typeof pickModel>[0]) => {
+      const { model } = pickModel(step);
+      history.push({ role: "user", content: `${userText}\n\n## Repository map\n${repoMap.render()}` });
+      const r = await runToolLoop({
+        llm: deps.llm,
+        model,
+        purpose: "agent.build",
+        system: BUILDER_SYSTEM,
+        messages: history,
+        tools,
+        events: deps.events,
+        projectId: input.projectId,
+        taskId: input.taskId,
+        maxTurns: this.o.maxTurnsPerRound,
+        isCancelled: deps.isCancelled,
+      });
+      history.splice(0, history.length, ...r.messages);
+      extraCost += r.costUsd;
+      return r;
+    };
+    const fail = (reason: string, blockedOn: string, gateReport?: GateReportLike): BuildOutcome => {
+      ev({ type: "task.failed", ...base, reason, charged: false, blockedOn });
+      return { status: "failed", charged: false, reason, blockedOn, spec, template: templateId, gateReport, summary: reason, costUsd: cost(), fixIterations: guard.count, previewUrl: previewUrl ?? undefined };
+    };
+    const onGuard = async (d: GuardDecision, failureText: string): Promise<"stop" | "go"> => {
+      if (d.action === "stop") return "stop";
+      if (d.action === "change_strategy") {
+        ev({ type: "message", ...base, role: "system", text: `Changing strategy (${d.strategy}): ${d.reason}` });
+        let docs = "";
+        if (d.strategy === "search_docs" && deps.docs) {
+          const hits = await deps.docs.search(failureText.slice(0, 200));
+          docs = hits.map((h) => `${h.title} ${h.url}\n${h.snippet}`).join("\n\n");
+        }
+        if (d.strategy === "replan") {
+          const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, kind, templateHint: templateId, failureContext: failureText.slice(0, 4000) });
+          spec = p.spec;
+          extraCost += p.costUsd;
+          ev({ type: "plan.ready", ...base, spec, requiresApproval: false });
+        }
+        await round(strategyPrompt(d.strategy, failureText, docs, spec), { phase: "fix", failures: 3, description: failureText });
+      }
+      return "go";
+    };
+
+    // ---------- BUILD ----------
+    phase("build");
+    await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
+    phaseDone("build");
+    if (deps.isCancelled && (await deps.isCancelled())) return { status: "cancelled", charged: false, spec, summary: "Cancelled by user", costUsd: cost(), fixIterations: 0 };
+
+    // ---------- VERIFY + REVIEW loop ----------
+    let gateReport: GateReportLike | undefined;
+    let designScore: number | undefined;
+    let designRoundsUsed = 0;
+    let reviewed = false;
+    for (;;) {
+      phase("verify");
+      if (manifest && kind !== "backend" && !previewUrl) previewUrl = await this.startPreview(manifest, input);
+      if (deps.design?.visualQa && previewUrl && kind === "website") {
+        const qa = await deps.design.visualQa(previewUrl, { brief: input.prompt });
+        designScore = qa.score;
+        ev({ type: "design.score", ...base, score: qa.score, notes: `${qa.critic}: ${qa.notes}` });
+        if (qa.score < this.o.designThreshold && designRoundsUsed < this.o.designRounds) {
+          designRoundsUsed++;
+          await round(`The design critic scored the site ${qa.score}/10 (needs ${this.o.designThreshold}). Revise per these notes, keeping performance and accessibility:\n${qa.notes}`, { phase: "fix", description: "design revision" });
+          continue;
+        }
+      }
+      gateReport = await deps.gates.run(deps.sandbox, { previewUrl: previewUrl ?? undefined, visualScore: designScore });
+      for (const r of gateReport.results) ev({ type: "gate.result", ...base, gate: r.gate, passed: r.passed || Boolean(r.skipped), details: r.skipped ? `skipped: ${r.details}` : r.details.slice(0, 2000), fix: r.fix });
+      phaseDone("verify");
+      if (!gateReport.passed) {
+        const text = summarizeGates(gateReport);
+        if ((await onGuard(guard.recordFailure(text), text)) === "stop") return fail(`Quality gates still failing after ${guard.count} fix attempts`, gateReport.blockers.map((b) => b.gate).join(", "), gateReport);
+        await round(fixPrompt(text), { phase: "fix", failures: guard.count, description: text });
+        continue;
+      }
+      if (!reviewed) {
+        phase("review");
+        reviewed = true;
+        const files = await Promise.all([...touched].filter((p) => !p.endsWith(".lock")).map(async (p) => ({ path: p, content: await deps.sandbox.readFile(p).catch(() => "") })));
+        const rv = await review(deps.llm, spec, files);
+        extraCost += rv.costUsd;
+        phaseDone("review");
+        if (!rv.review.approved && rv.review.issues.length) {
+          const text = rv.review.issues.map((i) => `- ${i.file ? `${i.file}: ` : ""}${i.problem}\n  Fix: ${i.fix}`).join("\n");
+          ev({ type: "message", ...base, role: "system", text: `Reviewer found ${rv.review.issues.length} issue(s)` });
+          if ((await onGuard(guard.recordFailure(text), text)) === "stop") return fail("Reviewer issues could not be resolved", "review");
+          await round(`A reviewer with fresh context found these problems. Fix them:\n${text}`, { phase: "fix", failures: guard.count, description: text });
+          continue;
+        }
+      }
+      break;
+    }
+
+    // ---------- FINISH ----------
+    phase("finish");
+    let checkpoint: BuildOutcome["checkpoint"];
+    if (deps.checkpoints) {
+      checkpoint = await deps.checkpoints.create({ sandbox: deps.sandbox, projectId: input.projectId, taskId: input.taskId, label: spec.title });
+      ev({ type: "checkpoint.created", ...base, checkpointId: checkpoint.checkpointId, commit: checkpoint.commit, label: spec.title });
+    }
+    if (previewUrl && deps.browser) {
+      for (const vp of [375, 1440]) {
+        try {
+          const s = await deps.browser.screenshot(previewUrl, vp);
+          ev({ type: "screenshot", ...base, url: s.url, viewport: vp });
+        } catch {
+          // screenshots are best-effort decoration of the summary
+        }
+      }
+    }
+    const summary = await this.summarize(spec, gateReport, designScore, touched.size);
+    phaseDone("finish");
+    return { status: "succeeded", charged: true, spec, template: templateId, gateReport, designScore, checkpoint, previewUrl: previewUrl ?? undefined, summary, costUsd: cost(), fixIterations: guard.count };
+  }
+
+  private async startPreview(manifest: TemplateManifestLike, input: BuildInput): Promise<string | null> {
+    const { sandbox, events } = this.deps;
+    await sandbox.exec(`nohup sh -c ${JSON.stringify(manifest.dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
+    for (let i = 0; i < 60; i++) {
+      const r = await sandbox.exec(`curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${manifest.port}/ || true`, { timeoutMs: 10_000 });
+      if (/^[23]\d\d$/.test(r.stdout.trim())) {
+        const { url } = await sandbox.exposePort(manifest.port);
+        events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port: manifest.port });
+        return url;
+      }
+      await new Promise((res) => setTimeout(res, 1000));
+    }
+    return null;
+  }
+
+  private async summarize(spec: Spec, gates: GateReportLike | undefined, designScore: number | undefined, files: number): Promise<string> {
+    const passed = gates?.results.filter((r) => r.passed && !r.skipped).map((r) => r.gate) ?? [];
+    const facts = `Built "${spec.title}": ${spec.userStories.length} user stories, ${spec.entities.length} entities, ${files} files changed. Gates passed: ${passed.join(", ") || "none"}.${designScore !== undefined ? ` Design score ${designScore}/10.` : ""}`;
+    try {
+      const r = await this.deps.llm.complete({ purpose: "agent.summary", model: getModels().fast, system: "Write a 2-4 sentence plain-language summary of what was built and verified. No marketing language.", messages: [{ role: "user", content: `${facts}\nStories:\n${spec.userStories.join("\n")}` }], maxTokens: 600, effort: "low" });
+      return textOf(r).trim() || facts;
+    } catch {
+      return facts;
+    }
+  }
+}
+
+function slug(s: string): string {
+  return s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "app";
+}
