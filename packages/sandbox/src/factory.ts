@@ -11,6 +11,17 @@ export interface SandboxProviderOptions {
   snapshotStore?: SnapshotStore;
 }
 
+/**
+ * Host proxy / CA / npm / pip settings for the NO-isolation local sandbox, so package installs work
+ * behind a corporate or agent proxy. Isolated providers (docker, e2b, daytona) never receive host env.
+ */
+export function hostNetworkEnv(): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && /proxy|^npm_config_|^NODE_EXTRA_CA_CERTS$|^SSL_CERT_FILE$|^REQUESTS_CA_BUNDLE$|^PIP_/i.test(k)) env[k] = v;
+  if (process.env.HOME) env.npm_config_cache ??= `${process.env.HOME}/.npm`;
+  return env;
+}
+
 const log = createLogger({ mod: "sandbox" });
 
 /** SANDBOX_PROVIDER=e2b|daytona|docker|local (also "mock" → local, no isolation). Default: docker. */
@@ -22,8 +33,8 @@ export function createSandboxProvider(opts: SandboxProviderOptions = {}): Sandbo
       docker: () => new DockerSandboxProvider(common),
       e2b: () => new E2BSandboxProvider(common),
       daytona: () => new DaytonaSandboxProvider(common),
-      local: () => new LocalSandboxProvider(common),
-      mock: () => new MockSandboxProvider(common),
+      local: () => new LocalSandboxProvider({ ...common, env: hostNetworkEnv() }),
+      mock: () => new MockSandboxProvider({ ...common, env: hostNetworkEnv() }),
     },
     "docker",
   );
