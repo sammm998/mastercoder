@@ -1,0 +1,7 @@
+{
+  "kind": "nextjs",
+  "typecheck": null,
+  "lint": null,
+  "test": null,
+  "publicRoutes": ["/api/health"]
+}

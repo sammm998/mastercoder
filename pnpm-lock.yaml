@@ -64,7 +64,17 @@ importers:
         specifier: ^3.24.1
         version: 3.25.2(zod@3.25.76)
 
-  packages/quality-gates: {}
+  packages/quality-gates:
+    dependencies:
+      '@forge/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/sandbox:
     dependencies:
