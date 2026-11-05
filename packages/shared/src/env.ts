@@ -17,7 +17,7 @@ export function envInt(name: string, fallback: number): number {
 export function envList(name: string, fallback: string[] = []): string[] {
   const v = process.env[name];
   if (!v) return fallback;
-  return v.split(",").map((s) => s.trim()).filter(Boolean);
+  return v.split(",").map((s: string) => s.trim()).filter(Boolean);
 }
 
 export type AdapterFactories<T> = Record<string, () => T>;
