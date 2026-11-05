@@ -68,7 +68,7 @@ export class BuildAgent {
     private readonly deps: AgentDeps,
     opts: BuildAgentOptions = {},
   ) {
-    this.o = { maxFixIterations: 8, sameErrorLimit: 3, designRounds: 3, designThreshold: 8, maxTurnsPerRound: 40, ...opts };
+    this.o = { maxFixIterations: 5, sameErrorLimit: 3, designRounds: 3, designThreshold: 8, maxTurnsPerRound: 40, ...opts };
   }
 
   private costOf(llm: LLMProvider): number {
@@ -210,6 +210,15 @@ export class BuildAgent {
       phaseDone("design");
     }
 
+    // Live preview: start the dev server as soon as there is a UI (scaffold, composed design or an existing
+    // project), in the background, so the user watches the site change while the builder works (HMR).
+    let earlyPreview: Promise<string | null> | null = null;
+    if (manifest && kind !== "backend") {
+      const m = manifest;
+      earlyPreview = this.startPreview(m, input)
+        .then((u) => (previewUrl ??= u))
+        .catch(() => null);
+    }
     const rt: ToolRuntime = { deps, projectId: input.projectId, taskId: input.taskId, repoMap, index, manifest: () => manifest, previewUrl: () => previewUrl, touched };
     const tools = buildTools(rt);
     const guard = new LoopGuard(this.o.maxFixIterations, this.o.sameErrorLimit);
@@ -274,7 +283,15 @@ export class BuildAgent {
     let reviewed = false;
     for (;;) {
       phase("verify");
-      if (manifest && kind !== "backend" && !previewUrl) previewUrl = await this.startPreview(manifest, input);
+      if (manifest && kind !== "backend") {
+        if (!previewUrl && earlyPreview) previewUrl = await earlyPreview;
+        earlyPreview = null;
+        // The builder may have changed scripts or crashed the server: restart it when it no longer answers.
+        if (!previewUrl || !(await this.previewAlive(manifest.port))) {
+          await deps.sandbox.exec(`pkill -f forge-dev-server >/dev/null 2>&1; fuser -k ${manifest.port}/tcp >/dev/null 2>&1 || true`, { timeoutMs: 10_000 });
+          previewUrl = await this.startPreview(manifest, input);
+        }
+      }
       if (deps.design?.visualQa && previewUrl && kind === "website") {
         const qa = await deps.design.visualQa(previewUrl, { brief: input.prompt }).catch((e: unknown) => {
           ev({ type: "message", ...base, role: "system", text: `Visual QA unavailable, skipping the design score: ${(e instanceof Error ? e.message : String(e)).slice(0, 500)}` });
@@ -359,9 +376,7 @@ export class BuildAgent {
     const dev = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
     await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
     for (let i = 0; i < 120; i++) {
-      // Dev servers may bind IPv4 or IPv6 only (FORGE_DEV_HOST="::"): probe both loopbacks.
-      const r = await sandbox.exec(`curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${manifest.port}/ || curl -s -g -o /dev/null -w "%{http_code}" "http://[::1]:${manifest.port}/" || true`, { timeoutMs: 10_000 });
-      if (/^[23]\d\d$/.test(r.stdout.trim())) {
+      if (await this.previewAlive(manifest.port)) {
         const { url } = await sandbox.exposePort(manifest.port);
         events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port: manifest.port });
         return url;
@@ -369,6 +384,13 @@ export class BuildAgent {
       await new Promise((res) => setTimeout(res, 1000));
     }
     return null;
+  }
+
+  /** HTTP probe of the dev server on IPv4 and IPv6 loopback, via node (no curl needed in the sandbox). */
+  private async previewAlive(port: number): Promise<boolean> {
+    const js = `const u=["http://127.0.0.1:${port}/","http://[::1]:${port}/"];(async()=>{for(const x of u){try{const r=await fetch(x,{signal:AbortSignal.timeout(4000),redirect:"manual"});if(r.status<500){console.log(r.status);return}}catch{}}console.log(0)})()`;
+    const r = await this.deps.sandbox.exec(`node -e ${JSON.stringify(js)} 2>/dev/null || curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${port}/ || true`, { timeoutMs: 12_000 });
+    return /^[1-4]\d\d$/.test(r.stdout.trim());
   }
 
   private async summarize(spec: Spec, gates: GateReportLike | undefined, designScore: number | undefined, files: number): Promise<string> {

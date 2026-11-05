@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { createServer } from "node:http";
 import { MockLLMProvider, type CompletionRequest, type ContentBlock } from "@forge/llm";
 import { EventBus, MemoryUsageSink } from "@forge/shared";
 import { BuildAgent, LoopGuard, classifyStep, errorSignature, mockPlan, runToolLoop, buildTools, RepoMap, MemoryVectorIndex, type AgentDeps } from "../src/index.js";
@@ -16,7 +17,7 @@ const call = (id: string, name: string, inp: unknown): ContentBlock => ({ type: 
 function previewSandbox(): TempDirSandbox {
   const sb = new TempDirSandbox();
   const exec = sb.exec.bind(sb);
-  sb.exec = (cmd, opts) => (cmd.startsWith("curl ") ? Promise.resolve({ exitCode: 0, stdout: "200", stderr: "", durationMs: 1, timedOut: false }) : cmd.startsWith("nohup ") ? Promise.resolve({ exitCode: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false }) : exec(cmd, opts));
+  sb.exec = (cmd, opts) => (cmd.startsWith("curl ") || cmd.startsWith("node -e") ? Promise.resolve({ exitCode: 0, stdout: "200", stderr: "", durationMs: 1, timedOut: false }) : cmd.startsWith("nohup ") ? Promise.resolve({ exitCode: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false }) : exec(cmd, opts));
   return sb;
 }
 
@@ -182,5 +183,17 @@ describe("mock reviewer", () => {
       JSON.parse((await llm.complete({ purpose: "agent.review", model: "m", messages: [{ role: "user", content: `### src/todos.ts\n\`\`\`\n${body}\n\`\`\`` }] })).content.map((b) => (b.type === "text" ? b.text : "")).join(""));
     expect((await ask("export type Todo = { title: string }; export const TODO_LIMIT = 50;")).approved).toBe(true);
     expect((await ask("export function save() { // TODO persist\n}")).approved).toBe(false);
+  });
+});
+
+describe("preview probe", () => {
+  it("detects a running dev server without curl and reports a closed port as down", async () => {
+    const server = createServer((_req, res) => res.end("ok"));
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+    const port = (server.address() as { port: number }).port;
+    const agent = new BuildAgent(deps(new MockLLMProvider())) as unknown as { previewAlive(p: number): Promise<boolean> };
+    expect(await agent.previewAlive(port)).toBe(true);
+    await new Promise((r) => server.close(r));
+    expect(await agent.previewAlive(port)).toBe(false);
   });
 });

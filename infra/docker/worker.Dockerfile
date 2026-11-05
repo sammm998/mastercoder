@@ -3,6 +3,12 @@
 FROM node:22-bookworm-slim AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true NODE_ENV=production
 RUN corepack enable
+# Tools the build sandbox needs: curl (preview probe), git, and the system libraries Chromium needs so
+# generated projects' Playwright/Lighthouse runs can launch a browser.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl git ca-certificates \
+  && npx -y playwright@1.56.1 install-deps chromium \
+  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile --prod=false --filter "@forge/agent-worker..." && pnpm store prune
