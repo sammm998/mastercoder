@@ -19,15 +19,17 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] W1-F integrations + billing + intent-router
 
 ## Wave 2 — Orchestration
-- [ ] W2-A agent-core
-- [ ] W2-B agents-runtime
+- [~] W2-A agent-core — loop (plan/design/build/verify/review/finish), loop guard (8 iters, strategy change after 3 identical), model router, 20 tools, tree-sitter repo map, pgvector search, mock planner/reviewer; 14 tests. TODO: mock builder code generators (after templates merge)
+- [x] W2-B agents-runtime — definitions, in-house + Claude Agent SDK runners, approvals, cost caps, AgentService (DB), evals, Slack/widget/email channels; 13 tests (DoD6 int test)
 
 ## Wave 3 — Apps
 - [x] W3-A apps/api — auth (password, magic link, OIDC Google/MS), RBAC, projects/files/remix, tasks (classify→estimate→queue, clarify, plan approval), GDPR, events WS, Yjs collab WS (2-client test), domain routers via ports, hooks; 13 tests
-- [ ] W3-B apps/agent-worker
+- [~] W3-B apps/agent-worker — build job runner + settlement + persisted events/usage (2 int tests). TODO: BullMQ wiring of all queues + domain ports
 - [ ] W3-C apps/web
 - [ ] W3-D apps/admin
 - [ ] W3-E apps/mobile
+
+- [x] observability package — OTel tracing, Sentry adapter, health checks, cost spike/provider-down alerts
 
 ## Wave 4 — Verification (Definition of done §19)
 - [ ] DoD1 docker compose up + one command starts platform
