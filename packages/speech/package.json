@@ -1,0 +1,29 @@
+{
+  "name": "@forge/speech",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Speech-to-text providers (ElevenLabs, Deepgram, Whisper, mock), streaming, WER",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol": "./src/protocol.ts",
+    "./wav": "./src/wav.ts",
+    "./wer": "./src/wer.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "test": "vitest run --passWithNoTests",
+    "eval:wer": "tsx ../../evals/speech/run-wer.ts"
+  },
+  "dependencies": {
+    "@forge/shared": "workspace:*",
+    "ws": "^8.18.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13"
+  }
+}
