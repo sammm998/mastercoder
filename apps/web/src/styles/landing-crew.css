@@ -1,0 +1,277 @@
+/* ---------- Landing: Scoutr mascots & crew ---------- */
+.bento-copy h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-floaters {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.floater {
+  position: absolute;
+  animation: bob 6s var(--ease-in-out) infinite alternate;
+  filter: drop-shadow(0 14px 22px rgba(60, 30, 120, 0.25));
+}
+
+.floater.f1 {
+  left: 8%;
+  top: 30%;
+}
+
+.floater.f2 {
+  right: 9%;
+  top: 22%;
+  animation-delay: -2s;
+}
+
+.floater.f3 {
+  left: 14%;
+  top: 60%;
+  animation-delay: -4s;
+  scale: 0.8;
+}
+
+.floater.f4 {
+  right: 15%;
+  top: 58%;
+  animation-delay: -1s;
+  scale: 0.75;
+}
+
+@keyframes bob {
+  to {
+    translate: 0 -14px;
+    rotate: 4deg;
+  }
+}
+
+@media (max-width: 900px) {
+  .floater.f3,
+  .floater.f4 {
+    display: none;
+  }
+  .floater.f1 {
+    left: 2%;
+    top: 13%;
+    scale: 0.62;
+  }
+  .floater.f2 {
+    right: 2%;
+    top: 11%;
+    scale: 0.62;
+  }
+}
+
+.hero-inner {
+  z-index: 1;
+}
+
+.hero-mascot {
+  position: absolute;
+  z-index: 2;
+  right: max(5%, calc(50% - 520px));
+  top: -138px;
+  width: clamp(110px, 14vw, 190px);
+  height: auto;
+  filter: drop-shadow(0 18px 30px rgba(80, 40, 160, 0.3));
+  pointer-events: none;
+}
+
+@media (max-width: 860px) {
+  .hero-mascot {
+    top: -84px;
+    right: 6%;
+  }
+}
+
+.orb-mascot {
+  width: 76%;
+  height: 76%;
+  object-fit: contain;
+  margin-top: 16%;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.25));
+}
+
+.statement-orb .orb,
+.make-orb {
+  overflow: hidden;
+}
+
+.make-chip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--glass-strong);
+  backdrop-filter: blur(10px);
+  font-size: 0.8rem;
+  font-weight: 640;
+  color: var(--ink);
+}
+
+.cta-mascot {
+  justify-self: center;
+  width: 104px;
+  height: auto;
+  filter: drop-shadow(0 12px 20px rgba(80, 40, 160, 0.3));
+  animation: bob 5s var(--ease-in-out) infinite alternate;
+}
+
+.b-cta {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.art-shield {
+  width: auto;
+  height: auto;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.crew-lead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 32px);
+  padding: clamp(20px, 3vw, 32px);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-4);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(60% 140% at 0% 50%, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%),
+    linear-gradient(90deg, var(--glass-2), var(--glass));
+  overflow: hidden;
+}
+
+.crew-lead > div {
+  display: grid;
+  gap: 4px;
+}
+
+.crew-lead p:last-child {
+  color: var(--ink-2);
+  max-width: 60ch;
+}
+
+.crew-name {
+  font-size: 1.25rem;
+  font-weight: 760;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.crew-role {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.crew-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.crew-card {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-3);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(90% 60% at 50% 0%, color-mix(in srgb, var(--c) 26%, transparent), transparent 75%),
+    var(--bg-elev);
+  text-align: center;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    border-color var(--dur-base);
+}
+
+.crew-card.is-lead {
+  border-color: color-mix(in srgb, var(--hue-1) 40%, var(--line));
+  background:
+    radial-gradient(90% 70% at 50% 0%, color-mix(in srgb, var(--c) 40%, transparent), transparent 75%),
+    radial-gradient(70% 60% at 50% 100%, color-mix(in srgb, var(--hue-1) 14%, transparent), transparent 75%),
+    var(--bg-elev);
+  box-shadow: var(--shadow-glow);
+}
+
+.crew-card.is-lead .crew-role {
+  color: var(--accent-ink);
+}
+
+@media (min-width: 1000px) {
+  .crew-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.crew-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--c) 50%, var(--line));
+}
+
+.crew-card:hover .crew-avatar {
+  animation: bob 0.8s var(--ease-in-out) infinite alternate;
+}
+
+.crew-card .crew-avatar {
+  margin-bottom: 6px;
+}
+
+.crew-card p:last-child {
+  font-size: 0.88rem;
+  color: var(--ink-2);
+}
+
+.crew-hint {
+  margin-top: var(--space-4);
+  text-align: center;
+  font-size: 0.86rem;
+  color: var(--ink-3);
+}
+
+.final-crew {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-2);
+}
+
+.final-crew .crew-avatar:nth-child(odd) {
+  translate: 0 6px;
+}
+
+/* Light theme: the hero sits on a soft pastel sky (Scoutr) instead of deep space. */
+:root[data-theme="light"] .hero-top {
+  background:
+    radial-gradient(60% 50% at 12% 10%, rgba(190, 240, 215, 0.55), transparent 70%),
+    radial-gradient(50% 45% at 90% 8%, rgba(210, 225, 255, 0.7), transparent 70%),
+    radial-gradient(60% 50% at 80% 70%, rgba(255, 215, 230, 0.55), transparent 70%);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .hero-top {
+    background:
+      radial-gradient(60% 50% at 12% 10%, rgba(190, 240, 215, 0.55), transparent 70%),
+      radial-gradient(50% 45% at 90% 8%, rgba(210, 225, 255, 0.7), transparent 70%),
+      radial-gradient(60% 50% at 80% 70%, rgba(255, 215, 230, 0.55), transparent 70%);
+  }
+}

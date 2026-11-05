@@ -1,10 +1,10 @@
 {
   "meta": {
-    "title": "Forge — say it, ship it",
-    "description": "Forge turns a typed, spoken or meeting prompt into a finished, tested product: apps, sites, APIs, media, decks and agents. Quality-gated, secure by default, fairly priced, EU-hosted."
+    "title": "Scoutr — say it, ship it",
+    "description": "Scoutr turns a typed, spoken or meeting prompt into a finished, tested product: apps, sites, APIs, media, decks and agents. Quality-gated, secure by default, fairly priced, EU-hosted."
   },
   "common": {
-    "home": "Forge home",
+    "home": "Scoutr home",
     "skipToContent": "Skip to content",
     "language": "Language",
     "languages": {
@@ -15,7 +15,9 @@
       "toggle": "Theme: {theme}. Switch theme",
       "system": "system",
       "light": "light",
-      "dark": "dark"
+      "dark": "dark",
+      "toDark": "Switch to dark theme",
+      "toLight": "Switch to light theme"
     },
     "loading": "Loading…",
     "save": "Save",
@@ -56,11 +58,14 @@
     "total": "Total",
     "on": "On",
     "off": "Off",
-    "you": "you"
+    "you": "you",
+    "details": "Details",
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "nav": {
     "primary": "Primary",
-    "why": "Why Forge",
+    "why": "Why Scoutr",
     "how": "How it works",
     "pricing": "Pricing",
     "login": "Log in",
@@ -77,7 +82,11 @@
     "switchWorkspace": "Switch workspace",
     "newWorkspace": "New workspace",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "make": "What it makes",
+    "crew": "Team",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
   },
   "cookie": {
     "title": "Cookies, briefly",
@@ -98,7 +107,7 @@
     "spendCap": "Spend cap reached",
     "spendCapBody": "This would exceed your spend cap. Raise it in Billing to continue.",
     "blocked": "Blocked",
-    "network": "Can't reach Forge. Check your connection and try again.",
+    "network": "Can't reach Scoutr. Check your connection and try again.",
     "unknown": "Unexpected error",
     "pageNotFound": "This page doesn't exist",
     "pageNotFoundBody": "The link may be broken, or the page may have moved.",
@@ -126,7 +135,7 @@
     "magicVerifying": "Signing you in…",
     "magicFailed": "This sign-in link is invalid or has expired.",
     "magicMissing": "This page needs a sign-in link from your email.",
-    "noAccount": "New to Forge?",
+    "noAccount": "New to Scoutr?",
     "haveAccount": "Already have an account?",
     "createOne": "Create an account",
     "loginInstead": "Log in",
@@ -134,7 +143,7 @@
     "termsLink": "Terms",
     "privacyLink": "Privacy policy",
     "inviteTitle": "Join a workspace",
-    "inviteLede": "You've been invited to collaborate on Forge.",
+    "inviteLede": "You've been invited to collaborate on Scoutr.",
     "inviteAccept": "Accept invite",
     "inviteAccepting": "Joining…",
     "inviteSignIn": "Sign in or create an account with the invited email address to accept.",
@@ -144,29 +153,31 @@
     "sideFacts": "EU-hosted · Quality gates on every build · Pay only for work that succeeds"
   },
   "footer": {
-    "tagline": "Forge turns prompts into finished, tested products — apps, sites, APIs, media, decks and agents.",
+    "tagline": "Scoutr turns prompts into finished, tested products — apps, sites, APIs, media, decks and agents.",
     "region": "Data stored in the EU · Frankfurt (eu-central-1)",
     "product": "Product",
     "account": "Account",
     "legal": "Legal",
-    "copyright": "© {year} Forge. Built in Europe."
+    "copyright": "© {year} Scoutr. Built in Europe.",
+    "madeIn": "Built in Europe · Data stays in the EU"
   },
   "landing": {
     "hero": {
       "eyebrow": "Prompt in · Product out",
       "title1": "Say it.",
-      "title2": "Forge",
+      "title2": "Scoutr",
       "title3": "ships it.",
-      "lede": "Type, speak or bring a meeting. Forge plans, designs, builds and tests a real product — and shows the price before it starts.",
+      "lede": "Type it, say it, or invite Scoutr to your meeting. It plans, designs, builds and tests real apps, sites, APIs, media, decks and agents — and shows you the price before it starts.",
       "promptLabel": "Try saying",
       "prompt1": "A booking site for my ceramics studio, with Swish payments and a waitlist",
       "prompt2": "Turn yesterday's customer meeting into a spec, then build the MVP",
       "prompt3": "An agent that drafts replies to support email every morning — ask me before sending",
       "cta": "Start building — free",
-      "secondary": "See how it works"
+      "secondary": "See how it works",
+      "badge": "Hosted in the EU · Pay only when it works"
     },
     "outputs": {
-      "label": "What Forge makes",
+      "label": "What Scoutr makes",
       "web": "Web apps",
       "mobile": "Mobile apps",
       "sites": "Sites",
@@ -178,10 +189,10 @@
       "agents": "Agents"
     },
     "why": {
-      "eyebrow": "Why Forge",
+      "eyebrow": "Why Scoutr",
       "title1": "Six promises,",
       "title2": "kept by default.",
-      "lede": "Other builders give you a demo. Forge gives you something you can put your name on."
+      "lede": "Other builders give you a demo. Scoutr gives you something you can put your name on."
     },
     "pillars": {
       "quality": {
@@ -221,11 +232,11 @@
       "step": "Step {n}",
       "ask": {
         "title": "Ask",
-        "body": "Type, use your voice, or invite the Forge notetaker to a meeting and approve the spec it writes."
+        "body": "Type, use your voice, or invite the Scoutr notetaker to a meeting and approve the spec it writes."
       },
       "estimate": {
         "title": "See the price",
-        "body": "Forge classifies the request, asks one question if it must, and shows a cost range before it spends a cent."
+        "body": "Scoutr classifies the request, asks one question if it must, and shows a cost range before it spends a cent."
       },
       "build": {
         "title": "Watch it build",
@@ -234,7 +245,8 @@
       "ship": {
         "title": "Ship and own it",
         "body": "Gates pass, it deploys with your domain and TLS. Roll back any checkpoint or take the code with you."
-      }
+      },
+      "lede": "You stay in control at every step — and can see exactly what the agent is doing."
     },
     "pricing": {
       "eyebrow": "Fair pricing",
@@ -247,7 +259,11 @@
       "lineBuild": "Build",
       "lineVerify": "Tests & review",
       "lineTotal": "Estimate",
-      "guarantee": "Agent error? Not charged."
+      "guarantee": "Agent error? Not charged.",
+      "exampleRange": "$1.58 – $2.88",
+      "point1": "An estimate and a hard spend cap before any work starts",
+      "point2": "Estimate vs. charged shown on every task",
+      "point3": "Failed because of the agent? You pay nothing"
     },
     "eu": {
       "title": "Built in Europe. Stored in Europe.",
@@ -255,8 +271,79 @@
     },
     "final": {
       "title1": "What will you",
-      "title2": "forge today?",
-      "cta": "Create your free account"
+      "title2": "build today?",
+      "cta": "Create your free account",
+      "body": "Free to start. You only pay for work that succeeds."
+    },
+    "mock": {
+      "caption": "Illustration of the Scoutr project workspace with example data: the agent timeline on the left, a live preview of the generated site on the right.",
+      "project": "Ceramics studio",
+      "wrote": "Wrote",
+      "tests": "Ran the tests — 24 passed",
+      "gatesSummary": "7 passed · 1 skipped",
+      "composer": "Ask for a change…",
+      "siteBrand": "Lera & Eld",
+      "siteNav": "Classes · Shop · Visit",
+      "siteKicker": "Ceramics studio · Malmö",
+      "siteTitle": "Throw your first bowl this weekend.",
+      "siteCta": "Book a class"
+    },
+    "stack": {
+      "label": "Real, standard code — exported the way you would write it"
+    },
+    "statement": {
+      "label": "What Scoutr is",
+      "lead": "Scoutr is the shortest path from an idea to a product you can ship.",
+      "rest": "Describe what you need. Scoutr picks a proven stack, writes the code, proves that it works and hands you everything it made — code, tests, designs and a running preview.",
+      "orb": "Made in the EU"
+    },
+    "ctaCard": {
+      "title": "Ready when you are.",
+      "body": "Describe your idea. You'll see the plan and the price before anything is built."
+    },
+    "make": {
+      "eyebrow": "What you can make",
+      "title": "One prompt. Every kind of output.",
+      "lede": "The same workspace builds software, media, documents and agents — and holds all of it to the same quality bar.",
+      "index": "Output types",
+      "apps": {
+        "short": "Apps & APIs",
+        "title": "Apps, sites and APIs",
+        "body": "Next.js web apps, Expo mobile apps, marketing sites and FastAPI backends — with sign-in, a database, row-level security and tests from the very first commit.",
+        "cta": "Build an app"
+      },
+      "media": {
+        "short": "Images & video",
+        "title": "Images and video",
+        "body": "On-brand images and Remotion videos from a sentence, rendered, stored in your project and editable with the next prompt.",
+        "chip1": "Your brand colours",
+        "chip2": "Edit by prompt",
+        "cta": "Make media"
+      },
+      "docs": {
+        "short": "Decks & docs",
+        "title": "Decks and documents",
+        "body": "Slide decks and documents written from your notes or a meeting, edited in the browser and exported to PPTX, PDF and DOCX.",
+        "chip1": "PPTX & PDF export",
+        "chip2": "DOCX export",
+        "cta": "Write a deck"
+      },
+      "agents": {
+        "short": "Agents & meetings",
+        "title": "Agents and meetings",
+        "body": "Invite Scoutr to a meeting and it turns the conversation into a spec. Or build an agent that runs on a schedule, asks before it acts and logs every step.",
+        "chip1": "Meeting notes to spec",
+        "chip2": "Approvals",
+        "chip3": "Schedules",
+        "cta": "Create an agent"
+      }
+    },
+    "crew": {
+      "eyebrow": "Meet your crew",
+      "title": "Eight specialists. One conversation.",
+      "lede": "Scoutr splits your ask into steps and hands each one to the specialist that knows it best — then brings it back to you as one tested result.",
+      "lead": "The lead",
+      "hint": "Every message in the project timeline comes from one of them, so you always know who did what."
     }
   },
   "legal": {
@@ -264,23 +351,23 @@
     "onThisPage": "On this page",
     "terms": {
       "title": "Terms of Service",
-      "intro": "These terms govern your use of Forge, a service that generates software, media, documents and automated agents from your instructions. Please read them carefully.",
+      "intro": "These terms govern your use of Scoutr, a service that generates software, media, documents and automated agents from your instructions. Please read them carefully.",
       "s1t": "1. Who we are",
-      "s1": "Forge is operated by Forge AB, a company registered in Sweden (“Forge”, “we”). Contact: legal@forge.example. These terms form an agreement between you (or the organisation you represent) and Forge.",
+      "s1": "Scoutr is operated by Scoutr AB, a company registered in Sweden (“Scoutr”, “we”). Contact: legal@forge.example. These terms form an agreement between you (or the organisation you represent) and Scoutr.",
       "s2t": "2. Your account",
       "s2": "You must provide accurate information and keep your credentials secure. You are responsible for activity in your workspace. Workspace owners decide who has access and with which role.",
       "s3t": "3. Your content and output",
-      "s3": "You keep all rights to the prompts, files, recordings and other material you provide, and to the code, media and documents Forge generates for you, subject to third-party licences of included open-source components. You grant Forge a limited licence to process your content only to provide the service.",
+      "s3": "You keep all rights to the prompts, files, recordings and other material you provide, and to the code, media and documents Scoutr generates for you, subject to third-party licences of included open-source components. You grant Scoutr a limited licence to process your content only to provide the service.",
       "s4t": "4. Acceptable use",
-      "s4": "You may not use Forge to create malware, phishing or impersonation sites, to harvest credentials, to infringe others’ rights, or to process personal data unlawfully. We scan deployments for abuse and may take down content that violates these rules.",
+      "s4": "You may not use Scoutr to create malware, phishing or impersonation sites, to harvest credentials, to infringe others’ rights, or to process personal data unlawfully. We scan deployments for abuse and may take down content that violates these rules.",
       "s5t": "5. Meeting recordings",
-      "s5": "When you record a meeting or invite the Forge notetaker, you are responsible for informing participants and obtaining any consent required by law. The notetaker announces itself in the meeting chat.",
+      "s5": "When you record a meeting or invite the Scoutr notetaker, you are responsible for informing participants and obtaining any consent required by law. The notetaker announces itself in the meeting chat.",
       "s6t": "6. Pricing, estimates and spend caps",
       "s6": "Paid usage is billed according to your plan. We show an estimate before a task starts; spend caps you set are enforced as hard limits. Tasks that fail due to an error on our side are not charged.",
       "s7t": "7. Availability and changes",
       "s7": "We aim for high availability but the service is provided “as is”. We may change features with reasonable notice. Material changes to these terms will be announced at least 30 days in advance.",
       "s8t": "8. Liability",
-      "s8": "To the extent permitted by law, Forge’s total liability is limited to the fees you paid in the 12 months before the claim. Nothing limits liability that cannot be limited under applicable law, including for gross negligence.",
+      "s8": "To the extent permitted by law, Scoutr’s total liability is limited to the fees you paid in the 12 months before the claim. Nothing limits liability that cannot be limited under applicable law, including for gross negligence.",
       "s9t": "9. Termination",
       "s9": "You can delete your account at any time from Settings. We may suspend accounts that seriously breach these terms. On termination you can export your data for 30 days.",
       "s10t": "10. Governing law",
@@ -288,9 +375,9 @@
     },
     "privacy": {
       "title": "Privacy Policy",
-      "intro": "This policy explains what personal data Forge processes, why, and the rights you have under the EU General Data Protection Regulation (GDPR).",
+      "intro": "This policy explains what personal data Scoutr processes, why, and the rights you have under the EU General Data Protection Regulation (GDPR).",
       "s1t": "1. Controller",
-      "s1": "Forge AB, Sweden, is the controller for account data. For content you upload into a workspace (for example meeting recordings), your organisation is the controller and Forge acts as processor under our Data Processing Agreement.",
+      "s1": "Scoutr AB, Sweden, is the controller for account data. For content you upload into a workspace (for example meeting recordings), your organisation is the controller and Scoutr acts as processor under our Data Processing Agreement.",
       "s2t": "2. Data we process",
       "s2": "Account data (name, email, password hash, language), workspace and project content, prompts and voice input, meeting audio and transcripts you choose to record, usage and billing records, and security logs (IP address, audit trail).",
       "s3t": "3. Purposes and legal bases",
@@ -308,21 +395,21 @@
     },
     "dpa": {
       "title": "Data Processing Agreement",
-      "intro": "This Data Processing Agreement (DPA) forms part of the Terms of Service when Forge processes personal data on behalf of a customer, in line with Article 28 GDPR.",
+      "intro": "This Data Processing Agreement (DPA) forms part of the Terms of Service when Scoutr processes personal data on behalf of a customer, in line with Article 28 GDPR.",
       "s1t": "1. Roles",
-      "s1": "The customer is the controller and Forge is the processor for personal data contained in customer content, including meeting recordings, transcripts, project data and agent inputs.",
+      "s1": "The customer is the controller and Scoutr is the processor for personal data contained in customer content, including meeting recordings, transcripts, project data and agent inputs.",
       "s2t": "2. Instructions",
-      "s2": "Forge processes personal data only on the customer’s documented instructions, which are given through the use of the service and these terms, unless required otherwise by EU or member state law.",
+      "s2": "Scoutr processes personal data only on the customer’s documented instructions, which are given through the use of the service and these terms, unless required otherwise by EU or member state law.",
       "s3t": "3. Confidentiality and security",
-      "s3": "Personnel with access are bound by confidentiality. Forge applies encryption in transit and at rest, envelope-encrypted secrets, role-based access, audit logging, isolated build sandboxes and regular security testing.",
+      "s3": "Personnel with access are bound by confidentiality. Scoutr applies encryption in transit and at rest, envelope-encrypted secrets, role-based access, audit logging, isolated build sandboxes and regular security testing.",
       "s4t": "4. Sub-processors",
-      "s4": "Forge maintains a list of sub-processors (hosting, model providers, transcription, email) and gives at least 30 days’ notice of changes, during which the customer may object.",
+      "s4": "Scoutr maintains a list of sub-processors (hosting, model providers, transcription, email) and gives at least 30 days’ notice of changes, during which the customer may object.",
       "s5t": "5. Assistance",
-      "s5": "Forge assists the customer with data subject requests, data protection impact assessments and breach notifications. Personal data breaches are reported without undue delay and within 48 hours.",
+      "s5": "Scoutr assists the customer with data subject requests, data protection impact assessments and breach notifications. Personal data breaches are reported without undue delay and within 48 hours.",
       "s6t": "6. Deletion and return",
-      "s6": "On termination, or on request, Forge deletes or returns customer personal data. Meeting data can be deleted by the customer at any time from the meeting page.",
+      "s6": "On termination, or on request, Scoutr deletes or returns customer personal data. Meeting data can be deleted by the customer at any time from the meeting page.",
       "s7t": "7. Audits",
-      "s7": "Forge makes available the information necessary to demonstrate compliance and allows for audits, including inspections, by the customer or an auditor mandated by the customer, with reasonable notice."
+      "s7": "Scoutr makes available the information necessary to demonstrate compliance and allows for audits, including inspections, by the customer or an auditor mandated by the customer, with reasonable notice."
     }
   },
   "composer": {
@@ -330,7 +417,7 @@
     "startVoice": "Speak your prompt",
     "stopVoice": "Stop and send",
     "planMode": "Plan first",
-    "planModeHint": "Forge writes a spec and task list for you to approve before building",
+    "planModeHint": "Scoutr writes a spec and task list for you to approve before building",
     "shortcut": "⌘/Ctrl + Enter",
     "attach": "Attach files or a screenshot",
     "figma": "Figma URL",
@@ -339,15 +426,34 @@
       "unsupported": "This browser can't record audio.",
       "not_configured": "Speech recognition isn't configured on this server yet.",
       "connection": "The voice connection dropped. Try again."
-    }
+    },
+    "mode": {
+      "label": "Mode",
+      "build": "Build",
+      "plan": "Plan",
+      "chat": "Chat",
+      "buildHint": "Plan and build it, with tests and a live preview",
+      "planHint": "Show me the spec and task list to approve before building",
+      "chatHint": "Just talk — questions and answers, nothing is built or charged"
+    },
+    "placeholder": {
+      "build": "Describe what to build or change…",
+      "plan": "Describe it — you'll approve the plan before anything is built…",
+      "chat": "Ask Scoutr anything about this project…"
+    },
+    "send": "Send",
+    "sendHint": "Enter to send · Shift + Enter for a new line",
+    "recording": "Recording — speak naturally",
+    "figmaLink": "Link a Figma file",
+    "tools": "Attachments and voice"
   },
   "dashboard": {
     "greeting": "Good to see you, {name}",
     "greetingAnon": "Good to see you",
     "title1": "What should we",
-    "title2": "forge next?",
+    "title2": "build next?",
     "placeholder": "Describe an app, site, API, image, video, deck or agent…",
-    "submit": "Forge it",
+    "submit": "Scoutr it",
     "voiceProjectName": "Voice project",
     "openAnyway": "Open the project anyway",
     "templates": "Start from a template",
@@ -413,7 +519,7 @@
       "emptyTitle": "The preview appears here",
       "emptyBody": "As soon as the agent starts the dev server, you'll see the live app — and can click anything to edit it.",
       "frameTitle": "Live preview of the app",
-      "noInspector": "Visual editing needs the Forge inspector in the preview (dev builds with @forge/visual-edit). Ask the agent to add it, or edit in Code.",
+      "noInspector": "Visual editing needs the Scoutr inspector in the preview (dev builds with @forge/visual-edit). Ask the agent to add it, or edit in Code.",
       "editHint": "Click any element to edit its text, colours, spacing or image",
       "commentHint": "Click an element to pin a comment to it"
     },
@@ -464,11 +570,12 @@
       "history": "History",
       "media": "Media",
       "slides": "Slides",
-      "deploy": "Deploy"
+      "deploy": "Deploy",
+      "run": "Run"
     },
     "chat": {
       "title": "Agent",
-      "empty": "Tell Forge what to build or change. You'll see the plan, the price and every step.",
+      "empty": "Tell Scoutr what to build or change. You'll see the plan, the price and every step.",
       "placeholder": "Ask for a change, or describe what to build…",
       "send": "Send",
       "you": "You",
@@ -552,7 +659,31 @@
         "closed": "Reconnecting…",
         "denied": "No access to live events"
       },
-      "usage": "{cost} so far"
+      "usage": "{cost} so far",
+      "detailsTitle": "Details",
+      "summary": "Summary from the agent",
+      "reason": "What went wrong",
+      "breakdown": "Breakdown",
+      "intent": {
+        "app": "App",
+        "website": "Website",
+        "mobile": "Mobile app",
+        "backend": "API / backend",
+        "image": "Image",
+        "video": "Video",
+        "slides": "Slides",
+        "document": "Document",
+        "agent": "Agent",
+        "integration": "Integration",
+        "question": "Question"
+      },
+      "artifact": "New result ready",
+      "deploy": "Deployment: {status}",
+      "meeting": "Meeting: {status}",
+      "previewReady": "Preview is live",
+      "thinking": "Thinking…",
+      "stop": "Stop",
+      "systemNote": "System note"
     },
     "comments": {
       "title": "Comments",
@@ -631,9 +762,128 @@
       "saved": "Saved",
       "export": "Export",
       "exportAs": "Export as {format}",
-      "unsupported": "This file isn't a slide deck Forge can edit here, but you can still export it.",
+      "unsupported": "This file isn't a slide deck Scoutr can edit here, but you can still export it.",
       "sections": "Sections",
       "heading": "Heading"
+    },
+    "pane": {
+      "label": "Show",
+      "agent": "Agent",
+      "workspace": "Workspace"
+    },
+    "resize": "Resize the agent panel",
+    "gates": {
+      "title": "Quality gates",
+      "passedCount": "{count, plural, one {# passed} other {# passed}}",
+      "failedCount": "{count, plural, one {# failed} other {# failed}}",
+      "skippedCount": "{count, plural, one {# skipped} other {# skipped}}",
+      "status": {
+        "passed": "Passed",
+        "failed": "Failed",
+        "skipped": "Skipped"
+      },
+      "findings": "{count, plural, one {# blocking finding} other {# blocking findings}}",
+      "notApplicable": "Not applicable to this project",
+      "fix": "Proposed fix",
+      "toggle": "Show the individual checks",
+      "name": {
+        "typecheck": "Type check",
+        "lint": "Lint",
+        "unit": "Unit tests",
+        "integration": "Integration tests",
+        "e2e": "End-to-end tests",
+        "semgrep": "Code security scan",
+        "gitleaks": "Secret scan",
+        "osv": "Dependency audit",
+        "rls": "Row-level security",
+        "auth": "Access control",
+        "validation": "Input validation",
+        "client-secrets": "Secrets in client code",
+        "lighthouse": "Performance (Lighthouse)",
+        "visual-qa": "Visual review"
+      }
+    },
+    "tools": {
+      "title": "{count, plural, one {# action} other {# actions}}",
+      "running": "Working…",
+      "failed": "Failed",
+      "read_file": "Read a file",
+      "write_file": "Wrote a file",
+      "edit_file": "Edited a file",
+      "list_files": "Listed the files",
+      "search_code": "Searched the code",
+      "run_command": "Ran a command",
+      "install_package": "Installed packages",
+      "run_tests": "Ran the tests",
+      "run_e2e": "Ran end-to-end tests",
+      "take_screenshot": "Took a screenshot",
+      "record_video": "Recorded a video",
+      "read_logs": "Read the logs",
+      "db_query": "Queried the database",
+      "db_migrate": "Migrated the database",
+      "web_search_docs": "Looked up documentation",
+      "generate_image": "Generated an image",
+      "generate_video": "Generated a video",
+      "create_slides": "Created slides",
+      "use_integration": "Used an integration",
+      "ask_user": "Asked you a question",
+      "other": "Used {tool}"
+    },
+    "stepper": {
+      "label": "Progress",
+      "done": "done",
+      "active": "in progress",
+      "todo": "not started",
+      "failed": "failed"
+    },
+    "cost": {
+      "label": "Cost",
+      "estimate": "estimate {range}",
+      "spent": "{amount} spent",
+      "mock": "mock",
+      "mockHint": "This run used the built-in mock providers, so it cost nothing.",
+      "meter": "Spent {spent} of an estimated {high}",
+      "ofEstimate": "of ≈{high} estimate"
+    },
+    "team": {
+      "title": "Team",
+      "working": "Team working · step {step} of {total}",
+      "finished": "{count, plural, one {Team finished in # step} other {Team finished in # steps}}",
+      "failed": "Team stopped at {step}",
+      "toUser": "to you",
+      "lastRun": "Last run",
+      "noRun": "No run yet. Send a prompt and the team gets to work.",
+      "status": {
+        "asking": "Asking",
+        "working": "Working",
+        "done": "Done",
+        "failed": "Needs attention"
+      },
+      "step": {
+        "plan": "Plan",
+        "kickoff": "Kick-off",
+        "design": "Design",
+        "build": "Build",
+        "verify": "Checks",
+        "review": "Review",
+        "finish": "Finish",
+        "chat": "Chat"
+      },
+      "collapse": "Hide the team conversation",
+      "expand": "Show the team conversation"
+    },
+    "live": {
+      "title": "Watch it build",
+      "lede": "The preview loads here automatically as soon as the dev server is up.",
+      "files": "Files being written",
+      "noFiles": "No files written yet.",
+      "terminal": "Latest output",
+      "noTerminal": "No output yet.",
+      "new": "new",
+      "changed": "changed",
+      "deleted": "deleted",
+      "idleTitle": "Nothing is running",
+      "idleBody": "Describe what you want in the agent panel. The team's progress, the files being written and the live preview show up here."
     }
   },
   "deploy": {
@@ -735,7 +985,7 @@
       "new": "New agent"
     },
     "empty": "No agents yet",
-    "emptyBody": "Describe a job — Forge drafts the agent, you review every tool, scope and approval rule before it exists.",
+    "emptyBody": "Describe a job — Scoutr drafts the agent, you review every tool, scope and approval rule before it exists.",
     "describe": "What should the agent do?",
     "describePlaceholder": "Every weekday at 8:00, read new support emails, draft replies in our tone and ask me before sending.",
     "draft": "Draft agent",
@@ -811,9 +1061,9 @@
   },
   "meetings": {
     "title": "Meetings",
-    "lede": "Turn conversations into specs. Forge transcribes, summarises, pulls out decisions and requirements, then drafts a build spec for you to approve.",
+    "lede": "Turn conversations into specs. Scoutr transcribes, summarises, pulls out decisions and requirements, then drafts a build spec for you to approve.",
     "bot": "Invite the notetaker",
-    "botLede": "Paste a Zoom, Microsoft Teams or Google Meet link. “Forge notetaker” joins, posts a recording notice in the meeting chat and leaves when the meeting ends.",
+    "botLede": "Paste a Zoom, Microsoft Teams or Google Meet link. “Scoutr notetaker” joins, posts a recording notice in the meeting chat and leaves when the meeting ends.",
     "meetingUrl": "Meeting link",
     "meetingTitle": "Title",
     "language": "Spoken language",
@@ -961,5 +1211,89 @@
     "checkoutSuccess": "Thanks — your plan is being activated.",
     "checkoutCancelled": "Checkout cancelled. Nothing was charged.",
     "ownerOnly": "Only workspace owners can change billing."
+  },
+  "crew": {
+    "scoutr": {
+      "role": "Lead",
+      "desc": "Takes your ask, splits it into steps, hands each one to the right specialist and reports back to you."
+    },
+    "plania": {
+      "role": "Planner",
+      "desc": "Turns your words into a spec and a task list you can approve before anything is built."
+    },
+    "pixel": {
+      "role": "Designer",
+      "desc": "Proposes art directions, design tokens and motion — and scores every viewport."
+    },
+    "byggo": {
+      "role": "Builder",
+      "desc": "Writes the code, installs packages, runs the app and keeps the live preview fresh."
+    },
+    "vakt": {
+      "role": "Security & quality",
+      "desc": "Runs the quality gates — tests, lint, security scans — and blocks anything unsafe."
+    },
+    "revy": {
+      "role": "Reviewer",
+      "desc": "Reads the result like a senior engineer and sends back anything that isn't good enough."
+    },
+    "chatti": {
+      "role": "Chat",
+      "desc": "Answers questions about your project in plain language. Nothing is built or charged."
+    },
+    "mailo": {
+      "role": "Email & schedules",
+      "desc": "Runs your scheduled agents and email workflows, and asks before anything is sent."
+    }
+  },
+  "status": {
+    "queued": "Queued",
+    "running": "Running",
+    "building": "Building",
+    "deploying": "Deploying",
+    "ready": "Ready",
+    "live": "Live",
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "error": "Error",
+    "cancelled": "Cancelled",
+    "joining": "Joining",
+    "recording": "Recording",
+    "processing": "Processing",
+    "done": "Done",
+    "active": "Active",
+    "pending": "Pending",
+    "issued": "Issued",
+    "verified": "Verified"
+  },
+  "team": {
+    "plan": {
+      "ask": "Plania, can you plan this? “{request}”",
+      "done": "Done ✓ “{title}”: {stories, plural, one {# user story} other {# user stories}}, {entities, plural, one {# data entity} other {# data entities}}, {tests, plural, one {# acceptance test} other {# acceptance tests}} — back to you, Scoutr"
+    },
+    "kickoff": {
+      "security": "Before you start, Byggo: the gates will require {checks}."
+    },
+    "design": {
+      "ask": "Pixel, can you set the art direction?",
+      "done": "Done ✓ art direction “{direction}”, {files, plural, one {# file} other {# files}} composed — back to you, Scoutr"
+    },
+    "build": {
+      "ask": "Byggo, can you build it from the plan? ({tasks, plural, one {# task} other {# tasks}})",
+      "done": "Done ✓ {files, plural, one {# file} other {# files}} written in {tools, plural, one {# step} other {# steps}} — over to Vakt for checks"
+    },
+    "verify": {
+      "done": "Done ✓ {passed} of {total} quality checks passed",
+      "failed": "{passed} of {total} checks passed — failing: {failed}. Byggo, please fix"
+    },
+    "review": {
+      "done": "Done ✓ the code matches the plan — no blocking issues",
+      "issues": "{issues, plural, one {# issue found} other {# issues found}} — sending it back to Byggo"
+    },
+    "finish": "“{title}” is ready and every check passed.",
+    "failed": "I couldn't finish this one. You won't be charged.",
+    "chat": {
+      "reply": "Here's my answer."
+    }
   }
 }

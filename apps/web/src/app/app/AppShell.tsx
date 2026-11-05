@@ -81,7 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <header className="shell-mobilebar">
           <Link href="/app" className="wordmark" aria-label={t("nav.dashboard")}>
             <LogoMark />
-            <span aria-hidden="true">Forge</span>
+            <img src="/brand/scoutr-logo.webp" width={84} height={28} alt="" className="wordmark-img" />
           </Link>
           <button type="button" className="btn btn-ghost btn-icon" aria-expanded={menuOpen} aria-controls="app-sidebar" onClick={() => setMenuOpen((o) => !o)} aria-label={menuOpen ? t("nav.closeMenu") : t("nav.openMenu")}>
             <Icon name={menuOpen ? "x" : "menu"} />
@@ -89,10 +89,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
         <aside id="app-sidebar" className="sidebar" aria-label={t("nav.app")}>
           <Link href="/app" className="sidebar-brand wordmark" aria-label={t("nav.dashboard")}>
-            <LogoMark />
-            <span className="sidebar-label" aria-hidden="true">
-              Forge
-            </span>
+            <LogoMark size={32} />
+            <img src="/brand/scoutr-logo.webp" width={84} height={28} alt="" aria-hidden="true" className="wordmark-img sidebar-label" />
           </Link>
           <div className="sidebar-ws">
             <label htmlFor="ws-switch" className="eyebrow sidebar-label">
@@ -123,7 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <nav className="sidebar-nav" aria-label={t("nav.app")}>
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className="sidebar-link" aria-current={isActive(n.href) ? "page" : undefined} title={t(n.label)}>
+              <Link key={n.href} href={n.href} className="sidebar-link" aria-current={isActive(n.href) ? "page" : undefined} data-tip={compact ? t(n.label) : undefined} data-tip-side="right" aria-label={compact ? t(n.label) : undefined}>
                 <Icon name={n.icon} />
                 <span className="sidebar-label">{t(n.label)}</span>
               </Link>
@@ -141,8 +139,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <div className="row sidebar-prefs">
               <LocaleSwitcher />
-              <ThemeToggle />
-              <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => logout.mutate()} aria-label={t("nav.logout")} title={t("nav.logout")}>
+              <ThemeToggle tipSide={compact ? "right" : undefined} />
+              <button type="button" className="btn btn-ghost btn-icon btn-sm" onClick={() => logout.mutate()} aria-label={t("nav.logout")} data-tip={t("nav.logout")} data-tip-side={compact ? "right" : undefined}>
                 <Icon name="logout" />
               </button>
             </div>

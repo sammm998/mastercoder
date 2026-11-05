@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useT } from "@/i18n/client";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
 import { stripAnsi, type ForgeEvent } from "@/lib/events";
+import { currentTaskId, eventsOf, liveFiles } from "@/lib/agent-run";
 import { initials, type Peer } from "@/lib/collab";
 import { ErrorNotice, LoadingBlock } from "@/components/Feedback";
 import { Icon } from "@/components/Icon";
@@ -17,23 +18,29 @@ const DiffView = dynamic(() => import("./DiffView"), { ssr: false, loading: () =
 
 type View = "code" | "diff" | "terminal";
 
-function Tree({ nodes, open, toggle, active, onOpen, depth = 0 }: { nodes: TreeNode[]; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string) => void; depth?: number }) {
+type Changes = Map<string, "created" | "modified" | "deleted">;
+
+function Tree({ nodes, open, toggle, active, onOpen, changed, depth = 0 }: { nodes: TreeNode[]; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string) => void; changed: Changes; depth?: number }) {
+  const t = useT();
+  const hasChanged = (dir: string) => [...changed.keys()].some((p) => p.startsWith(`${dir}/`));
   return (
     <ul className="tree" role={depth === 0 ? "tree" : "group"}>
       {nodes.map((n) =>
         n.children ? (
           <li key={n.path} role="treeitem" aria-expanded={open.has(n.path)} aria-selected={false}>
-            <button type="button" className="tree-row" style={{ paddingLeft: 8 + depth * 14 }} onClick={() => toggle(n.path)}>
+            <button type="button" className="tree-row" style={{ paddingLeft: 8 + depth * 14 }} onClick={() => toggle(n.path)} data-changed={hasChanged(n.path) || undefined}>
               <Icon name="folder" size={14} />
-              {n.name}
+              <span className="tree-name">{n.name}</span>
+              {hasChanged(n.path) && <span className="tree-dot" aria-hidden="true" />}
             </button>
-            {open.has(n.path) && <Tree nodes={n.children} open={open} toggle={toggle} active={active} onOpen={onOpen} depth={depth + 1} />}
+            {open.has(n.path) && <Tree nodes={n.children} open={open} toggle={toggle} active={active} onOpen={onOpen} changed={changed} depth={depth + 1} />}
           </li>
         ) : (
           <li key={n.path} role="treeitem" aria-selected={active === n.path}>
-            <button type="button" className="tree-row" data-active={active === n.path} style={{ paddingLeft: 8 + depth * 14 }} onClick={() => onOpen(n.path)} data-testid={`file-${n.path}`}>
+            <button type="button" className="tree-row" data-active={active === n.path} data-changed={changed.get(n.path)} style={{ paddingLeft: 8 + depth * 14 }} onClick={() => onOpen(n.path)} data-testid={`file-${n.path}`}>
               <Icon name="file" size={14} />
-              {n.name}
+              <span className="tree-name">{n.name}</span>
+              {changed.has(n.path) && <span className="tree-tag">{changed.get(n.path) === "created" ? t("project.live.new") : t("project.live.changed")}</span>}
             </button>
           </li>
         ),
@@ -75,13 +82,31 @@ export function CodePane({
   const [diff, setDiff] = useState<{ original: string; modified: string; label: string } | null>(null);
   const writeFile = useMutation(trpc.project.writeFile.mutationOptions());
 
-  const tree = useMemo(() => buildTree((files.data ?? []).map((f) => f.path)), [files.data]);
+  // Files the latest task touched: shown in the tree right away (before the refetch) with a new/changed tag.
+  const focusTask = useMemo(() => currentTaskId(events), [events]);
+  const changed = useMemo<Changes>(() => new Map(liveFiles(eventsOf(events, focusTask)).map((f) => [f.path, f.change])), [events, focusTask]);
+  const tree = useMemo(() => {
+    const paths = new Set((files.data ?? []).map((f) => f.path));
+    for (const [p, c] of changed) {
+      if (c === "deleted") paths.delete(p);
+      else if (validPath(p)) paths.add(p);
+    }
+    return buildTree([...paths]);
+  }, [files.data, changed]);
 
   // Refresh the file list when files change (agent writes, visual edits, other editors).
-  const lastFileEvent = useMemo(() => [...events].reverse().find((e) => e.type === "file.changed")?.id, [events]);
+  const lastFile = useMemo(() => [...events].reverse().find((e) => e.type === "file.changed"), [events]);
   useEffect(() => {
-    if (lastFileEvent) void qc.invalidateQueries({ queryKey: trpc.project.files.queryKey({ projectId }) });
-  }, [lastFileEvent, qc, trpc, projectId]);
+    if (lastFile) void qc.invalidateQueries({ queryKey: trpc.project.files.queryKey({ projectId }) });
+  }, [lastFile, qc, trpc, projectId]);
+
+  // The agent rewrote the open file: re-open it so the editor shows the new text (the collab room
+  // re-syncs from the stored file). Edits by people come through the shared doc and need no reload.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  useEffect(() => {
+    if (lastFile?.type === "file.changed" && lastFile.taskId && lastFile.path === active && peers.length <= 1) setReloadNonce((n) => n + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastFile?.id]);
 
   // A new checkpoint resets the diff baseline: changes are shown relative to it from now on.
   const lastCheckpoint = useMemo(() => [...events].reverse().find((e) => e.type === "checkpoint.created"), [events]);
@@ -178,7 +203,7 @@ export function CodePane({
             {t("project.code.noFiles")}
           </p>
         ) : (
-          <Tree nodes={tree} open={open} toggle={(p) => setOpen((cur) => (cur.has(p) ? new Set([...cur].filter((x) => x !== p)) : new Set([...cur, p])))} active={active} onOpen={openFile} />
+          <Tree nodes={tree} open={open} toggle={(p) => setOpen((cur) => (cur.has(p) ? new Set([...cur].filter((x) => x !== p)) : new Set([...cur, p])))} active={active} onOpen={openFile} changed={changed} />
         )}
         {canWrite && (
           <form className="code-newfile" onSubmit={createFile}>
@@ -246,7 +271,7 @@ export function CodePane({
             </div>
           ) : (
             <CollabEditor
-              key={`${projectId}:${active}`}
+              key={`${projectId}:${active}:${reloadNonce}`}
               projectId={projectId}
               path={active}
               userName={userName}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { isInspectorMessage, type ForgeSelectMessage, type ParentToInspector } from "@forge/visual-edit/protocol";
 import { useT } from "@/i18n/client";
 import { Icon, type IconName } from "@/components/Icon";
@@ -33,6 +33,7 @@ export function PreviewPane({
   highlight,
   reloadKey,
   canWrite,
+  placeholder,
 }: {
   url: string | null;
   mode: PreviewMode;
@@ -41,6 +42,8 @@ export function PreviewPane({
   highlight: string | null;
   reloadKey: number;
   canWrite: boolean;
+  /** Shown instead of the empty state while there is no preview URL (e.g. the live build view). */
+  placeholder?: ReactNode;
 }) {
   const t = useT();
   const frame = useRef<HTMLIFrameElement>(null);
@@ -125,7 +128,9 @@ export function PreviewPane({
         </div>
       </div>
       <div className="preview-stage" ref={stage}>
-        {!url ? (
+        {!url && placeholder ? (
+          <div className="preview-live">{placeholder}</div>
+        ) : !url ? (
           <div className="preview-empty">
             <span className="preview-empty-mark" aria-hidden="true" />
             <p className="serif" style={{ fontSize: "var(--step-2)" }}>

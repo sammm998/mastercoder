@@ -2,24 +2,46 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocale, useT } from "@/i18n/client";
-import { formatUsd } from "@/i18n/format";
+import { useT } from "@/i18n/client";
 import type { MessageKey } from "@/i18n/translate";
 import { useTRPC, useTRPCClient } from "@/lib/trpc";
-import { toChatItems, toolResults, type ForgeEvent } from "@/lib/events";
+import { toChatItems, toolResults, type EventOf, type ForgeEvent } from "@/lib/events";
+import { currentTaskId, eventsOf, groupTimeline, phaseSteps, taskCost, teamRuns } from "@/lib/agent-run";
 import { attachmentPath, isFigmaUrl, isTextFile, MAX_ATTACHMENT_BYTES, promptWithAttachments, readAsDataUrl, readAsText, type StoredAttachment } from "@/lib/attachments";
+import { taskCreateInput } from "@/lib/task-input";
 import type { SocketState } from "@/lib/useProjectEvents";
-import { PromptComposer, type ComposerSubmit } from "@/components/PromptComposer";
+import { ComposerIcon, PromptComposer, type ComposerSubmit } from "@/components/PromptComposer";
 import { ErrorNotice } from "@/components/Feedback";
 import { Icon } from "@/components/Icon";
-import { EventCard, summarizeTasks } from "./EventCard";
+import { CrewAvatar } from "@/components/CrewAvatar";
+import { Details, EventCard, GatesCard, summarizeTasks, ToolGroup } from "./EventCard";
+import { TeamThread } from "./TeamThread";
+import { CostMeter, PhaseStepper } from "./RunWidgets";
 
 const ACTIVE = new Set(["queued", "running", "awaiting_clarification", "awaiting_approval"]);
 const REFRESH_ON = new Set(["task.completed", "task.failed", "clarify.question", "plan.ready", "phase.started"]);
 
+/** Long agent reports are clamped to a few lines with a Show more toggle. */
+function LongText({ text }: { text: string }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const long = text.length > 420;
+  return (
+    <>
+      <p className={long && !open ? "clamp" : undefined}>{text}</p>
+      {long && (
+        <button type="button" className="ev-more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? t("common.showLess") : t("common.showMore")}
+        </button>
+      )}
+    </>
+  );
+}
+
+type Item = { key: string; kind: "user" | "assistant" | "system" | "event" | "team"; text?: string; event?: ForgeEvent; taskId?: string; at: string; sort: string; source?: string };
+
 export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { projectId: string; events: ForgeEvent[]; socket: SocketState; canWrite: boolean; onRestore: (checkpointId: string, label: string) => void }) {
   const t = useT();
-  const locale = useLocale();
   const trpc = useTRPC();
   const client = useTRPCClient();
   const qc = useQueryClient();
@@ -45,13 +67,21 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
   const taskMap = useMemo(() => new Map((tasks.data ?? []).map((x) => [x.id, x])), [tasks.data]);
   const results = useMemo(() => toolResults(events), [events]);
   const summaries = useMemo(() => summarizeTasks(events), [events]);
-  const usage = useMemo(() => events.reduce((s, e) => (e.type === "usage" ? s + e.costUsd : s), 0), [events]);
+  const runs = useMemo(() => teamRuns(events), [events]);
+  const focusTask = useMemo(() => currentTaskId(events), [events]);
+  const focusEvents = useMemo(() => eventsOf(events, focusTask), [events, focusTask]);
+  const steps = useMemo(() => phaseSteps(focusEvents), [focusEvents]);
+  const cost = useMemo(() => taskCost(focusEvents), [focusEvents]);
+  const focusIsChat = focusTask ? runs.get(focusTask)?.chat === true : false;
+  const showStepper = focusTask && !focusIsChat && focusEvents.some((e) => e.type === "phase.started");
 
   const timeline = useMemo(() => {
-    const items = toChatItems(events).map((i) => ({ ...i, sort: i.at }));
-    const prompts = (tasks.data ?? []).map((task) => ({ key: `task-${task.id}`, kind: "user" as const, text: task.prompt, taskId: task.id, at: new Date(task.createdAt).toISOString(), sort: new Date(task.createdAt).toISOString(), source: task.source }));
-    return [...prompts, ...items].sort((a, b) => (a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : a.kind === "user" ? -1 : 1));
-  }, [events, tasks.data]);
+    const items: Item[] = toChatItems(events).map((i) => ({ ...i, sort: i.at }));
+    const prompts: Item[] = (tasks.data ?? []).map((task) => ({ key: `task-${task.id}`, kind: "user", text: task.prompt, taskId: task.id, at: new Date(task.createdAt).toISOString(), sort: new Date(task.createdAt).toISOString(), source: task.source }));
+    const team: Item[] = [...runs.values()].filter((r) => !r.chat).map((r) => ({ key: `team-${r.taskId}`, kind: "team", taskId: r.taskId, at: r.messages[r.messages.length - 1]!.at, sort: r.messages[r.messages.length - 1]!.at }));
+    return [...prompts, ...team, ...items].sort((a, b) => (a.sort < b.sort ? -1 : a.sort > b.sort ? 1 : a.kind === "user" ? -1 : 1));
+  }, [events, tasks.data, runs]);
+  const grouped = useMemo(() => groupTimeline(timeline), [timeline]);
 
   useEffect(() => {
     const el = scroller.current;
@@ -70,7 +100,7 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
     setFiles((cur) => [...cur, ...next].slice(0, 10));
   };
 
-  const submit = async ({ prompt, source, planMode }: ComposerSubmit) => {
+  const submit = async (s: ComposerSubmit) => {
     setUploadError(null);
     const stored: StoredAttachment[] = [];
     if (files.length) {
@@ -92,7 +122,7 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
       setUploading(false);
     }
     const figmaUrl = figma && isFigmaUrl(figma) ? figma : undefined;
-    await createTask.mutateAsync({ projectId, prompt: promptWithAttachments(prompt, stored, figmaUrl), source, planMode });
+    await createTask.mutateAsync(taskCreateInput(projectId, promptWithAttachments(s.prompt, stored, figmaUrl), s));
     setFiles([]);
     setFigma("");
     setFigmaOpen(false);
@@ -101,23 +131,25 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
   return (
     <section className="chat" aria-label={t("project.chat.title")}>
       <header className="chat-head">
-        <div className="row" style={{ gap: 8 }}>
-          <h2 className="eyebrow" style={{ fontWeight: 500 }}>
+        <div className="chat-head-row">
+          <h2 className="chat-title">
+            <CrewAvatar id="scoutr" size={24} />
             {t("project.chat.title")}
           </h2>
-          <span className={`dot status-${socket}`} aria-hidden="true" />
-          <span className="subtle" style={{ fontSize: "0.76rem" }}>
+          <span className={`conn conn-${socket}`}>
+            <span className={`dot status-${socket}`} aria-hidden="true" />
             {t(`project.chat.connection.${socket}`)}
           </span>
-        </div>
-        <div className="row" style={{ gap: 8 }}>
-          {usage > 0 && <span className="badge">{t("project.chat.usage", { cost: formatUsd(usage, locale) })}</span>}
+          <span className="grow" />
+          {focusTask && (cost.tokens > 0 || cost.highUsd !== null) && <CostMeter cost={cost} />}
           {activeTask && canWrite && (
-            <button type="button" className="btn btn-sm btn-danger" onClick={() => cancel.mutate({ taskId: activeTask.id })} disabled={cancel.isPending}>
-              <Icon name="stop" size={12} /> {t("project.chat.cancel")}
+            <button type="button" className="btn btn-sm btn-danger chat-stop" onClick={() => cancel.mutate({ taskId: activeTask.id })} disabled={cancel.isPending} aria-label={t("project.chat.cancel")} data-tip={t("project.chat.cancel")}>
+              <Icon name="stop" size={11} />
+              <span className="chat-stop-label">{t("project.chat.stop")}</span>
             </button>
           )}
         </div>
+        {showStepper && <PhaseStepper steps={steps} />}
       </header>
       <div
         className="chat-scroll"
@@ -132,34 +164,82 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
         data-testid="chat-log"
       >
         {timeline.length === 0 ? (
-          <p className="chat-empty muted">{t("project.chat.empty")}</p>
+          <div className="chat-empty">
+            <span className="orb chat-empty-orb" aria-hidden="true">
+              <img src="/brand/avatars/scoutr.webp" alt="" width={84} height={84} className="orb-mascot" />
+            </span>
+            <p>{t("project.chat.empty")}</p>
+          </div>
         ) : (
-          timeline.map((item) => {
-            if (item.kind === "user") {
-              const task = item.taskId ? taskMap.get(item.taskId) : undefined;
-              return (
-                <div key={item.key} className="bubble bubble-user">
-                  <p>{item.text.split("\n\nAttachments (saved in the project):")[0]}</p>
-                  <div className="bubble-meta">
-                    <span>{t("project.chat.you")}</span>
-                    {"source" in item && item.source && item.source !== "typed" && <span>· {t(`project.chat.source.${item.source}` as MessageKey)}</span>}
-                    {task && <span className={`badge ${task.status === "succeeded" ? "badge-ok" : task.status === "failed" ? "badge-bad" : ""}`}>{t(`project.chat.status.${task.status}` as MessageKey)}</span>}
-                  </div>
-                </div>
-              );
-            }
-            if (item.kind === "assistant" || item.kind === "system")
-              return (
-                <div key={item.key} className={`bubble bubble-${item.kind}`}>
-                  <p>{item.text}</p>
-                </div>
-              );
-            return item.event ? (
-              <div key={item.key} className="chat-event">
-                <EventCard e={item.event} tasks={taskMap} results={results} summaries={summaries} onRestore={onRestore} onShowScreenshot={setLightbox} />
-              </div>
-            ) : null;
-          })
+          <ol className="timeline-list">
+            {grouped.map((g) => {
+              if (g.kind === "gates") {
+                const res = g.items.map((i) => i.event).filter((e): e is EventOf<"gate.result"> => e?.type === "gate.result");
+                return (
+                  <li key={g.key} className="tl-item">
+                    <GatesCard results={res} />
+                  </li>
+                );
+              }
+              if (g.kind === "tools") {
+                const calls = g.items.map((i) => i.event).filter((e): e is EventOf<"tool.call"> => e?.type === "tool.call");
+                return (
+                  <li key={g.key} className="tl-item">
+                    <ToolGroup calls={calls} results={results} />
+                  </li>
+                );
+              }
+              const item = g.item;
+              if (item.kind === "user") {
+                const task = item.taskId ? taskMap.get(item.taskId) : undefined;
+                return (
+                  <li key={item.key} className="tl-item tl-user">
+                    <div className="bubble bubble-user">
+                      <p>{(item.text ?? "").split("\n\nAttachments (saved in the project):")[0]}</p>
+                      <div className="bubble-meta">
+                        <span>{t("project.chat.you")}</span>
+                        {item.source && item.source !== "typed" && <span>· {t(`project.chat.source.${item.source}` as MessageKey)}</span>}
+                        {task && <span className={`badge ${task.status === "succeeded" ? "badge-ok" : task.status === "failed" ? "badge-bad" : ""}`}>{t(`project.chat.status.${task.status}` as MessageKey)}</span>}
+                      </div>
+                    </div>
+                  </li>
+                );
+              }
+              if (item.kind === "team") {
+                const run = item.taskId ? runs.get(item.taskId) : undefined;
+                return run ? (
+                  <li key={item.key} className="tl-item">
+                    <TeamThread run={run} />
+                  </li>
+                ) : null;
+              }
+              if (item.kind === "assistant" || item.kind === "system") {
+                const chat = item.taskId ? runs.get(item.taskId)?.chat : false;
+                // System notes are server-generated (English) status text: keep them behind "Details".
+                if (item.kind === "system")
+                  return (
+                    <li key={item.key} className="tl-item tl-system">
+                      <Details label={t("project.chat.systemNote")}>
+                        <p className="ev-raw">{item.text}</p>
+                      </Details>
+                    </li>
+                  );
+                return (
+                  <li key={item.key} className={`tl-item tl-${item.kind}`}>
+                    {item.kind === "assistant" && <CrewAvatar id={chat ? "chatti" : "scoutr"} size={28} />}
+                    <div className={`bubble bubble-${item.kind}`}>
+                      <LongText text={item.text ?? ""} />
+                    </div>
+                  </li>
+                );
+              }
+              return item.event ? (
+                <li key={item.key} className="tl-item">
+                  <EventCard e={item.event} tasks={taskMap} summaries={summaries} onRestore={onRestore} onShowScreenshot={setLightbox} />
+                </li>
+              ) : null;
+            })}
+          </ol>
         )}
       </div>
       {canWrite && (
@@ -167,7 +247,7 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
           {(files.length > 0 || figmaOpen) && (
             <div className="chat-attachments">
               {files.map((f, i) => (
-                <span key={`${f.name}-${i}`} className="chip" aria-pressed={false}>
+                <span key={`${f.name}-${i}`} className="chip">
                   <Icon name="file" size={12} /> {f.name}
                   <button type="button" className="chip-x" aria-label={t("project.chat.removeAttachment", { name: f.name })} onClick={() => setFiles((cur) => cur.filter((_, k) => k !== i))}>
                     <Icon name="x" size={12} />
@@ -198,18 +278,10 @@ export function ChatPanel({ projectId, events, socket, canWrite, onRestore }: { 
             onSubmit={(s) => submit(s).catch(() => undefined)}
             ensureProject={async () => projectId}
             busy={createTask.isPending || uploading}
-            placeholder={t("project.chat.placeholder")}
-            submitLabel={t("project.chat.send")}
-            extra={
+            tools={
               <>
-                <button type="button" className="btn btn-icon btn-ghost" onClick={() => fileInput.current?.click()} aria-label={t("project.chat.attach")} title={t("project.chat.attach")}>
-                  <Icon name="paperclip" />
-                </button>
-                <button type="button" className="btn btn-icon btn-ghost" aria-pressed={figmaOpen} onClick={() => setFigmaOpen((o) => !o)} aria-label={t("project.chat.figmaAdd")} title={t("project.chat.figmaAdd")}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-                    <path d="M8 2h4v6H8a3 3 0 0 1 0-6zm4 0h4a3 3 0 0 1 0 6h-4zM8 8h4v6H8a3 3 0 0 1 0-6zm8 0a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM8 14h4v3a3 3 0 1 1-4-3z" />
-                  </svg>
-                </button>
+                <ComposerIcon icon="paperclip" label={t("project.chat.attach")} onClick={() => fileInput.current?.click()} />
+                <ComposerIcon icon="figma" label={t("composer.figmaLink")} onClick={() => setFigmaOpen((o) => !o)} pressed={figmaOpen} />
               </>
             }
           />

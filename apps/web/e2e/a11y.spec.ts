@@ -20,10 +20,13 @@ test("landing is keyboard navigable with a visible skip link", async ({ page }) 
   await expect(skip).toBeInViewport();
 });
 
-test("reduced motion: hero renders without the animated canvas running", async ({ page }) => {
+test("reduced motion: the aurora, mascots and reveals stand still", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  const marquee = page.locator(".marquee");
-  await expect(marquee).toHaveCSS("animation-name", "none");
+  // Scroll-driven reveals are not applied at all, so nothing starts hidden.
+  await expect(page.locator(".reveal").first()).toHaveCSS("animation-name", "none");
+  // Looping animations collapse to a single 0.01 ms iteration.
+  await expect(page.locator(".aurora-streaks")).toHaveCSS("animation-iteration-count", "1");
+  await expect(page.locator(".floater").first()).toHaveCSS("animation-iteration-count", "1");
 });

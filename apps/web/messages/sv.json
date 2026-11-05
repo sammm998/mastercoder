@@ -1,10 +1,10 @@
 {
   "meta": {
-    "title": "Forge — säg det, skeppa det",
-    "description": "Forge förvandlar en skriven, talad eller mötesbaserad prompt till en färdig, testad produkt: appar, webbplatser, API:er, media, presentationer och agenter. Kvalitetssäkrat, säkert som standard, rättvist prissatt och lagrat i EU."
+    "title": "Scoutr — säg det, skeppa det",
+    "description": "Scoutr förvandlar en skriven, talad eller mötesbaserad prompt till en färdig, testad produkt: appar, webbplatser, API:er, media, presentationer och agenter. Kvalitetssäkrat, säkert som standard, rättvist prissatt och lagrat i EU."
   },
   "common": {
-    "home": "Forge startsida",
+    "home": "Scoutr startsida",
     "skipToContent": "Hoppa till innehållet",
     "language": "Språk",
     "languages": {
@@ -15,7 +15,9 @@
       "toggle": "Tema: {theme}. Byt tema",
       "system": "system",
       "light": "ljust",
-      "dark": "mörkt"
+      "dark": "mörkt",
+      "toDark": "Byt till mörkt tema",
+      "toLight": "Byt till ljust tema"
     },
     "loading": "Laddar…",
     "save": "Spara",
@@ -56,11 +58,14 @@
     "total": "Totalt",
     "on": "På",
     "off": "Av",
-    "you": "du"
+    "you": "du",
+    "details": "Detaljer",
+    "showMore": "Visa mer",
+    "showLess": "Visa mindre"
   },
   "nav": {
     "primary": "Huvudmeny",
-    "why": "Varför Forge",
+    "why": "Varför Scoutr",
     "how": "Så funkar det",
     "pricing": "Priser",
     "login": "Logga in",
@@ -77,7 +82,11 @@
     "switchWorkspace": "Byt arbetsyta",
     "newWorkspace": "Ny arbetsyta",
     "openMenu": "Öppna meny",
-    "closeMenu": "Stäng meny"
+    "closeMenu": "Stäng meny",
+    "make": "Vad den bygger",
+    "crew": "Teamet",
+    "collapse": "Fäll ihop sidofältet",
+    "expand": "Fäll ut sidofältet"
   },
   "cookie": {
     "title": "Kakor, kort och gott",
@@ -98,7 +107,7 @@
     "spendCap": "Kostnadstaket är nått",
     "spendCapBody": "Det här skulle överskrida ditt kostnadstak. Höj det under Fakturering för att fortsätta.",
     "blocked": "Blockerat",
-    "network": "Vi når inte Forge. Kontrollera anslutningen och försök igen.",
+    "network": "Vi når inte Scoutr. Kontrollera anslutningen och försök igen.",
     "unknown": "Oväntat fel",
     "pageNotFound": "Sidan finns inte",
     "pageNotFoundBody": "Länken kan vara trasig eller så har sidan flyttats.",
@@ -107,7 +116,7 @@
   "auth": {
     "loginTitle": "Välkommen tillbaka",
     "loginLede": "Logga in och fortsätt bygga.",
-    "signupTitle": "Börja smida",
+    "signupTitle": "Börja bygga",
     "signupLede": "Ditt första projekt är en mening bort. Inget kort behövs.",
     "email": "E-post",
     "password": "Lösenord",
@@ -126,7 +135,7 @@
     "magicVerifying": "Loggar in dig…",
     "magicFailed": "Inloggningslänken är ogiltig eller har gått ut.",
     "magicMissing": "Den här sidan behöver en inloggningslänk från din e-post.",
-    "noAccount": "Ny på Forge?",
+    "noAccount": "Ny på Scoutr?",
     "haveAccount": "Har du redan ett konto?",
     "createOne": "Skapa ett konto",
     "loginInstead": "Logga in",
@@ -134,7 +143,7 @@
     "termsLink": "villkoren",
     "privacyLink": "integritetspolicyn",
     "inviteTitle": "Gå med i en arbetsyta",
-    "inviteLede": "Du har bjudits in att samarbeta i Forge.",
+    "inviteLede": "Du har bjudits in att samarbeta i Scoutr.",
     "inviteAccept": "Acceptera inbjudan",
     "inviteAccepting": "Går med…",
     "inviteSignIn": "Logga in eller skapa ett konto med den inbjudna e-postadressen för att acceptera.",
@@ -144,29 +153,31 @@
     "sideFacts": "Lagras i EU · Kvalitetskontroller i varje bygge · Betala bara för arbete som lyckas"
   },
   "footer": {
-    "tagline": "Forge förvandlar prompter till färdiga, testade produkter — appar, webbplatser, API:er, media, presentationer och agenter.",
+    "tagline": "Scoutr förvandlar prompter till färdiga, testade produkter — appar, webbplatser, API:er, media, presentationer och agenter.",
     "region": "Data lagras i EU · Frankfurt (eu-central-1)",
     "product": "Produkt",
     "account": "Konto",
     "legal": "Juridik",
-    "copyright": "© {year} Forge. Byggt i Europa."
+    "copyright": "© {year} Scoutr. Byggt i Europa.",
+    "madeIn": "Byggt i Europa · Data stannar i EU"
   },
   "landing": {
     "hero": {
       "eyebrow": "Prompt in · Produkt ut",
       "title1": "Säg det.",
-      "title2": "Forge",
+      "title2": "Scoutr",
       "title3": "skeppar det.",
-      "lede": "Skriv, prata eller ta med ett möte. Forge planerar, designar, bygger och testar en riktig produkt — och visar priset innan arbetet börjar.",
+      "lede": "Skriv det, säg det eller bjud in Scoutr till ditt möte. Scoutr planerar, designar, bygger och testar riktiga appar, webbplatser, API:er, media, presentationer och agenter — och visar priset innan arbetet börjar.",
       "promptLabel": "Prova att säga",
       "prompt1": "En bokningssida för min keramikateljé, med Swish-betalning och väntelista",
       "prompt2": "Gör gårdagens kundmöte till en kravspec och bygg sedan en MVP",
       "prompt3": "En agent som skriver utkast till svar på supportmejl varje morgon — fråga mig innan den skickar",
       "cta": "Börja bygga — gratis",
-      "secondary": "Se hur det funkar"
+      "secondary": "Se hur det funkar",
+      "badge": "Driftas i EU · Betala bara när det fungerar"
     },
     "outputs": {
-      "label": "Det här bygger Forge",
+      "label": "Det här bygger Scoutr",
       "web": "Webbappar",
       "mobile": "Mobilappar",
       "sites": "Webbplatser",
@@ -178,10 +189,10 @@
       "agents": "Agenter"
     },
     "why": {
-      "eyebrow": "Varför Forge",
+      "eyebrow": "Varför Scoutr",
       "title1": "Sex löften,",
       "title2": "som standard.",
-      "lede": "Andra byggverktyg ger dig en demo. Forge ger dig något du kan sätta ditt namn på."
+      "lede": "Andra byggverktyg ger dig en demo. Scoutr ger dig något du kan sätta ditt namn på."
     },
     "pillars": {
       "quality": {
@@ -221,11 +232,11 @@
       "step": "Steg {n}",
       "ask": {
         "title": "Fråga",
-        "body": "Skriv, använd rösten eller bjud in Forges antecknare till ett möte och godkänn kravspecen den skriver."
+        "body": "Skriv, använd rösten eller bjud in Scoutrs antecknare till ett möte och godkänn kravspecen den skriver."
       },
       "estimate": {
         "title": "Se priset",
-        "body": "Forge klassificerar förfrågan, ställer en fråga om det behövs och visar ett kostnadsintervall innan ett öre spenderas."
+        "body": "Scoutr klassificerar förfrågan, ställer en fråga om det behövs och visar ett kostnadsintervall innan ett öre spenderas."
       },
       "build": {
         "title": "Se det byggas",
@@ -234,7 +245,8 @@
       "ship": {
         "title": "Skeppa och äg det",
         "body": "Kontrollerna går igenom och det driftsätts med din domän och TLS. Rulla tillbaka till valfri kontrollpunkt eller ta med dig koden."
-      }
+      },
+      "lede": "Du har kontrollen i varje steg — och ser exakt vad agenten gör."
     },
     "pricing": {
       "eyebrow": "Rättvisa priser",
@@ -247,7 +259,11 @@
       "lineBuild": "Bygge",
       "lineVerify": "Tester och granskning",
       "lineTotal": "Uppskattning",
-      "guarantee": "Agentfel? Ingen debitering."
+      "guarantee": "Agentfel? Ingen debitering.",
+      "exampleRange": "1,58–2,88 US$",
+      "point1": "En uppskattning och ett hårt kostnadstak innan arbetet börjar",
+      "point2": "Uppskattat mot debiterat visas för varje uppgift",
+      "point3": "Misslyckades det på grund av agenten? Då betalar du ingenting"
     },
     "eu": {
       "title": "Byggt i Europa. Lagrat i Europa.",
@@ -255,8 +271,79 @@
     },
     "final": {
       "title1": "Vad ska du",
-      "title2": "smida i dag?",
-      "cta": "Skapa ditt gratiskonto"
+      "title2": "bygga i dag?",
+      "cta": "Skapa ditt gratiskonto",
+      "body": "Gratis att börja. Du betalar bara för arbete som lyckas."
+    },
+    "mock": {
+      "caption": "Illustration av Scoutrs projektvy med exempeldata: agentens tidslinje till vänster och en live-förhandsvisning av den genererade webbplatsen till höger.",
+      "project": "Keramikateljé",
+      "wrote": "Skrev",
+      "tests": "Körde testerna — 24 godkända",
+      "gatesSummary": "7 godkända · 1 överhoppad",
+      "composer": "Be om en ändring…",
+      "siteBrand": "Lera & Eld",
+      "siteNav": "Kurser · Butik · Besök",
+      "siteKicker": "Keramikateljé · Malmö",
+      "siteTitle": "Dreja din första skål i helgen.",
+      "siteCta": "Boka en kurs"
+    },
+    "stack": {
+      "label": "Riktig standardkod — exporterad som du själv hade skrivit den"
+    },
+    "statement": {
+      "label": "Vad Scoutr är",
+      "lead": "Scoutr är den kortaste vägen från en idé till en produkt du kan lansera.",
+      "rest": "Beskriv vad du behöver. Scoutr väljer en beprövad stack, skriver koden, bevisar att den fungerar och lämnar över allt den gjort — kod, tester, design och en körande förhandsvisning.",
+      "orb": "Gjort i EU"
+    },
+    "ctaCard": {
+      "title": "Redo när du är det.",
+      "body": "Beskriv din idé. Du ser planen och priset innan något byggs."
+    },
+    "make": {
+      "eyebrow": "Det här kan du bygga",
+      "title": "En prompt. Alla sorters resultat.",
+      "lede": "Samma arbetsyta bygger mjukvara, media, dokument och agenter — och håller allt till samma kvalitetsnivå.",
+      "index": "Typer av resultat",
+      "apps": {
+        "short": "Appar och API:er",
+        "title": "Appar, webbplatser och API:er",
+        "body": "Webbappar i Next.js, mobilappar i Expo, marknadssajter och backend i FastAPI — med inloggning, databas, radnivåsäkerhet och tester från första commit.",
+        "cta": "Bygg en app"
+      },
+      "media": {
+        "short": "Bilder och video",
+        "title": "Bilder och video",
+        "body": "Bilder i din stil och videor med Remotion från en mening — renderade, sparade i projektet och redigerbara med nästa prompt.",
+        "chip1": "Dina varumärkesfärger",
+        "chip2": "Redigera med en prompt",
+        "cta": "Skapa media"
+      },
+      "docs": {
+        "short": "Presentationer och dokument",
+        "title": "Presentationer och dokument",
+        "body": "Presentationer och dokument skrivna utifrån dina anteckningar eller ett möte, redigerade i webbläsaren och exporterade till PPTX, PDF och DOCX.",
+        "chip1": "Export till PPTX och PDF",
+        "chip2": "Export till DOCX",
+        "cta": "Skriv en presentation"
+      },
+      "agents": {
+        "short": "Agenter och möten",
+        "title": "Agenter och möten",
+        "body": "Bjud in Scoutr till ett möte så blir samtalet en kravspec. Eller bygg en agent som körs på schema, frågar innan den agerar och loggar varje steg.",
+        "chip1": "Från mötesanteckningar till kravspec",
+        "chip2": "Godkännanden",
+        "chip3": "Scheman",
+        "cta": "Skapa en agent"
+      }
+    },
+    "crew": {
+      "eyebrow": "Möt ditt team",
+      "title": "Åtta specialister. Ett samtal.",
+      "lede": "Scoutr delar upp din förfrågan i steg och ger varje steg till den specialist som kan det bäst — och lämnar sedan tillbaka ett färdigt, testat resultat.",
+      "lead": "Projektledaren",
+      "hint": "Varje meddelande i projektets tidslinje kommer från någon av dem, så du vet alltid vem som gjorde vad."
     }
   },
   "legal": {
@@ -264,23 +351,23 @@
     "onThisPage": "På den här sidan",
     "terms": {
       "title": "Användarvillkor",
-      "intro": "Dessa villkor gäller för din användning av Forge, en tjänst som skapar mjukvara, media, dokument och automatiserade agenter utifrån dina instruktioner. Läs dem noggrant.",
+      "intro": "Dessa villkor gäller för din användning av Scoutr, en tjänst som skapar mjukvara, media, dokument och automatiserade agenter utifrån dina instruktioner. Läs dem noggrant.",
       "s1t": "1. Vilka vi är",
-      "s1": "Forge drivs av Forge AB, ett bolag registrerat i Sverige (”Forge”, ”vi”). Kontakt: legal@forge.example. Villkoren utgör ett avtal mellan dig (eller den organisation du företräder) och Forge.",
+      "s1": "Scoutr drivs av Scoutr AB, ett bolag registrerat i Sverige (”Scoutr”, ”vi”). Kontakt: legal@forge.example. Villkoren utgör ett avtal mellan dig (eller den organisation du företräder) och Scoutr.",
       "s2t": "2. Ditt konto",
       "s2": "Du måste lämna korrekta uppgifter och skydda dina inloggningsuppgifter. Du ansvarar för aktiviteten i din arbetsyta. Arbetsytans ägare bestämmer vem som har åtkomst och med vilken roll.",
       "s3t": "3. Ditt innehåll och resultat",
-      "s3": "Du behåller alla rättigheter till de prompter, filer, inspelningar och annat material du tillhandahåller, och till den kod, media och de dokument Forge skapar åt dig, med förbehåll för tredjepartslicenser för ingående öppen källkod. Du ger Forge en begränsad licens att behandla ditt innehåll enbart för att tillhandahålla tjänsten.",
+      "s3": "Du behåller alla rättigheter till de prompter, filer, inspelningar och annat material du tillhandahåller, och till den kod, media och de dokument Scoutr skapar åt dig, med förbehåll för tredjepartslicenser för ingående öppen källkod. Du ger Scoutr en begränsad licens att behandla ditt innehåll enbart för att tillhandahålla tjänsten.",
       "s4t": "4. Godtagbar användning",
-      "s4": "Du får inte använda Forge för att skapa skadlig kod, nätfiske- eller imitationssajter, för att samla in inloggningsuppgifter, för att göra intrång i andras rättigheter eller för att behandla personuppgifter olagligt. Vi skannar driftsättningar efter missbruk och kan ta ned innehåll som bryter mot reglerna.",
+      "s4": "Du får inte använda Scoutr för att skapa skadlig kod, nätfiske- eller imitationssajter, för att samla in inloggningsuppgifter, för att göra intrång i andras rättigheter eller för att behandla personuppgifter olagligt. Vi skannar driftsättningar efter missbruk och kan ta ned innehåll som bryter mot reglerna.",
       "s5t": "5. Mötesinspelningar",
-      "s5": "När du spelar in ett möte eller bjuder in Forges antecknare ansvarar du för att informera deltagarna och inhämta det samtycke som lagen kräver. Antecknaren presenterar sig i mötets chatt.",
+      "s5": "När du spelar in ett möte eller bjuder in Scoutrs antecknare ansvarar du för att informera deltagarna och inhämta det samtycke som lagen kräver. Antecknaren presenterar sig i mötets chatt.",
       "s6t": "6. Priser, uppskattningar och kostnadstak",
       "s6": "Betald användning faktureras enligt din plan. Vi visar en uppskattning innan en uppgift startar; kostnadstak som du sätter tillämpas som hårda gränser. Uppgifter som misslyckas på grund av fel hos oss debiteras inte.",
       "s7t": "7. Tillgänglighet och ändringar",
       "s7": "Vi strävar efter hög tillgänglighet men tjänsten tillhandahålls i befintligt skick. Vi kan ändra funktioner med rimligt varsel. Väsentliga ändringar av villkoren meddelas minst 30 dagar i förväg.",
       "s8t": "8. Ansvar",
-      "s8": "I den utsträckning lagen tillåter är Forges sammanlagda ansvar begränsat till de avgifter du betalat under de 12 månaderna före kravet. Inget begränsar ansvar som inte kan begränsas enligt tillämplig lag, inklusive vid grov vårdslöshet.",
+      "s8": "I den utsträckning lagen tillåter är Scoutrs sammanlagda ansvar begränsat till de avgifter du betalat under de 12 månaderna före kravet. Inget begränsar ansvar som inte kan begränsas enligt tillämplig lag, inklusive vid grov vårdslöshet.",
       "s9t": "9. Uppsägning",
       "s9": "Du kan radera ditt konto när som helst under Inställningar. Vi kan stänga av konton som allvarligt bryter mot villkoren. Efter uppsägning kan du exportera dina data i 30 dagar.",
       "s10t": "10. Tillämplig lag",
@@ -288,9 +375,9 @@
     },
     "privacy": {
       "title": "Integritetspolicy",
-      "intro": "Den här policyn förklarar vilka personuppgifter Forge behandlar, varför, och vilka rättigheter du har enligt EU:s dataskyddsförordning (GDPR).",
+      "intro": "Den här policyn förklarar vilka personuppgifter Scoutr behandlar, varför, och vilka rättigheter du har enligt EU:s dataskyddsförordning (GDPR).",
       "s1t": "1. Personuppgiftsansvarig",
-      "s1": "Forge AB, Sverige, är personuppgiftsansvarig för kontouppgifter. För innehåll som du laddar upp i en arbetsyta (till exempel mötesinspelningar) är din organisation personuppgiftsansvarig och Forge personuppgiftsbiträde enligt vårt biträdesavtal.",
+      "s1": "Scoutr AB, Sverige, är personuppgiftsansvarig för kontouppgifter. För innehåll som du laddar upp i en arbetsyta (till exempel mötesinspelningar) är din organisation personuppgiftsansvarig och Scoutr personuppgiftsbiträde enligt vårt biträdesavtal.",
       "s2t": "2. Uppgifter vi behandlar",
       "s2": "Kontouppgifter (namn, e-post, lösenordshash, språk), innehåll i arbetsytor och projekt, prompter och röstinmatning, mötesljud och transkriptioner som du väljer att spela in, användnings- och faktureringsposter samt säkerhetsloggar (IP-adress, granskningslogg).",
       "s3t": "3. Ändamål och rättslig grund",
@@ -308,21 +395,21 @@
     },
     "dpa": {
       "title": "Personuppgiftsbiträdesavtal",
-      "intro": "Detta biträdesavtal ingår i användarvillkoren när Forge behandlar personuppgifter för en kunds räkning, i enlighet med artikel 28 i GDPR.",
+      "intro": "Detta biträdesavtal ingår i användarvillkoren när Scoutr behandlar personuppgifter för en kunds räkning, i enlighet med artikel 28 i GDPR.",
       "s1t": "1. Roller",
-      "s1": "Kunden är personuppgiftsansvarig och Forge personuppgiftsbiträde för personuppgifter i kundens innehåll, inklusive mötesinspelningar, transkriptioner, projektdata och indata till agenter.",
+      "s1": "Kunden är personuppgiftsansvarig och Scoutr personuppgiftsbiträde för personuppgifter i kundens innehåll, inklusive mötesinspelningar, transkriptioner, projektdata och indata till agenter.",
       "s2t": "2. Instruktioner",
-      "s2": "Forge behandlar personuppgifter endast enligt kundens dokumenterade instruktioner, som ges genom användningen av tjänsten och dessa villkor, om inte annat krävs enligt unionsrätten eller nationell rätt.",
+      "s2": "Scoutr behandlar personuppgifter endast enligt kundens dokumenterade instruktioner, som ges genom användningen av tjänsten och dessa villkor, om inte annat krävs enligt unionsrätten eller nationell rätt.",
       "s3t": "3. Sekretess och säkerhet",
-      "s3": "Personal med åtkomst omfattas av tystnadsplikt. Forge tillämpar kryptering under överföring och i vila, kuvertkrypterade hemligheter, rollbaserad åtkomst, granskningsloggning, isolerade byggmiljöer och regelbundna säkerhetstester.",
+      "s3": "Personal med åtkomst omfattas av tystnadsplikt. Scoutr tillämpar kryptering under överföring och i vila, kuvertkrypterade hemligheter, rollbaserad åtkomst, granskningsloggning, isolerade byggmiljöer och regelbundna säkerhetstester.",
       "s4t": "4. Underbiträden",
-      "s4": "Forge för en förteckning över underbiträden (drift, modellleverantörer, transkribering, e-post) och meddelar ändringar minst 30 dagar i förväg, under vilka kunden kan invända.",
+      "s4": "Scoutr för en förteckning över underbiträden (drift, modellleverantörer, transkribering, e-post) och meddelar ändringar minst 30 dagar i förväg, under vilka kunden kan invända.",
       "s5t": "5. Bistånd",
-      "s5": "Forge bistår kunden vid begäranden från registrerade, konsekvensbedömningar och anmälan av personuppgiftsincidenter. Incidenter rapporteras utan onödigt dröjsmål och inom 48 timmar.",
+      "s5": "Scoutr bistår kunden vid begäranden från registrerade, konsekvensbedömningar och anmälan av personuppgiftsincidenter. Incidenter rapporteras utan onödigt dröjsmål och inom 48 timmar.",
       "s6t": "6. Radering och återlämnande",
-      "s6": "Vid avtalets upphörande, eller på begäran, raderar eller återlämnar Forge kundens personuppgifter. Mötesdata kan när som helst raderas av kunden från mötessidan.",
+      "s6": "Vid avtalets upphörande, eller på begäran, raderar eller återlämnar Scoutr kundens personuppgifter. Mötesdata kan när som helst raderas av kunden från mötessidan.",
       "s7t": "7. Granskning",
-      "s7": "Forge tillhandahåller den information som behövs för att visa efterlevnad och möjliggör granskningar, inklusive inspektioner, av kunden eller en revisor som kunden utsett, med rimligt varsel."
+      "s7": "Scoutr tillhandahåller den information som behövs för att visa efterlevnad och möjliggör granskningar, inklusive inspektioner, av kunden eller en revisor som kunden utsett, med rimligt varsel."
     }
   },
   "composer": {
@@ -330,7 +417,7 @@
     "startVoice": "Säg din prompt",
     "stopVoice": "Stoppa och skicka",
     "planMode": "Planera först",
-    "planModeHint": "Forge skriver en kravspec och uppgiftslista som du godkänner innan bygget börjar",
+    "planModeHint": "Scoutr skriver en kravspec och uppgiftslista som du godkänner innan bygget börjar",
     "shortcut": "⌘/Ctrl + Enter",
     "attach": "Bifoga filer eller en skärmbild",
     "figma": "Figma-länk",
@@ -339,13 +426,32 @@
       "unsupported": "Den här webbläsaren kan inte spela in ljud.",
       "not_configured": "Taligenkänning är inte konfigurerad på servern ännu.",
       "connection": "Röstanslutningen bröts. Försök igen."
-    }
+    },
+    "mode": {
+      "label": "Läge",
+      "build": "Bygg",
+      "plan": "Planera",
+      "chat": "Chatta",
+      "buildHint": "Planera och bygg, med tester och live-förhandsvisning",
+      "planHint": "Visa kravspec och uppgiftslista för godkännande innan något byggs",
+      "chatHint": "Bara prata — frågor och svar, inget byggs och inget debiteras"
+    },
+    "placeholder": {
+      "build": "Beskriv vad som ska byggas eller ändras…",
+      "plan": "Beskriv det — du godkänner planen innan något byggs…",
+      "chat": "Fråga Scoutr vad du vill om projektet…"
+    },
+    "send": "Skicka",
+    "sendHint": "Enter skickar · Skift + Enter ger ny rad",
+    "recording": "Spelar in — prata som vanligt",
+    "figmaLink": "Länka en Figma-fil",
+    "tools": "Bilagor och röst"
   },
   "dashboard": {
     "greeting": "Kul att se dig, {name}",
     "greetingAnon": "Kul att se dig",
     "title1": "Vad ska vi",
-    "title2": "smida härnäst?",
+    "title2": "bygga härnäst?",
     "placeholder": "Beskriv en app, webbplats, ett API, en bild, video, presentation eller agent…",
     "submit": "Smid det",
     "voiceProjectName": "Röstprojekt",
@@ -413,7 +519,7 @@
       "emptyTitle": "Förhandsvisningen visas här",
       "emptyBody": "Så fort agenten startar utvecklingsservern ser du appen live — och kan klicka på vad som helst för att redigera det.",
       "frameTitle": "Live-förhandsvisning av appen",
-      "noInspector": "Visuell redigering kräver Forges inspektör i förhandsvisningen (utvecklingsbyggen med @forge/visual-edit). Be agenten lägga till den, eller redigera under Kod.",
+      "noInspector": "Visuell redigering kräver Scoutrs inspektör i förhandsvisningen (utvecklingsbyggen med @forge/visual-edit). Be agenten lägga till den, eller redigera under Kod.",
       "editHint": "Klicka på ett element för att ändra text, färger, avstånd eller bild",
       "commentHint": "Klicka på ett element för att fästa en kommentar"
     },
@@ -464,11 +570,12 @@
       "history": "Historik",
       "media": "Media",
       "slides": "Presentationer",
-      "deploy": "Driftsättning"
+      "deploy": "Driftsättning",
+      "run": "Körning"
     },
     "chat": {
       "title": "Agent",
-      "empty": "Berätta för Forge vad som ska byggas eller ändras. Du ser planen, priset och varje steg.",
+      "empty": "Berätta för Scoutr vad som ska byggas eller ändras. Du ser planen, priset och varje steg.",
       "placeholder": "Be om en ändring, eller beskriv vad som ska byggas…",
       "send": "Skicka",
       "you": "Du",
@@ -552,7 +659,31 @@
         "closed": "Återansluter…",
         "denied": "Ingen åtkomst till live-händelser"
       },
-      "usage": "{cost} hittills"
+      "usage": "{cost} hittills",
+      "detailsTitle": "Detaljer",
+      "summary": "Agentens sammanfattning",
+      "reason": "Vad som gick fel",
+      "breakdown": "Uppdelning",
+      "intent": {
+        "app": "App",
+        "website": "Webbplats",
+        "mobile": "Mobilapp",
+        "backend": "API / backend",
+        "image": "Bild",
+        "video": "Video",
+        "slides": "Presentation",
+        "document": "Dokument",
+        "agent": "Agent",
+        "integration": "Integration",
+        "question": "Fråga"
+      },
+      "artifact": "Nytt resultat klart",
+      "deploy": "Driftsättning: {status}",
+      "meeting": "Möte: {status}",
+      "previewReady": "Förhandsvisningen är live",
+      "thinking": "Tänker…",
+      "stop": "Stoppa",
+      "systemNote": "Systemnotis"
     },
     "comments": {
       "title": "Kommentarer",
@@ -631,9 +762,128 @@
       "saved": "Sparat",
       "export": "Exportera",
       "exportAs": "Exportera som {format}",
-      "unsupported": "Filen är inte en presentation som Forge kan redigera här, men du kan fortfarande exportera den.",
+      "unsupported": "Filen är inte en presentation som Scoutr kan redigera här, men du kan fortfarande exportera den.",
       "sections": "Avsnitt",
       "heading": "Rubrik"
+    },
+    "pane": {
+      "label": "Visa",
+      "agent": "Agent",
+      "workspace": "Arbetsyta"
+    },
+    "resize": "Ändra bredd på agentpanelen",
+    "gates": {
+      "title": "Kvalitetskontroller",
+      "passedCount": "{count, plural, one {# godkänd} other {# godkända}}",
+      "failedCount": "{count, plural, one {# underkänd} other {# underkända}}",
+      "skippedCount": "{count, plural, one {# överhoppad} other {# överhoppade}}",
+      "status": {
+        "passed": "Godkänd",
+        "failed": "Underkänd",
+        "skipped": "Överhoppad"
+      },
+      "findings": "{count, plural, one {# blockerande fynd} other {# blockerande fynd}}",
+      "notApplicable": "Gäller inte det här projektet",
+      "fix": "Föreslagen åtgärd",
+      "toggle": "Visa de enskilda kontrollerna",
+      "name": {
+        "typecheck": "Typkontroll",
+        "lint": "Lint",
+        "unit": "Enhetstester",
+        "integration": "Integrationstester",
+        "e2e": "End-to-end-tester",
+        "semgrep": "Säkerhetsskanning av kod",
+        "gitleaks": "Hemlighetsskanning",
+        "osv": "Beroendegranskning",
+        "rls": "Radnivåsäkerhet",
+        "auth": "Behörighetskontroll",
+        "validation": "Indatavalidering",
+        "client-secrets": "Hemligheter i klientkod",
+        "lighthouse": "Prestanda (Lighthouse)",
+        "visual-qa": "Visuell granskning"
+      }
+    },
+    "tools": {
+      "title": "{count, plural, one {# åtgärd} other {# åtgärder}}",
+      "running": "Arbetar…",
+      "failed": "Misslyckades",
+      "read_file": "Läste en fil",
+      "write_file": "Skrev en fil",
+      "edit_file": "Redigerade en fil",
+      "list_files": "Listade filerna",
+      "search_code": "Sökte i koden",
+      "run_command": "Körde ett kommando",
+      "install_package": "Installerade paket",
+      "run_tests": "Körde testerna",
+      "run_e2e": "Körde end-to-end-tester",
+      "take_screenshot": "Tog en skärmbild",
+      "record_video": "Spelade in en video",
+      "read_logs": "Läste loggarna",
+      "db_query": "Frågade databasen",
+      "db_migrate": "Migrerade databasen",
+      "web_search_docs": "Slog upp dokumentation",
+      "generate_image": "Skapade en bild",
+      "generate_video": "Skapade en video",
+      "create_slides": "Skapade bilder till en presentation",
+      "use_integration": "Använde en integration",
+      "ask_user": "Ställde en fråga till dig",
+      "other": "Använde {tool}"
+    },
+    "stepper": {
+      "label": "Förlopp",
+      "done": "klart",
+      "active": "pågår",
+      "todo": "inte påbörjat",
+      "failed": "misslyckades"
+    },
+    "cost": {
+      "label": "Kostnad",
+      "estimate": "uppskattning {range}",
+      "spent": "{amount} förbrukat",
+      "mock": "mock",
+      "mockHint": "Den här körningen använde de inbyggda mock-leverantörerna, så den kostade ingenting.",
+      "meter": "Förbrukat {spent} av uppskattade {high}",
+      "ofEstimate": "av ≈{high} uppskattat"
+    },
+    "team": {
+      "title": "Team",
+      "working": "Teamet arbetar · steg {step} av {total}",
+      "finished": "{count, plural, one {Teamet blev klart på # steg} other {Teamet blev klart på # steg}}",
+      "failed": "Teamet stannade vid {step}",
+      "toUser": "till dig",
+      "lastRun": "Senaste körning",
+      "noRun": "Ingen körning än. Skicka en prompt så sätter teamet igång.",
+      "status": {
+        "asking": "Frågar",
+        "working": "Arbetar",
+        "done": "Klar",
+        "failed": "Behöver åtgärdas"
+      },
+      "step": {
+        "plan": "Plan",
+        "kickoff": "Uppstart",
+        "design": "Design",
+        "build": "Bygge",
+        "verify": "Kontroller",
+        "review": "Granskning",
+        "finish": "Avslut",
+        "chat": "Chatt"
+      },
+      "collapse": "Dölj teamets samtal",
+      "expand": "Visa teamets samtal"
+    },
+    "live": {
+      "title": "Se det byggas",
+      "lede": "Förhandsvisningen laddas här automatiskt så fort utvecklingsservern är igång.",
+      "files": "Filer som skrivs",
+      "noFiles": "Inga filer skrivna än.",
+      "terminal": "Senaste utdata",
+      "noTerminal": "Ingen utdata än.",
+      "new": "ny",
+      "changed": "ändrad",
+      "deleted": "raderad",
+      "idleTitle": "Inget körs just nu",
+      "idleBody": "Beskriv vad du vill ha i agentpanelen. Teamets framsteg, filerna som skrivs och live-förhandsvisningen visas här."
     }
   },
   "deploy": {
@@ -735,7 +985,7 @@
       "new": "Ny agent"
     },
     "empty": "Inga agenter än",
-    "emptyBody": "Beskriv ett jobb — Forge gör ett utkast till agenten och du granskar varje verktyg, behörighet och godkännanderegel innan den skapas.",
+    "emptyBody": "Beskriv ett jobb — Scoutr gör ett utkast till agenten och du granskar varje verktyg, behörighet och godkännanderegel innan den skapas.",
     "describe": "Vad ska agenten göra?",
     "describePlaceholder": "Varje vardag kl. 8.00: läs nya supportmejl, skriv svarsutkast i vår ton och fråga mig innan något skickas.",
     "draft": "Gör utkast",
@@ -811,9 +1061,9 @@
   },
   "meetings": {
     "title": "Möten",
-    "lede": "Gör samtal till kravspecar. Forge transkriberar, sammanfattar, plockar ut beslut och krav och gör sedan ett utkast till byggspec som du godkänner.",
+    "lede": "Gör samtal till kravspecar. Scoutr transkriberar, sammanfattar, plockar ut beslut och krav och gör sedan ett utkast till byggspec som du godkänner.",
     "bot": "Bjud in antecknaren",
-    "botLede": "Klistra in en länk till Zoom, Microsoft Teams eller Google Meet. ”Forge notetaker” ansluter, skriver ett inspelningsmeddelande i mötets chatt och lämnar när mötet slutar.",
+    "botLede": "Klistra in en länk till Zoom, Microsoft Teams eller Google Meet. ”Scoutr notetaker” ansluter, skriver ett inspelningsmeddelande i mötets chatt och lämnar när mötet slutar.",
     "meetingUrl": "Möteslänk",
     "meetingTitle": "Rubrik",
     "language": "Talat språk",
@@ -961,5 +1211,89 @@
     "checkoutSuccess": "Tack — din plan aktiveras.",
     "checkoutCancelled": "Betalningen avbröts. Inget har debiterats.",
     "ownerOnly": "Bara arbetsytans ägare kan ändra fakturering."
+  },
+  "crew": {
+    "scoutr": {
+      "role": "Projektledare",
+      "desc": "Tar emot din förfrågan, delar upp den i steg, ger varje steg till rätt specialist och rapporterar tillbaka till dig."
+    },
+    "plania": {
+      "role": "Planerare",
+      "desc": "Gör om dina ord till en kravspec och en uppgiftslista som du kan godkänna innan något byggs."
+    },
+    "pixel": {
+      "role": "Designer",
+      "desc": "Föreslår konstnärliga riktningar, design-tokens och rörelse — och betygsätter varje skärmstorlek."
+    },
+    "byggo": {
+      "role": "Byggare",
+      "desc": "Skriver koden, installerar paket, kör appen och håller live-förhandsvisningen uppdaterad."
+    },
+    "vakt": {
+      "role": "Säkerhet och kvalitet",
+      "desc": "Kör kvalitetskontrollerna — tester, lint, säkerhetsskanningar — och stoppar allt som är osäkert."
+    },
+    "revy": {
+      "role": "Granskare",
+      "desc": "Läser resultatet som en senior utvecklare och skickar tillbaka allt som inte håller måttet."
+    },
+    "chatti": {
+      "role": "Chatt",
+      "desc": "Svarar på frågor om ditt projekt på vanlig svenska. Inget byggs och inget debiteras."
+    },
+    "mailo": {
+      "role": "E-post och scheman",
+      "desc": "Kör dina schemalagda agenter och e-postflöden, och frågar innan något skickas."
+    }
+  },
+  "status": {
+    "queued": "I kö",
+    "running": "Körs",
+    "building": "Bygger",
+    "deploying": "Driftsätter",
+    "ready": "Klar",
+    "live": "Live",
+    "succeeded": "Lyckades",
+    "failed": "Misslyckades",
+    "error": "Fel",
+    "cancelled": "Avbruten",
+    "joining": "Ansluter",
+    "recording": "Spelar in",
+    "processing": "Bearbetar",
+    "done": "Klar",
+    "active": "Aktiv",
+    "pending": "Väntar",
+    "issued": "Utfärdat",
+    "verified": "Verifierad"
+  },
+  "team": {
+    "plan": {
+      "ask": "Plania, kan du planera det här? ”{request}”",
+      "done": "Klart ✓ ”{title}”: {stories, plural, one {# användarberättelse} other {# användarberättelser}}, {entities, plural, one {# dataentitet} other {# dataentiteter}}, {tests, plural, one {# acceptanstest} other {# acceptanstester}} — tillbaka till dig, Scoutr"
+    },
+    "kickoff": {
+      "security": "Innan du börjar, Byggo: kontrollerna kommer att kräva {checks}."
+    },
+    "design": {
+      "ask": "Pixel, kan du sätta den konstnärliga riktningen?",
+      "done": "Klart ✓ konstnärlig riktning ”{direction}”, {files, plural, one {# fil} other {# filer}} komponerade — tillbaka till dig, Scoutr"
+    },
+    "build": {
+      "ask": "Byggo, kan du bygga det enligt planen? ({tasks, plural, one {# uppgift} other {# uppgifter}})",
+      "done": "Klart ✓ {files, plural, one {# fil} other {# filer}} skrivna i {tools, plural, one {# steg} other {# steg}} — över till Vakt för kontroll"
+    },
+    "verify": {
+      "done": "Klart ✓ {passed} av {total} kvalitetskontroller godkända",
+      "failed": "{passed} av {total} kontroller godkända — underkända: {failed}. Byggo, fixa det tack"
+    },
+    "review": {
+      "done": "Klart ✓ koden stämmer med planen — inga blockerande problem",
+      "issues": "{issues, plural, one {# problem hittat} other {# problem hittade}} — skickar tillbaka till Byggo"
+    },
+    "finish": "”{title}” är klart och alla kontroller är godkända.",
+    "failed": "Jag kunde inte slutföra den här. Du debiteras inte.",
+    "chat": {
+      "reply": "Här är mitt svar."
+    }
   }
 }

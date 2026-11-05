@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { ViewTransition, type ReactNode } from "react";
 import "../styles/globals.css";
-import { fraunces, interTight, jetbrainsMono } from "./fonts";
+import { dmSans, jetbrainsMono } from "./fonts";
 import { getLocale } from "@/i18n/server";
 import { getMessages } from "@/i18n/messages";
 import { createTranslator, pick } from "@/i18n/translate";
@@ -14,17 +14,17 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const t = createTranslator(getMessages(locale), locale);
   return {
-    title: { default: t("meta.title"), template: `%s — Forge` },
+    title: { default: t("meta.title"), template: `%s — Scoutr` },
     description: t("meta.description"),
     icons: { icon: "/favicon.svg" },
-    applicationName: "Forge",
+    applicationName: "Scoutr",
   };
 }
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3eee5" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0e0c" },
+    { media: "(prefers-color-scheme: light)", color: "#faf8ff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0814" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const messages = getMessages(locale);
   const t = createTranslator(messages, locale);
   return (
-    <html lang={locale} data-theme={theme === "system" ? undefined : theme} className={`${fraunces.variable} ${interTight.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+    <html lang={locale} data-theme={theme === "system" ? undefined : theme} className={`${dmSans.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <body>
         <a href="#main" className="skip-link">
           {t("common.skipToContent")}

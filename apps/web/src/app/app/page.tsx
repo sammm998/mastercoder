@@ -8,6 +8,8 @@ import { useLocale, useT } from "@/i18n/client";
 import { formatRelative } from "@/i18n/format";
 import { useTRPC } from "@/lib/trpc";
 import { PromptComposer, type ComposerSubmit } from "@/components/PromptComposer";
+import { taskCreateInput } from "@/lib/task-input";
+import { CrewAvatar } from "@/components/CrewAvatar";
 import { EmptyState, ErrorNotice, LoadingBlock } from "@/components/Feedback";
 import { Icon } from "@/components/Icon";
 import { useWorkspace } from "./workspace-context";
@@ -41,12 +43,13 @@ export default function Dashboard() {
     return draftProject.current;
   };
 
-  const submit = async ({ prompt, source, planMode }: ComposerSubmit) => {
+  const submit = async (s: ComposerSubmit) => {
+    const { prompt } = s;
     const projectId = draftProject.current ? await draftProject.current : (await createProject.mutateAsync({ workspaceId: workspace.id, name: projectNameFrom(prompt), template })).id;
     draftProject.current = null;
     setPendingProject(projectId);
     void refresh();
-    await createTask.mutateAsync({ projectId, prompt, source, planMode });
+    await createTask.mutateAsync(taskCreateInput(projectId, prompt, s));
     router.push(`/app/p/${projectId}`);
   };
 
@@ -56,18 +59,19 @@ export default function Dashboard() {
   return (
     <div className="page">
       <section className="prompt-hero" aria-labelledby="dash-title">
-        <p className="eyebrow" style={{ color: "inherit", opacity: 0.7 }}>
+        <div className="prompt-hero-glow" aria-hidden="true" />
+        <img className="prompt-hero-mascot" src="/brand/scoutr-hero.webp" width={180} height={180} alt="" aria-hidden="true" decoding="async" />
+        <p className="prompt-hero-greet">
+          <CrewAvatar id="scoutr" size={26} />
           {firstName ? t("dashboard.greeting", { name: firstName }) : t("dashboard.greetingAnon")}
         </p>
         <h1 id="dash-title">
-          {t("dashboard.title1")} <em>{t("dashboard.title2")}</em>
+          {t("dashboard.title1")} <span className="grad-text">{t("dashboard.title2")}</span>
         </h1>
         <PromptComposer
           onSubmit={(s) => submit(s).catch(() => undefined)}
           ensureProject={ensureProject}
           busy={busy}
-          placeholder={t("dashboard.placeholder")}
-          submitLabel={t("dashboard.submit")}
         />
         {(createProject.error || createTask.error) && (
           <div className="stack" style={{ gap: 8 }}>
