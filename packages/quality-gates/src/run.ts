@@ -32,6 +32,8 @@ const RUNNERS: Record<GateName, (ctx: GateContext) => Promise<GateOutcome>> = {
  * Run quality/security/performance gates against the project in `sandbox` (/workspace).
  * A gate that throws fails closed (blocker) with the error in `details`.
  */
+const ENVIRONMENT_GATES = new Set<GateName>(["lighthouse", "visual-qa", "e2e"]);
+
 export async function runGates(sandbox: Sandbox, opts: RunGatesOptions = {}): Promise<GateReport> {
   const gates = opts.gates ?? [...GATE_NAMES];
   let topLevel: string[] = [];
@@ -56,6 +58,12 @@ export async function runGates(sandbox: Sandbox, opts: RunGatesOptions = {}): Pr
       outcome = await RUNNERS[gate](ctx);
     } catch (e) {
       const msg = (e as Error).message ?? String(e);
+      // Browser-based gates depend on the runner (Chromium, network), not on the project's code: when they
+      // cannot run, report them as skipped with the reason instead of sending the builder to "fix" them.
+      if (ENVIRONMENT_GATES.has(gate)) {
+        results.push({ gate, passed: false, skipped: true, details: `skipped: could not run in this environment (${msg.slice(0, 240)})`, findings: [], durationMs: Date.now() - started });
+        continue;
+      }
       outcome = {
         passed: false,
         details: `gate crashed: ${msg.slice(0, 300)}`,

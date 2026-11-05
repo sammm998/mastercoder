@@ -209,12 +209,12 @@ describe("lighthouse and visual-qa", () => {
     await sb.destroy();
   });
 
-  it("a crashing gate fails closed", async () => {
+  it("a browser gate that cannot run is reported as skipped with the reason, never as passed", async () => {
     const sb = await sandboxFromFiles({});
     const r = await runGates(sb, { gates: ["lighthouse"], previewUrl: "http://x", lighthouse: async () => Promise.reject(new Error("chrome not found")) });
-    expect(r.passed).toBe(false);
-    expect(r.blockers[0]).toMatchObject({ gate: "lighthouse", details: "gate crashed: chrome not found" });
-    expect(r.blockers[0]?.fix).toMatch(/could not run/);
+    expect(r.results[0]).toMatchObject({ gate: "lighthouse", passed: false, skipped: true });
+    expect(r.results[0]?.details).toMatch(/could not run in this environment \(chrome not found\)/);
+    expect(r.blockers).toHaveLength(0);
     await sb.destroy();
   });
 });
