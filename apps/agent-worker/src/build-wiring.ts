@@ -4,7 +4,7 @@ import { MeteredLLM } from "@forge/llm";
 import { QUEUES, newId, BuildJobSchema, DeployJobSchema, type BuildJob } from "@forge/shared";
 import type { AgentDeps, SandboxPort, DesignPort, CheckpointPort, GatesPort, TemplatesPort, BrowserPort } from "@forge/agent-core";
 import { createSandboxProvider, type Sandbox, type SandboxProvider } from "@forge/sandbox";
-import { runGates } from "@forge/quality-gates";
+import { runGates, type GateName } from "@forge/quality-gates";
 import { selectTemplate, getManifest, templateFiles, isTemplateId } from "@forge/templates";
 import { kitFilesFor, createDbBranchProvider, createDeployProvider, type KitFeature } from "@forge/app-kit";
 import { createCheckpointing } from "./checkpoints.js";
@@ -50,8 +50,16 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     },
   };
 
+  // The e2e gate needs a Playwright browser inside the sandbox image. Without one (FORGE_E2E_GATE unset) it
+  // is reported as skipped — never as passed.
+  const e2eEnabled = process.env.FORGE_E2E_GATE === "1";
   const gates: GatesPort = {
-    run: (sb, opts) => runGates(sb as unknown as Sandbox, { previewUrl: opts.previewUrl, visualScore: opts.visualScore, lighthouse: opts.previewUrl ? (u) => runLighthouse(u) : undefined }),
+    async run(sb, opts) {
+      const names: GateName[] = (opts.gates as GateName[] | undefined) ?? (["typecheck", "lint", "unit", "integration", "semgrep", "gitleaks", "osv", "rls", "auth", "validation", "client-secrets", "lighthouse", "visual-qa"] as GateName[]);
+      const report = await runGates(sb as unknown as Sandbox, { gates: e2eEnabled ? [...names, "e2e"] : names, previewUrl: opts.previewUrl, visualScore: opts.visualScore, lighthouse: opts.previewUrl ? (u) => runLighthouse(u) : undefined });
+      if (!e2eEnabled) report.results.push({ gate: "e2e", passed: false, skipped: true, details: "no Playwright browser in the sandbox image (set FORGE_E2E_GATE=1 with a browser-enabled image)", findings: [], durationMs: 0 });
+      return report;
+    },
   };
 
   const design = (llm: MeteredLLM): DesignPort => ({

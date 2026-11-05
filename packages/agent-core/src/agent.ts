@@ -227,7 +227,10 @@ export class BuildAgent {
         }
       }
       gateReport = await deps.gates.run(deps.sandbox, { previewUrl: previewUrl ?? undefined, visualScore: designScore });
-      for (const r of gateReport.results) ev({ type: "gate.result", ...base, gate: r.gate, passed: r.passed || Boolean(r.skipped), details: r.skipped ? `skipped: ${r.details}` : r.details.slice(0, 2000), fix: r.fix });
+      for (const r of gateReport.results) {
+        const finds = r.findings.slice(0, 5).map((f) => `- ${f.file ? `${f.file}${f.line ? `:${f.line}` : ""} ` : ""}[${f.rule}] ${f.message}`).join("\n");
+        ev({ type: "gate.result", ...base, gate: r.gate, passed: r.passed || Boolean(r.skipped), details: (r.skipped ? `skipped: ${r.details}` : `${r.details}${finds ? `\n${finds}` : ""}`).slice(0, 2000), fix: r.fix });
+      }
       phaseDone("verify");
       if (!gateReport.passed) {
         const text = summarizeGates(gateReport);
