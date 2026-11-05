@@ -41,7 +41,7 @@ const deps: ApiDeps = {
 const wired = await wireServices(deps);
 
 const { app } = await buildServer(deps, { collabRelay: new RedisCollabRelay(redis, collabSub), audio: wired.audio, extensions: wired.extensions });
-const port = Number(process.env.API_PORT || 4000);
+const port = Number(process.env.PORT || process.env.API_PORT || 4000);
 await app.listen({ port, host: "0.0.0.0" });
 log.info("api listening", { port, llm: deps.llm.name, mockLLM: deps.llm.isMock });
 

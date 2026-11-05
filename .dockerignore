@@ -1,0 +1,14 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+.git
+.claude/worktrees
+.data
+.env
+.env.*
+!.env.example
+evals/results
+**/playwright-report
+**/test-results
