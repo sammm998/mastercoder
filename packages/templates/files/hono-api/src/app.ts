@@ -25,6 +25,9 @@ export function createApp(env: Pick<Env, "CORS_ORIGINS" | "BODY_LIMIT_BYTES" | "
   app.use(bodyLimit({ maxSize: env.BODY_LIMIT_BYTES }));
   if (origins.length > 0) app.use("/v1/*", cors({ origin: origins, credentials: true }));
 
+  // App-kit features (auth, payments, cron, observability middleware ...) mount before app routes.
+  mountKit(app);
+
   app.get("/health", (c) => c.json({ status: "ok", service: SERVICE_NAME, uptimeSec: Math.round(process.uptime()) }));
 
   /** Validated request example: the body is checked by zod before the handler runs. */
@@ -38,8 +41,6 @@ export function createApp(env: Pick<Env, "CORS_ORIGINS" | "BODY_LIMIT_BYTES" | "
       return c.json({ message: uppercase ? message.toUpperCase() : message });
     },
   );
-
-  mountKit(app);
 
   app.notFound((c) => c.json({ error: "not_found" }, 404));
   app.onError((err, c) => {

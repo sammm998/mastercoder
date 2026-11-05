@@ -80,6 +80,19 @@ export function substitute(content: string, vars: Record<string, string>): strin
   return content.replace(/\{\{([A-Za-z][A-Za-z0-9_]*)\}\}/g, (m, key: string) => (key in vars ? (vars[key] as string) : m));
 }
 
+/**
+ * Substitute with values escaped for the file type, so a project name like `Bob's "Shop" <3>` can
+ * neither break a string literal / JSON document nor inject markup.
+ */
+export function substituteForFile(path: string, content: string, vars: Record<string, string>): string {
+  let esc: (v: string) => string = (v) => v;
+  if (/\.(json|[cm]?[jt]sx?|py|astro|toml)$/.test(path)) esc = (v) => JSON.stringify(v).slice(1, -1);
+  else if (/\.(html?|svg|xml)$/.test(path)) esc = (v) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
+  const escaped: Record<string, string> = {};
+  for (const [k, v] of Object.entries(vars)) escaped[k] = esc(v);
+  return substitute(content, escaped);
+}
+
 async function walk(dir: string, root: string, out: string[]): Promise<void> {
   const entries = await readdir(dir, { withFileTypes: true });
   for (const e of entries) {
@@ -108,7 +121,7 @@ export async function templateFiles(id: string, vars?: TemplateVars): Promise<Re
   const files: Record<string, string> = {};
   for (const rel of await templateFileList(id)) {
     const content = await readFile(join(root, rel), "utf8");
-    files[rel] = resolved ? substitute(content, resolved) : content;
+    files[rel] = resolved ? substituteForFile(rel, content, resolved) : content;
   }
   return files;
 }

@@ -1,8 +1,11 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "react-native";
+import { initKit } from "../src/kit";
 import { site } from "../src/lib/site";
 import { colorsFor } from "../src/theme/tokens";
+
+initKit();
 
 export default function RootLayout() {
   const colors = colorsFor(useColorScheme());

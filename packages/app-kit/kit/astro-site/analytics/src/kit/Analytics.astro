@@ -1,0 +1,21 @@
+---
+/*
+ * Cookieless pageview beacon (Plausible-compatible). No cookies or personal data; honours Do Not
+ * Track / Global Privacy Control. Configure PUBLIC_ANALYTICS_ENDPOINT and PUBLIC_ANALYTICS_DOMAIN.
+ */
+const endpoint = import.meta.env.PUBLIC_ANALYTICS_ENDPOINT ?? "";
+const domain = import.meta.env.PUBLIC_ANALYTICS_DOMAIN ?? "";
+---
+
+<forge-analytics data-endpoint={endpoint} data-domain={domain} hidden></forge-analytics>
+
+<script>
+  import { buildPageview, sendPageview } from "./pageview";
+
+  const el = document.querySelector("forge-analytics");
+  const endpoint = el?.getAttribute("data-endpoint");
+  if (endpoint) {
+    const domain = el?.getAttribute("data-domain") || window.location.hostname;
+    sendPageview(endpoint, buildPageview(window.location.href, document.referrer, domain));
+  }
+</script>

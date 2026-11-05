@@ -1,0 +1,15 @@
+{
+  "hero": {
+    "title": "{{projectName}}",
+    "lead": "Edit this text at /admin.",
+    "ctaLabel": "Read more",
+    "ctaHref": "#about"
+  },
+  "sections": [
+    {
+      "id": "about",
+      "heading": "About",
+      "body": "Use the editor at /admin to change headings and text on this page. Changes are live as soon as you save."
+    }
+  ]
+}
