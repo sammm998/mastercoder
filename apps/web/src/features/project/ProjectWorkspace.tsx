@@ -26,10 +26,12 @@ import { MediaPanel } from "./MediaPanel";
 import { LiveRun } from "./LiveRun";
 import { SlidesPanel } from "../slides/SlidesPanel";
 import { DeployPanel } from "../deploy/DeployPanel";
+import { AppCatalog } from "../integrations/AppCatalog";
+import "@/styles/integrations.css";
 
-const TABS = ["preview", "run", "code", "comments", "history", "media", "slides", "deploy"] as const;
+const TABS = ["preview", "run", "code", "comments", "history", "media", "slides", "integrations", "deploy"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_ICON = { preview: "eye", run: "users", code: "code", comments: "comment", history: "history", media: "image", slides: "slides", deploy: "rocket" } as const;
+const TAB_ICON = { preview: "eye", run: "users", code: "code", comments: "comment", history: "history", media: "image", slides: "slides", integrations: "plug", deploy: "rocket" } as const;
 const WRITE_ROLES = new Set(["owner", "admin", "editor"]);
 const ROLES = ["owner", "admin", "editor", "viewer"];
 const CHAT_W_KEY = "forge.chatWidth";
@@ -43,6 +45,10 @@ function readWidth(): number | null {
   } catch {
     return null;
   }
+}
+
+export function isTab(v: unknown): v is Tab {
+  return typeof v === "string" && (TABS as readonly string[]).includes(v);
 }
 
 export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projectId: string; initialTab?: Tab }) {
@@ -308,6 +314,11 @@ export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projec
               {x === "history" && <HistoryPanel projectId={projectId} events={events} canWrite={canWrite} restore={restore} />}
               {x === "media" && <MediaPanel projectId={projectId} events={events} canWrite={canWrite} />}
               {x === "slides" && <SlidesPanel projectId={projectId} events={events} canWrite={canWrite} brand={p.brand} />}
+              {x === "integrations" && (
+                <div className="ws-integrations">
+                  <AppCatalog workspaceId={workspace.id} projectId={projectId} canConnect={canWrite} canManageShared={workspace.role === "owner" || workspace.role === "admin"} />
+                </div>
+              )}
               {x === "deploy" && <DeployPanel projectId={projectId} events={events} canDeploy={canWrite} />}
             </div>
           ))}

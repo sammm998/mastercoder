@@ -226,6 +226,8 @@ export const uploadChunks = pgTable("upload_chunks", {
 export const connections = pgTable("connections", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  /** Set for a connection made inside one project; null = available to the whole workspace. */
+  projectId: text("project_id").references(() => projects.id, { onDelete: "cascade" }),
   userId: text("user_id").notNull(),
   provider: text("provider").notNull(), // composio | nango | pipedream | openapi | mcp
   app: text("app").notNull(),

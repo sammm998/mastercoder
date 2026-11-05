@@ -2,9 +2,10 @@
 
 import { use } from "react";
 import "@/styles/workspace.css";
-import { ProjectWorkspace } from "@/features/project/ProjectWorkspace";
+import { ProjectWorkspace, isTab } from "@/features/project/ProjectWorkspace";
 
-export default function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
+export default function ProjectPage({ params, searchParams }: { params: Promise<{ projectId: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { projectId } = use(params);
-  return <ProjectWorkspace projectId={projectId} />;
+  const { tab } = use(searchParams);
+  return <ProjectWorkspace projectId={projectId} initialTab={isTab(tab) ? tab : undefined} />;
 }

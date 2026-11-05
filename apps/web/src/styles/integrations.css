@@ -1,0 +1,326 @@
+/* Integrations: app catalog + connections (workspace page and the project's Integrations tab). */
+
+.ig-page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.ig-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-4);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--hue-1) 16%, transparent), transparent 60%),
+    radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--hue-2) 14%, transparent), transparent 60%),
+    var(--surface);
+}
+.ig-hero p {
+  max-width: 62ch;
+  margin: var(--space-1) 0 0;
+}
+.ig-hero-mascot {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--glass);
+  box-shadow: var(--shadow);
+}
+
+.ig {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.ig-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+.ig-head .hint {
+  max-width: 60ch;
+}
+
+.ig-empty {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-3);
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* Monogram "logo" */
+.ig-mono {
+  --h: 260;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font: 700 1.05rem/1 var(--font-display);
+  color: hsl(var(--h) 55% 30%);
+  background: linear-gradient(135deg, hsl(var(--h) 85% 92%), hsl(calc(var(--h) + 40) 80% 86%));
+  box-shadow: inset 0 0 0 1px hsl(var(--h) 50% 80% / 0.6);
+}
+:root[data-theme="dark"] .ig-mono {
+  color: hsl(var(--h) 80% 88%);
+  background: linear-gradient(135deg, hsl(var(--h) 45% 26%), hsl(calc(var(--h) + 40) 45% 20%));
+  box-shadow: inset 0 0 0 1px hsl(var(--h) 50% 50% / 0.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ig-mono {
+    color: hsl(var(--h) 80% 88%);
+    background: linear-gradient(135deg, hsl(var(--h) 45% 26%), hsl(calc(var(--h) + 40) 45% 20%));
+    box-shadow: inset 0 0 0 1px hsl(var(--h) 50% 50% / 0.35);
+  }
+}
+
+/* Connected accounts */
+.ig-conn-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ig-conn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+  background: var(--surface-2);
+}
+.ig-conn-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.ig-conn-text strong,
+.ig-conn-text .hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Catalog toolbar */
+.ig-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.ig-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: min(100%, 300px);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-3);
+}
+.ig-search:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 25%, transparent);
+}
+.ig-search input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+
+.ig-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.ig-cat {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font: 500 var(--step--1) / 1.2 var(--font-body);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.ig-cat:hover {
+  border-color: var(--line-strong);
+}
+.ig-cat[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Catalog cards */
+.ig-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ig-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+  background: var(--surface);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.ig-card:hover {
+  border-color: color-mix(in srgb, var(--hue-1) 40%, var(--line));
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+.ig-card[data-connected="true"] {
+  border-color: color-mix(in srgb, var(--hue-1) 35%, var(--line));
+}
+.ig-card-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.ig-card-title {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.ig-card-title h3 {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--step-0);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ig-perm-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font: 500 var(--step--1) / 1.2 var(--font-body);
+  cursor: pointer;
+}
+.ig-perm-toggle:hover {
+  color: var(--ink);
+}
+.ig-chev {
+  display: inline-flex;
+  transform: rotate(90deg);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.ig-chev[data-open="true"] {
+  transform: rotate(-90deg);
+}
+.ig-perms {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-2);
+  background: var(--surface-2);
+}
+.ig-perm {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--step--1);
+  line-height: 1.4;
+}
+.ig-perm input {
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+.ig-perm span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ig-perm code {
+  overflow-wrap: anywhere;
+  color: var(--ink-3);
+  font: 0.72rem/1.3 var(--font-mono);
+}
+.ig-card-foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Advanced: OpenAPI, MCP, secrets */
+.ig-adv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+/* Project tab */
+.ws-integrations {
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .ig-hero {
+    align-items: flex-start;
+    padding: var(--space-4);
+  }
+  .ig-hero-mascot {
+    width: 52px;
+    height: 52px;
+  }
+  .ig-adv-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ig-card,
+  .ig-chev {
+    transition: none;
+  }
+  .ig-card:hover {
+    transform: none;
+  }
+}

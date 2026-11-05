@@ -162,6 +162,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
             design: design(llm),
             checkpoints: checkpointsPort(j),
             browser,
+            ...(d.integrations ? { integrations: { listTools: (pid: string) => d.integrations!.listProjectTools(pid), call: (pid: string, tool: string, input: unknown) => d.integrations!.callProjectTool(pid, tool, input) } } : {}),
             media: {
               generateImage: async (i) => (await runMediaRequest({ taskId: j.taskId, projectId: i.projectId, workspaceId: j.workspaceId, kind: "image", prompt: i.prompt, options: { n: i.n } }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events })).map((a) => ({ artifactId: a.id, url: a.storageKey })),
               generateVideo: async (i) => {

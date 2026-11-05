@@ -59,3 +59,14 @@ Pick the **EU West (Amsterdam)** region for every service to keep data in the EU
 - PDF export and visual QA use Chromium, which the slim images don't include; those features report an error
   until a Chromium layer is added.
 - Everything defaults to mock providers, so a fresh deploy works without any vendor keys.
+
+## Integrations (Composio)
+
+1. Create a project at platform.composio.dev and copy its API key (Settings → API keys).
+2. In Railway, add these variables to **both** `@forge/api` and `@forge/agent-worker`:
+   - `COMPOSIO_API_KEY` = the key
+   - `CONNECTOR_PROVIDER` = `composio`
+3. Redeploy both. Apps then connect through Composio's hosted Connect Link (Composio-managed OAuth).
+   Connections made in a project's Integrations tab use the project id as Composio `user_id`.
+
+Without `CONNECTOR_PROVIDER=composio` the mock connector is used (clearly labelled, no real accounts).

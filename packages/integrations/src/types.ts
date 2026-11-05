@@ -28,6 +28,8 @@ export interface ActionDef {
 
 export interface InitiateConnectionInput {
   workspaceId: string;
+  /** Set when the connection belongs to one project (its own Composio user / Nango end user). */
+  projectId?: string;
   userId: string;
   app: string;
   scopes: string[];

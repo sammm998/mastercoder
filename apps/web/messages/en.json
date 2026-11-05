@@ -571,7 +571,8 @@
       "media": "Media",
       "slides": "Slides",
       "deploy": "Deploy",
-      "run": "Run"
+      "run": "Run",
+      "integrations": "Integrations"
     },
     "chat": {
       "title": "Agent",
@@ -1142,7 +1143,9 @@
     "status": {
       "pending": "Pending",
       "active": "Active",
-      "revoked": "Revoked"
+      "revoked": "Revoked",
+      "failed": "Failed",
+      "expired": "Expired"
     },
     "openapi": "Import an OpenAPI spec",
     "openapiLede": "Turn any REST API into tools for your agents and apps — from a URL or pasted JSON.",
@@ -1173,7 +1176,32 @@
     "noSecrets": "No secrets yet.",
     "deleteSecretConfirm": "Delete secret {name}?",
     "provider": "via {provider}",
-    "operations": "{count, plural, one {# operation} other {# operations}}"
+    "operations": "{count, plural, one {# operation} other {# operations}}",
+    "inProject": "Connected to this project",
+    "projectHint": "Only this project uses these accounts. Apps shared with the whole workspace are listed too.",
+    "workspaceHint": "Shared with every project in the workspace. To connect an app for one project only, open the project's Integrations tab.",
+    "scopeProject": "This project",
+    "scopeWorkspace": "Whole workspace",
+    "categories": "Categories",
+    "noMatch": "No apps match your search.",
+    "connectedHere": "Connected",
+    "connectedShared": "Shared",
+    "permissionCount": "{count} of {total, plural, one {# permission} other {# permissions}}",
+    "reconnect": "Reconnect",
+    "category": {
+      "all": "All",
+      "crm": "CRM",
+      "chat": "Chat",
+      "email": "Email",
+      "productivity": "Productivity",
+      "calendar": "Calendar",
+      "dev": "Developer",
+      "payments": "Payments",
+      "database": "Data"
+    },
+    "advanced": "Advanced",
+    "advancedLede": "Your own APIs, MCP servers and secrets.",
+    "pageLede": "Connect the apps your projects and agents use. You always see the exact permissions first and can revoke access any time."
   },
   "billing": {
     "title": "Billing",

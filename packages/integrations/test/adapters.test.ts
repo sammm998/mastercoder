@@ -30,23 +30,25 @@ afterEach(() => vi.unstubAllGlobals());
 
 const init = { workspaceId: "ws_1", userId: "usr_1", app: "hubspot", scopes: ["crm.objects.contacts.read"], redirectUrl: "https://forge.example/cb" };
 
-describe("ComposioConnectorProvider (v3 REST)", () => {
+describe("ComposioConnectorProvider (v3.1 REST)", () => {
   it("creates a connected account via auth config and executes tools", async () => {
     const calls = stubFetch([
-      ["GET", /\/api\/v3\/auth_configs$/, { items: [] }],
-      ["POST", /\/api\/v3\/auth_configs$/, { auth_config: { id: "ac_1" }, toolkit: { slug: "hubspot" } }],
-      ["POST", /\/api\/v3\/connected_accounts$/, { id: "ca_1", redirect_url: "https://connect.composio.dev/link/abc", status: "INITIATED" }],
-      ["GET", /\/api\/v3\/connected_accounts\/ca_1$/, { id: "ca_1", status: "ACTIVE", toolkit: { slug: "hubspot" }, params: { scope: "crm.objects.contacts.read oauth" } }],
-      ["GET", /\/api\/v3\/tools$/, { items: [{ slug: "HUBSPOT_LIST_CONTACTS", name: "List contacts", description: "List", input_parameters: { type: "object", properties: {} } }, { slug: "HUBSPOT_DELETE_CONTACT", description: "Delete" }] }],
-      ["POST", /\/api\/v3\/tools\/execute\/HUBSPOT_LIST_CONTACTS$/, { data: { results: [] }, successful: true, error: null }],
-      ["DELETE", /\/api\/v3\/connected_accounts\/ca_1$/, {}],
+      ["GET", /\/api\/v3\.1\/auth_configs$/, { items: [] }],
+      ["POST", /\/api\/v3\.1\/auth_configs$/, { auth_config: { id: "ac_1" }, toolkit: { slug: "hubspot" } }],
+      ["POST", /\/api\/v3\.1\/connected_accounts\/link$/, { connected_account_id: "ca_1", redirect_url: "https://connect.composio.dev/link/abc", link_token: "lt_1", expires_at: "2026-11-06T00:00:00Z" }],
+      ["GET", /\/api\/v3\.1\/connected_accounts\/ca_1$/, { id: "ca_1", status: "ACTIVE", toolkit: { slug: "hubspot" }, params: { scope: "crm.objects.contacts.read oauth" } }],
+      ["GET", /\/api\/v3\.1\/tools$/, { items: [{ slug: "HUBSPOT_LIST_CONTACTS", name: "List contacts", description: "List", input_parameters: { type: "object", properties: {} } }, { slug: "HUBSPOT_DELETE_CONTACT", description: "Delete" }] }],
+      ["POST", /\/api\/v3\.1\/tools\/execute\/HUBSPOT_LIST_CONTACTS$/, { data: { results: [] }, successful: true, error: null }],
+      ["DELETE", /\/api\/v3\.1\/connected_accounts\/ca_1$/, {}],
     ]);
     const p = new ComposioConnectorProvider({ apiKey: "ck_test" });
-    const c = await p.initiateConnection(init);
+    const c = await p.initiateConnection({ ...init, projectId: "prj_42" });
     expect(c).toEqual({ connectionId: "ca_1", redirectUrl: "https://connect.composio.dev/link/abc" });
     expect(calls[0]!.url.searchParams.get("toolkit_slug")).toBe("hubspot");
     expect(calls[1]!.body).toMatchObject({ toolkit: { slug: "hubspot" }, auth_config: { type: "use_composio_managed_auth" } });
-    expect(calls[2]!.body).toEqual({ auth_config: { id: "ac_1" }, connection: { user_id: "ws_1:usr_1", callback_url: "https://forge.example/cb" } });
+    expect(calls[0]!.url.searchParams.get("is_composio_managed")).toBe("true");
+    // One Composio user per project: the project's accounts never mix with other projects'.
+    expect(calls[2]!.body).toEqual({ auth_config_id: "ac_1", user_id: "prj_42", callback_url: "https://forge.example/cb" });
     expect(calls.every((x) => x.headers["x-api-key"] === "ck_test")).toBe(true);
 
     expect(await p.getConnection("ca_1")).toEqual({ status: "active", scopes: ["crm.objects.contacts.read", "oauth"], externalId: "ca_1", app: "hubspot" });
@@ -78,7 +80,7 @@ describe("NangoConnectorProvider", () => {
       ["DELETE", /^\/connection\/conn-123$/, {}],
     ]);
     const p = new NangoConnectorProvider({ secretKey: "nk_test" });
-    const c = await p.initiateConnection(init);
+    const c = await p.initiateConnection({ ...init, projectId: "prj_42" });
     expect(c.connectionId).toMatch(/^nango_/);
     expect(new URL(c.redirectUrl).searchParams.get("session_token")).toBe("nango_tok");
     expect(calls[0]!.body).toMatchObject({ end_user: { id: "ws_1:usr_1" }, allowed_integrations: ["hubspot"] });
@@ -109,7 +111,7 @@ describe("NangoConnectorProvider", () => {
       ["GET", /^\/connection$/, { connections: [] }],
     ]);
     const p = new NangoConnectorProvider({ secretKey: "k", baseUrl: "https://nango.eu.example" });
-    const c = await p.initiateConnection(init);
+    const c = await p.initiateConnection({ ...init, projectId: "prj_42" });
     expect(c.redirectUrl).toMatch(/^https:\/\/connect\.nango\.dev\/?\?session_token=t/);
     expect(await p.getConnection(c.connectionId)).toMatchObject({ status: "pending", externalId: null, scopes: ["crm.objects.contacts.read"] });
     expect((await p.executeAction({ connectionId: c.connectionId, action: "x", input: {} })).ok).toBe(false);

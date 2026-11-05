@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { and, eq, desc, connections } from "@forge/db";
+import { and, eq, desc, isNull, or, connections } from "@forge/db";
 import { newId } from "@forge/shared";
 import { router, authedProcedure, requireWorkspace, requireProject, audit } from "../trpc.js";
 import { requireService, type ConnectorPort, type OpenApiImporter, type VaultPort } from "../services.js";
@@ -13,28 +13,47 @@ export const integrationsRouter = router({
     return requireService<ConnectorPort>(ctx.deps.services, "connectors").listApps(input.locale);
   }),
 
-  connections: authedProcedure.input(z.object({ workspaceId: z.string() })).query(async ({ ctx, input }) => {
-    await requireWorkspace(ctx, input.workspaceId, "project.read");
-    const rows = await ctx.deps.db.select().from(connections).where(eq(connections.workspaceId, input.workspaceId)).orderBy(desc(connections.createdAt));
-    return rows.map((r) => ({ ...r, config: r.provider === "openapi" || r.provider === "mcp" ? r.config : undefined }));
+  /**
+   * Connections. With `projectId`: that project's own connections plus workspace-wide ones (each tagged
+   * with its scope). Without: every connection in the workspace.
+   */
+  connections: authedProcedure.input(z.object({ workspaceId: z.string(), projectId: z.string().optional() })).query(async ({ ctx, input }) => {
+    if (input.projectId) {
+      const { project } = await requireProject(ctx, input.projectId, "project.read");
+      if (project.workspaceId !== input.workspaceId) throw new TRPCError({ code: "BAD_REQUEST", message: "Project is not in this workspace" });
+    } else await requireWorkspace(ctx, input.workspaceId, "project.read");
+    const where = input.projectId
+      ? and(eq(connections.workspaceId, input.workspaceId), or(eq(connections.projectId, input.projectId), isNull(connections.projectId)))
+      : eq(connections.workspaceId, input.workspaceId);
+    const rows = await ctx.deps.db.select().from(connections).where(where).orderBy(desc(connections.createdAt));
+    return rows.map((r) => ({ ...r, scope: r.projectId ? ("project" as const) : ("workspace" as const), config: r.provider === "openapi" || r.provider === "mcp" ? r.config : undefined }));
   }),
 
+  /**
+   * Start an OAuth / API-key connection. With `projectId` the connection belongs to that project only
+   * (project editors may connect); without it, it is shared by the workspace (admins only).
+   */
   connect: authedProcedure
-    .input(z.object({ workspaceId: z.string(), app: z.string().max(60), scopes: z.array(z.string().max(200)).max(50) }))
+    .input(z.object({ workspaceId: z.string(), projectId: z.string().optional(), app: z.string().max(60), scopes: z.array(z.string().max(200)).max(50) }))
     .mutation(async ({ ctx, input }) => {
-      await requireWorkspace(ctx, input.workspaceId, "integrations.manage");
+      if (input.projectId) {
+        const { project } = await requireProject(ctx, input.projectId, "project.write");
+        if (project.workspaceId !== input.workspaceId) throw new TRPCError({ code: "BAD_REQUEST", message: "Project is not in this workspace" });
+      } else await requireWorkspace(ctx, input.workspaceId, "integrations.manage");
       const port = requireService<ConnectorPort>(ctx.deps.services, "connectors");
       const id = newId("con");
-      const r = await port.initiate({ workspaceId: input.workspaceId, userId: ctx.user.id, app: input.app, scopes: input.scopes, redirectUrl: `${ctx.deps.config.appUrl}/app/integrations?connected=${id}` });
-      await ctx.deps.db.insert(connections).values({ id, workspaceId: input.workspaceId, userId: ctx.user.id, provider: port.provider, app: input.app, scopes: input.scopes, externalId: r.externalId ?? r.connectionId, status: "pending" });
-      await audit(ctx, "integration.connect", { workspaceId: input.workspaceId, target: id, meta: { app: input.app, scopes: input.scopes } });
+      const back = input.projectId ? `${ctx.deps.config.appUrl}/app/p/${input.projectId}?tab=integrations&connected=${id}` : `${ctx.deps.config.appUrl}/app/integrations?connected=${id}`;
+      const r = await port.initiate({ workspaceId: input.workspaceId, projectId: input.projectId, userId: ctx.user.id, app: input.app, scopes: input.scopes, redirectUrl: back });
+      await ctx.deps.db.insert(connections).values({ id, workspaceId: input.workspaceId, projectId: input.projectId ?? null, userId: ctx.user.id, provider: port.provider, app: input.app, scopes: input.scopes, externalId: r.externalId ?? r.connectionId, status: "pending" });
+      await audit(ctx, "integration.connect", { workspaceId: input.workspaceId, target: id, meta: { app: input.app, scopes: input.scopes, projectId: input.projectId } });
       return { connectionId: id, redirectUrl: r.redirectUrl };
     }),
 
   refresh: authedProcedure.input(z.object({ connectionId: z.string() })).mutation(async ({ ctx, input }) => {
     const [c] = await ctx.deps.db.select().from(connections).where(eq(connections.id, input.connectionId));
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Connection not found" });
-    await requireWorkspace(ctx, c.workspaceId, "project.read");
+    if (c.projectId) await requireProject(ctx, c.projectId, "project.read");
+    else await requireWorkspace(ctx, c.workspaceId, "project.read");
     if (!c.externalId || c.provider === "openapi" || c.provider === "mcp") return { status: c.status };
     const s = await requireService<ConnectorPort>(ctx.deps.services, "connectors").status(c.externalId);
     await ctx.deps.db.update(connections).set({ status: s.status, scopes: s.scopes.length ? s.scopes : c.scopes }).where(eq(connections.id, c.id));
@@ -44,7 +63,8 @@ export const integrationsRouter = router({
   revoke: authedProcedure.input(z.object({ connectionId: z.string() })).mutation(async ({ ctx, input }) => {
     const [c] = await ctx.deps.db.select().from(connections).where(eq(connections.id, input.connectionId));
     if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "Connection not found" });
-    await requireWorkspace(ctx, c.workspaceId, "integrations.manage");
+    if (c.projectId) await requireProject(ctx, c.projectId, "project.write");
+    else await requireWorkspace(ctx, c.workspaceId, "integrations.manage");
     if (c.externalId && c.provider !== "openapi" && c.provider !== "mcp") await requireService<ConnectorPort>(ctx.deps.services, "connectors").revoke(c.externalId);
     await ctx.deps.db.update(connections).set({ status: "revoked", revokedAt: new Date() }).where(eq(connections.id, c.id));
     await audit(ctx, "integration.revoke", { workspaceId: c.workspaceId, target: c.id });

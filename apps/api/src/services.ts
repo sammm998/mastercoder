@@ -51,8 +51,8 @@ export interface MeetingUrlParser {
 }
 
 export interface ConnectorPort {
-  listApps(locale: "en" | "sv"): Promise<Array<{ app: string; name: string; scopes: Array<{ id: string; description: string }> }>>;
-  initiate(opts: { workspaceId: string; userId: string; app: string; scopes: string[]; redirectUrl: string }): Promise<{ connectionId: string; redirectUrl: string; externalId?: string }>;
+  listApps(locale: "en" | "sv"): Promise<Array<{ app: string; name: string; category: string; scopes: Array<{ id: string; description: string }> }>>;
+  initiate(opts: { workspaceId: string; projectId?: string; userId: string; app: string; scopes: string[]; redirectUrl: string }): Promise<{ connectionId: string; redirectUrl: string; externalId?: string }>;
   status(externalId: string): Promise<{ status: string; scopes: string[] }>;
   revoke(externalId: string): Promise<void>;
   provider: string;

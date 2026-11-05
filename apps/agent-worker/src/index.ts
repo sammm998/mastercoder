@@ -36,10 +36,11 @@ const stt = createSttProvider();
 const bots = createMeetingBotProvider();
 const connectors = createConnectorProvider();
 const vault = new Vault(new DrizzleSecretStore(db), createKeyProvider());
+const toolExecutor = new ConnectionToolExecutor(db, connectors, vault);
 const agents = new AgentService({
   db,
   runner: createAgentRunner(new MeteredLLM(llm, usage)),
-  tools: new ConnectionToolExecutor(db, connectors, vault),
+  tools: toolExecutor,
   memory: new DrizzleMemoryStore(db),
   usage,
   onFailure: (a) => log.warn("agent run failed", a),
@@ -102,7 +103,7 @@ consume(QUEUES.scan, async (job) => {
   return scanDeployment(db, reputation, { projectId: p.projectId, deploymentId: p.deploymentId, files: { "index.html": html }, hostname: new URL(p.url).hostname });
 });
 
-await registerBuildQueue({ consume, db, llm, store, events, usage, log });
+await registerBuildQueue({ consume, db, llm, store, events, usage, log, integrations: toolExecutor });
 
 // Cron triggers → BullMQ job schedulers, re-synced every minute.
 const sync = async () => {

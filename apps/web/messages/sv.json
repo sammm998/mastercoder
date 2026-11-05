@@ -571,7 +571,8 @@
       "media": "Media",
       "slides": "Presentationer",
       "deploy": "Driftsättning",
-      "run": "Körning"
+      "run": "Körning",
+      "integrations": "Integrationer"
     },
     "chat": {
       "title": "Agent",
@@ -1142,7 +1143,9 @@
     "status": {
       "pending": "Väntar",
       "active": "Aktiv",
-      "revoked": "Återkallad"
+      "revoked": "Återkallad",
+      "failed": "Misslyckades",
+      "expired": "Utgången"
     },
     "openapi": "Importera en OpenAPI-spec",
     "openapiLede": "Gör vilket REST-API som helst till verktyg för dina agenter och appar — från en URL eller inklistrad JSON.",
@@ -1173,7 +1176,32 @@
     "noSecrets": "Inga hemligheter än.",
     "deleteSecretConfirm": "Radera hemligheten {name}?",
     "provider": "via {provider}",
-    "operations": "{count, plural, one {# operation} other {# operationer}}"
+    "operations": "{count, plural, one {# operation} other {# operationer}}",
+    "inProject": "Kopplat till det här projektet",
+    "projectHint": "Bara det här projektet använder de här kontona. Appar som delas med hela arbetsytan visas också.",
+    "workspaceHint": "Delas med alla projekt i arbetsytan. Vill du koppla en app för ett enda projekt öppnar du projektets flik Integrationer.",
+    "scopeProject": "Det här projektet",
+    "scopeWorkspace": "Hela arbetsytan",
+    "categories": "Kategorier",
+    "noMatch": "Inga appar matchar sökningen.",
+    "connectedHere": "Kopplad",
+    "connectedShared": "Delad",
+    "permissionCount": "{count} av {total, plural, one {# behörighet} other {# behörigheter}}",
+    "reconnect": "Koppla om",
+    "category": {
+      "all": "Alla",
+      "crm": "CRM",
+      "chat": "Chatt",
+      "email": "E-post",
+      "productivity": "Produktivitet",
+      "calendar": "Kalender",
+      "dev": "Utveckling",
+      "payments": "Betalningar",
+      "database": "Data"
+    },
+    "advanced": "Avancerat",
+    "advancedLede": "Egna API:er, MCP-servrar och hemligheter.",
+    "pageLede": "Koppla de appar dina projekt och agenter använder. Du ser alltid exakt vilka behörigheter som begärs och kan återkalla åtkomst när som helst."
   },
   "billing": {
     "title": "Fakturering",

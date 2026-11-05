@@ -1,153 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocale, useT } from "@/i18n/client";
-import { formatDate } from "@/i18n/format";
-import type { MessageKey } from "@/i18n/translate";
+import { useT } from "@/i18n/client";
 import { useTRPC } from "@/lib/trpc";
 import { atLeast } from "@/lib/roles";
 import { ErrorNotice, LoadingBlock } from "@/components/Feedback";
 import { Icon } from "@/components/Icon";
 import { useWorkspace } from "../workspace-context";
+import { AppCatalog } from "@/features/integrations/AppCatalog";
+import "@/styles/integrations.css";
 
 const SECRET_NAME = /^[A-Z][A-Z0-9_]{1,63}$/;
-
-function Catalog({ canManage }: { canManage: boolean }) {
-  const t = useT();
-  const locale = useLocale();
-  const trpc = useTRPC();
-  const { workspace } = useWorkspace();
-  const apps = useQuery(trpc.integrations.apps.queryOptions({ locale }));
-  const [q, setQ] = useState("");
-  const [picked, setPicked] = useState<Record<string, Set<string>>>({});
-  const connect = useMutation(trpc.integrations.connect.mutationOptions({ onSuccess: (r) => window.location.assign(r.redirectUrl) }));
-  const list = useMemo(() => (apps.data ?? []).filter((a) => !q || a.name.toLowerCase().includes(q.toLowerCase()) || a.app.includes(q.toLowerCase())), [apps.data, q]);
-  const scopesFor = (app: string, all: string[]) => picked[app] ?? new Set(all);
-
-  return (
-    <section className="stack">
-      <div className="row-between">
-        <h2 className="section-title-sm">{t("integrations.catalog")}</h2>
-        <div className="field" style={{ width: 260 }}>
-          <label htmlFor="app-search" className="sr-only">
-            {t("integrations.search")}
-          </label>
-          <input id="app-search" className="input" type="search" placeholder={t("integrations.search")} value={q} onChange={(e) => setQ(e.target.value)} />
-        </div>
-      </div>
-      {apps.isPending ? (
-        <LoadingBlock rows={3} />
-      ) : apps.isError ? (
-        <ErrorNotice error={apps.error} service="connectors" />
-      ) : (
-        <ul className="grid-cards" style={{ listStyle: "none", padding: 0, margin: 0 }}>
-          {list.map((a) => {
-            const selected = scopesFor(
-              a.app,
-              a.scopes.map((s) => s.id),
-            );
-            return (
-              <li key={a.app} className="tile">
-                <h3>{a.name}</h3>
-                <fieldset className="stack" style={{ gap: 6, border: 0, padding: 0, margin: 0 }}>
-                  <legend className="label" style={{ marginBottom: 6 }}>
-                    {t("integrations.scopes")}
-                  </legend>
-                  {a.scopes.map((s) => (
-                    <label key={s.id} className="checkbox" style={{ alignItems: "flex-start", fontSize: "0.82rem" }}>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(s.id)}
-                        onChange={(e) =>
-                          setPicked((cur) => {
-                            const next = new Set(scopesFor(a.app, a.scopes.map((x) => x.id)));
-                            if (e.target.checked) next.add(s.id);
-                            else next.delete(s.id);
-                            return { ...cur, [a.app]: next };
-                          })
-                        }
-                      />
-                      <span>
-                        {s.description} <span className="mono subtle">({s.id})</span>
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-                <div className="tile-foot">
-                  <span />
-                  <button type="button" className="btn btn-sm btn-ink" disabled={!canManage || connect.isPending} onClick={() => connect.mutate({ workspaceId: workspace.id, app: a.app, scopes: [...selected] })}>
-                    {connect.isPending && connect.variables?.app === a.app ? t("integrations.connecting") : t("integrations.connect")}
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <ErrorNotice error={connect.error} compact />
-    </section>
-  );
-}
-
-function Connections({ canManage }: { canManage: boolean }) {
-  const t = useT();
-  const locale = useLocale();
-  const trpc = useTRPC();
-  const qc = useQueryClient();
-  const { workspace } = useWorkspace();
-  const q = useQuery(trpc.integrations.connections.queryOptions({ workspaceId: workspace.id }));
-  const inv = () => qc.invalidateQueries({ queryKey: trpc.integrations.connections.queryKey({ workspaceId: workspace.id }) });
-  const revoke = useMutation(trpc.integrations.revoke.mutationOptions({ onSuccess: inv }));
-  const refresh = useMutation(trpc.integrations.refresh.mutationOptions({ onSuccess: inv }));
-  return (
-    <section className="card stack">
-      <h2 className="section-title-sm">{t("integrations.connections")}</h2>
-      {q.isPending ? (
-        <LoadingBlock rows={2} />
-      ) : q.isError ? (
-        <ErrorNotice error={q.error} />
-      ) : q.data.length === 0 ? (
-        <p className="hint">{t("integrations.noConnections")}</p>
-      ) : (
-        <ul className="list">
-          {q.data.map((c) => {
-            const scopes = Array.isArray(c.scopes) ? (c.scopes as string[]) : [];
-            const ops = (c.config as { operations?: unknown[] } | null)?.operations;
-            return (
-              <li key={c.id}>
-                <div className="stack" style={{ gap: 4 }}>
-                  <strong>{c.app}</strong>
-                  <span className="hint">
-                    {t("integrations.provider", { provider: c.provider })} · {formatDate(c.createdAt, locale, false)}
-                    {Array.isArray(ops) && ` · ${t("integrations.operations", { count: ops.length })}`}
-                  </span>
-                  {scopes.length > 0 && <span className="mono subtle" style={{ fontSize: "0.72rem" }}>{scopes.join(", ")}</span>}
-                </div>
-                <div className="row" style={{ gap: 6 }}>
-                  <span className={`badge ${c.status === "active" ? "badge-ok" : c.status === "revoked" ? "badge-bad" : "badge-warn"}`}>{t(`integrations.status.${c.status}` as MessageKey)}</span>
-                  {c.status !== "revoked" && (
-                    <>
-                      <button type="button" className="btn btn-sm btn-ghost btn-icon" aria-label={t("integrations.refresh")} title={t("integrations.refresh")} onClick={() => refresh.mutate({ connectionId: c.id })}>
-                        <Icon name="refresh" size={14} />
-                      </button>
-                      {canManage && (
-                        <button type="button" className="btn btn-sm btn-danger" onClick={() => window.confirm(t("integrations.revokeConfirm", { app: c.app })) && revoke.mutate({ connectionId: c.id })}>
-                          {t("integrations.revoke")}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <ErrorNotice error={revoke.error ?? refresh.error} service="connectors" compact />
-    </section>
-  );
-}
 
 function OpenApiImport({ canManage }: { canManage: boolean }) {
   const t = useT();
@@ -357,27 +221,29 @@ export default function IntegrationsPage() {
   const { workspace } = useWorkspace();
   const canManage = atLeast(workspace.role, "admin");
   return (
-    <div className="page">
-      <header className="page-head">
+    <div className="page ig-page">
+      <header className="ig-hero">
+        <img className="ig-hero-mascot" src="/brand/avatars/mailo.webp" width={72} height={72} alt="" aria-hidden="true" decoding="async" />
         <div>
           <h1 className="page-title">{t("integrations.title")}</h1>
-          <p className="muted" style={{ maxWidth: 680 }}>
-            {t("integrations.lede")}
-          </p>
+          <p className="muted">{t("integrations.pageLede")}</p>
         </div>
       </header>
       {!canManage && <p className="notice">{t("settings.adminOnly")}</p>}
-      <Catalog canManage={canManage} />
-      <div className="split">
-        <div className="stack-lg">
-          <Connections canManage={canManage} />
-          <Secrets canManage={canManage} />
+      <AppCatalog workspaceId={workspace.id} canConnect={canManage} canManageShared={canManage} />
+      <section className="ig-advanced" aria-labelledby="ig-adv-title">
+        <div className="ig-head">
+          <h2 id="ig-adv-title" className="section-title-sm">
+            {t("integrations.advanced")}
+          </h2>
+          <span className="hint">{t("integrations.advancedLede")}</span>
         </div>
-        <div className="stack-lg">
+        <div className="ig-adv-grid">
           <OpenApiImport canManage={canManage} />
           <McpServers canManage={canManage} />
+          <Secrets canManage={canManage} />
         </div>
-      </div>
+      </section>
     </div>
   );
 }

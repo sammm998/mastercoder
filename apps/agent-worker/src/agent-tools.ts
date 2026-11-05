@@ -1,4 +1,4 @@
-import { and, eq, connections, type Db } from "@forge/db";
+import { and, eq, isNull, or, connections, projects, type Db } from "@forge/db";
 import { ForgeError } from "@forge/shared";
 import type { ToolExecutor, ToolRef } from "@forge/agents-runtime";
 import { importOpenApi, callOperation, vaultAuth, type ConnectorProvider, type Vault } from "@forge/integrations";
@@ -22,6 +22,43 @@ export class ConnectionToolExecutor implements ToolExecutor {
     const c = rows.find((r) => r.status === "active" || r.status === "pending");
     if (!c) throw new ForgeError("NOT_FOUND", `No active ${where.app ?? where.id} connection in this workspace — connect it under Integrations`);
     return c;
+  }
+
+  /** Active connector connections a project can use: its own first, then workspace-wide ones. */
+  private async projectConnections(projectId: string) {
+    const [p] = await this.db.select({ workspaceId: projects.workspaceId }).from(projects).where(eq(projects.id, projectId));
+    if (!p) throw new ForgeError("NOT_FOUND", "Project not found");
+    const rows = await this.db
+      .select()
+      .from(connections)
+      .where(and(eq(connections.workspaceId, p.workspaceId), or(eq(connections.projectId, projectId), isNull(connections.projectId))));
+    return rows
+      .filter((r) => r.status === "active" && r.provider !== "openapi" && r.provider !== "mcp")
+      .sort((a, b) => Number(!!b.projectId) - Number(!!a.projectId));
+  }
+
+  /** Tools for the build agent (`use_integration`): `<app>.<action>` for each connected app. */
+  async listProjectTools(projectId: string): Promise<Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>> {
+    const seen = new Set<string>();
+    const out: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }> = [];
+    for (const c of await this.projectConnections(projectId)) {
+      if (seen.has(c.app)) continue;
+      seen.add(c.app);
+      for (const a of await this.connectors.listActions(c.app)) out.push({ name: `${c.app}.${a.name}`, description: `${a.irreversible ? "[irreversible — ask the user first] " : ""}${a.description}`, inputSchema: a.inputSchema as Record<string, unknown> });
+    }
+    return out;
+  }
+
+  async callProjectTool(projectId: string, tool: string, input: unknown): Promise<unknown> {
+    const dot = tool.indexOf(".");
+    if (dot < 1) throw new ForgeError("BAD_INPUT", `Tool must be "<app>.<action>", got "${tool}" — use tool="list"`);
+    const app = tool.slice(0, dot);
+    const action = tool.slice(dot + 1);
+    const c = (await this.projectConnections(projectId)).find((r) => r.app === app);
+    if (!c) throw new ForgeError("NOT_FOUND", `No active ${app} connection for this project — connect it in the project's Integrations tab`);
+    const def = (await this.connectors.listActions(app)).find((a) => a.name === action);
+    if (def?.irreversible) throw new ForgeError("BAD_INPUT", `${tool} is irreversible (sends, posts, deletes or pays); the build agent may not run it — ask the user to run it from an agent with approval`);
+    return this.connectors.executeAction({ connectionId: c.externalId ?? c.id, action, input: (input ?? {}) as Record<string, unknown> });
   }
 
   async describe(ref: ToolRef): Promise<{ description: string; inputSchema: Record<string, unknown> }> {

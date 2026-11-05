@@ -12,6 +12,8 @@ export interface BuildQueueDeps {
   events: EventSink;
   usage: DbUsageSink;
   log: Logger;
+  /** The project's connected apps, offered to the build agent as `use_integration` tools. */
+  integrations?: { listProjectTools(projectId: string): Promise<Array<{ name: string; description: string; inputSchema: Record<string, unknown> }>>; callProjectTool(projectId: string, tool: string, input: unknown): Promise<unknown> };
 }
 
 /**

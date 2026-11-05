@@ -49,10 +49,10 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
   const connectorPort: ConnectorPort = {
     provider: connectors.name,
     async listApps(locale) {
-      return integ.CATALOG.map((a) => ({ app: a.slug, name: a.displayName, scopes: integ.describeScopes(a.slug, [], locale) }));
+      return integ.CATALOG.map((a) => ({ app: a.slug, name: a.displayName, category: a.category, scopes: integ.describeScopes(a.slug, [], locale) }));
     },
     async initiate(o) {
-      const r = await connectors.initiateConnection({ workspaceId: o.workspaceId, userId: o.userId, app: o.app, scopes: o.scopes, redirectUrl: o.redirectUrl });
+      const r = await connectors.initiateConnection({ workspaceId: o.workspaceId, projectId: o.projectId, userId: o.userId, app: o.app, scopes: o.scopes, redirectUrl: o.redirectUrl });
       return { connectionId: r.connectionId, redirectUrl: r.redirectUrl, externalId: r.connectionId };
     },
     async status(id) {

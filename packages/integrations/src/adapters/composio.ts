@@ -7,7 +7,7 @@ import { vendorJson } from "./http.js";
 
 export interface ComposioOptions {
   apiKey: string;
-  /** Composio REST API v3 base URL. */
+  /** Composio REST API base URL (default https://backend.composio.dev/api/v3.1). */
   baseUrl?: string;
   /** Pre-created auth config ids per catalog app (otherwise looked up / created with Composio-managed auth). */
   authConfigIds?: Record<string, string>;
@@ -15,9 +15,8 @@ export interface ComposioOptions {
 
 const AuthConfigList = z.object({ items: z.array(z.object({ id: z.string() }).passthrough()).default([]) }).passthrough();
 const AuthConfigCreated = z.object({ auth_config: z.object({ id: z.string() }).passthrough() }).passthrough();
-const ConnectedAccountCreated = z
-  .object({ id: z.string(), redirect_url: z.string().nullish(), redirect_uri: z.string().nullish(), status: z.string().optional() })
-  .passthrough();
+/** POST /connected_accounts/link → hosted Connect Link (Composio handles OAuth / API-key entry). */
+const ConnectLinkCreated = z.object({ redirect_url: z.string(), connected_account_id: z.string(), link_token: z.string().optional(), expires_at: z.string().optional() }).passthrough();
 const ConnectedAccount = z
   .object({
     id: z.string(),
@@ -43,7 +42,16 @@ const STATUS: Record<string, ConnectionInfo["status"]> = {
   FAILED: "failed",
   EXPIRED: "expired",
   INACTIVE: "revoked",
+  REVOKED: "revoked",
 };
+
+/**
+ * Composio scopes connections by `user_id`. A project connection uses the project id, so each project
+ * has its own accounts; a workspace-wide connection uses the workspace id.
+ */
+export function composioUserId(input: { workspaceId: string; projectId?: string }): string {
+  return input.projectId ?? input.workspaceId;
+}
 
 function scopesFrom(v: unknown): string[] {
   if (Array.isArray(v)) return v.map(String);
@@ -51,7 +59,10 @@ function scopesFrom(v: unknown): string[] {
   return [];
 }
 
-/** Composio REST API v3 (auth configs, connected accounts, tools/execute). Auth: `x-api-key`. */
+/**
+ * Composio REST API v3.1 (auth configs, connect links, connected accounts, tools/execute).
+ * Auth: `x-api-key` (project API key from platform.composio.dev → Settings → API keys).
+ */
 export class ComposioConnectorProvider extends CatalogBackedProvider implements ConnectorProvider {
   readonly name = "composio";
   readonly isMock = false;
@@ -61,7 +72,7 @@ export class ComposioConnectorProvider extends CatalogBackedProvider implements 
   constructor(private readonly opts: ComposioOptions) {
     super();
     if (!opts.apiKey) throw new ForgeError("BAD_INPUT", "COMPOSIO_API_KEY is required");
-    this.base = (opts.baseUrl ?? "https://backend.composio.dev/api/v3").replace(/\/$/, "");
+    this.base = (opts.baseUrl ?? "https://backend.composio.dev/api/v3.1").replace(/\/$/, "");
   }
 
   private call<T>(path: string, req: Parameters<typeof vendorJson>[2], schema: z.ZodType<T, z.ZodTypeDef, unknown>): Promise<T> {
@@ -76,7 +87,7 @@ export class ComposioConnectorProvider extends CatalogBackedProvider implements 
     const pre = this.opts.authConfigIds?.[app];
     if (pre) return pre;
     const toolkit = this.toolkit(app);
-    const list = await this.call("/auth_configs", { query: { toolkit_slug: toolkit, limit: 1 } }, AuthConfigList);
+    const list = await this.call("/auth_configs", { query: { toolkit_slug: toolkit, is_composio_managed: "true", limit: 1 } }, AuthConfigList);
     if (list.items[0]) return list.items[0].id;
     const created = await this.call(
       "/auth_configs",
@@ -93,14 +104,12 @@ export class ComposioConnectorProvider extends CatalogBackedProvider implements 
     const app = this.app(input.app);
     const authConfig = await this.authConfigId(app.slug, input.scopes);
     const r = await this.call(
-      "/connected_accounts",
-      { method: "POST", body: { auth_config: { id: authConfig }, connection: { user_id: `${input.workspaceId}:${input.userId}`, callback_url: input.redirectUrl } } },
-      ConnectedAccountCreated,
+      "/connected_accounts/link",
+      { method: "POST", body: { auth_config_id: authConfig, user_id: composioUserId(input), callback_url: input.redirectUrl } },
+      ConnectLinkCreated,
     );
-    const redirectUrl = r.redirect_url ?? r.redirect_uri;
-    if (!redirectUrl) throw new ForgeError("PROVIDER_ERROR", "Composio did not return a redirect URL");
-    this.toolkitByConnection.set(r.id, app.vendor.composio);
-    return { connectionId: r.id, redirectUrl };
+    this.toolkitByConnection.set(r.connected_account_id, app.vendor.composio);
+    return { connectionId: r.connected_account_id, redirectUrl: r.redirect_url };
   }
 
   async getConnection(connectionId: string): Promise<ConnectionInfo> {
