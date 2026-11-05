@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-/** Lazy-loads the WebGL field after the page is idle, so it never competes with first paint. */
+/** Lazy-loads the WebGL field on first interaction, so it never competes with first paint. */
 export function HeroBackdrop() {
   const ref = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -20,12 +20,17 @@ export function HeroBackdrop() {
         stop = startEmberField(canvas, { reducedMotion, onReady: () => setReady(true) });
       });
     };
-    const ric = window.requestIdleCallback as ((cb: () => void, o?: { timeout: number }) => number) | undefined;
-    const handle = ric ? ric(start, { timeout: 2500 }) : window.setTimeout(start, 1200);
+    // Start on the first sign of a person (pointer, touch, scroll, key): the static gradient is the
+    // first paint, and the field never competes with loading or runs for idle/background tabs.
+    const events = ["pointermove", "pointerdown", "touchstart", "scroll", "keydown"] as const;
+    const kick = () => {
+      events.forEach((e) => window.removeEventListener(e, kick));
+      start();
+    };
+    events.forEach((e) => window.addEventListener(e, kick, { passive: true, once: true }));
     return () => {
       cancelled = true;
-      if (ric) window.cancelIdleCallback?.(handle);
-      else window.clearTimeout(handle);
+      events.forEach((e) => window.removeEventListener(e, kick));
       stop?.();
     };
   }, []);

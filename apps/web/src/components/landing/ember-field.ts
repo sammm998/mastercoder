@@ -52,7 +52,8 @@ export interface EmberOptions {
   onReady?: () => void;
 }
 
-export function startEmberField(canvas: HTMLCanvasElement, opts: EmberOptions): () => void {
+export function startEmberField(canvas: HTMLCanvasElement, options: EmberOptions): () => void {
+  let opts = options;
   const gl = canvas.getContext("webgl", { antialias: false, alpha: false, powerPreference: "low-power", preserveDrawingBuffer: false });
   if (!gl) return () => undefined;
   const vs = compile(gl, gl.VERTEX_SHADER, VERT);
@@ -63,6 +64,10 @@ export function startEmberField(canvas: HTMLCanvasElement, opts: EmberOptions): 
   gl.attachShader(prog, fs);
   gl.linkProgram(prog);
   if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return () => undefined;
+  // Without a GPU (software rasterisers) animate nothing: draw one still frame.
+  const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+  const renderer = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
+  if (/swiftshader|llvmpipe|software/i.test(renderer)) opts = { ...opts, reducedMotion: true };
   gl.useProgram(prog);
   const buf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buf);
@@ -112,7 +117,13 @@ export function startEmberField(canvas: HTMLCanvasElement, opts: EmberOptions): 
   let running = false;
   const t0 = performance.now() - 40_000;
   let ready = false;
+  let last = 0;
   const frame = (now: number) => {
+    if (running && now - last < 32) {
+      raf = requestAnimationFrame(frame);
+      return;
+    }
+    last = now;
     mouse = [mouse[0] + (target[0] - mouse[0]) * 0.04, mouse[1] + (target[1] - mouse[1]) * 0.04];
     gl.uniform2f(uM, mouse[0], mouse[1]);
     gl.uniform1f(uT, (now - t0) / 1000);

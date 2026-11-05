@@ -611,3 +611,8 @@ button.tile:hover {
 .log .dim {
   color: #9d9384;
 }
+
+.card.stack,
+.card.stack-lg {
+  align-content: start;
+}

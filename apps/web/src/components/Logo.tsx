@@ -1,10 +1,10 @@
-/** Forge mark: an anvil-cut square with an ember wedge struck out of the corner. */
+/** Forge mark: a bold F cut from a dark block, with an ember spark. */
 export function LogoMark({ title }: { title?: string }) {
   return (
     <svg viewBox="0 0 32 32" role={title ? "img" : undefined} aria-hidden={title ? undefined : true} aria-label={title}>
       <rect x="2" y="2" width="28" height="28" rx="6" fill="currentColor" />
-      <path d="M9 9h14v4.5H14v3h7v4.5h-7V23H9z" fill="var(--bg)" />
-      <path d="M22 18.5 27 23.5V27h-3.5L18.5 22z" fill="var(--accent)" />
+      <path d="M10 8h13v4h-8.5v3H21v4h-6.5v5H10z" fill="var(--bg)" />
+      <path d="M24 17.5l1.4 3.1 3.1 1.4-3.1 1.4-1.4 3.1-1.4-3.1-3.1-1.4 3.1-1.4z" fill="var(--accent)" />
     </svg>
   );
 }

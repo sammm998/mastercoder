@@ -39,9 +39,9 @@
 }
 
 .hero-inner {
-  padding-block: clamp(120px, 18vh, 200px) clamp(40px, 7vh, 88px);
+  padding-block: clamp(72px, 9vh, 128px) clamp(32px, 5vh, 64px);
   display: grid;
-  gap: clamp(28px, 4vw, 56px);
+  gap: clamp(20px, 3vh, 44px);
 }
 
 .hero-eyebrow {
@@ -384,6 +384,10 @@
 
 .estimate-lines dd {
   margin: 0;
+}
+
+.estimate-card .badge {
+  justify-self: start;
 }
 
 .estimate-total {

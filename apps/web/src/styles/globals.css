@@ -753,9 +753,9 @@ a.btn:hover {
   left: var(--space-4);
   right: var(--space-4);
   bottom: var(--space-4);
-  max-width: 560px;
+  max-width: 440px;
   margin-left: auto;
-  padding: var(--space-5);
+  padding: var(--space-4) var(--space-5);
   background: var(--ink);
   color: var(--bg);
   border-radius: var(--radius-3);
