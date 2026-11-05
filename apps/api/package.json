@@ -1,0 +1,42 @@
+{
+  "name": "@forge/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/router-types.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/websocket": "^11.0.2",
+    "@forge/db": "workspace:*",
+    "@forge/llm": "workspace:*",
+    "@forge/shared": "workspace:*",
+    "@trpc/server": "^11.24.0",
+    "bullmq": "^5.34.0",
+    "fastify": "^5.2.0",
+    "ioredis": "^5.4.2",
+    "lib0": "^0.2.99",
+    "nodemailer": "^6.9.16",
+    "superjson": "^2.2.2",
+    "ws": "^8.18.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.21",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "@types/ws": "^8.5.13",
+    "y-websocket": "^3.0.0"
+  }
+}

@@ -329,3 +329,19 @@ export const retentionPolicies = pgTable("retention_policies", {
   transcriptDays: integer("transcript_days").notNull().default(365),
   eventDays: integer("event_days").notNull().default(180),
 });
+
+/** Persisted Yjs document state for realtime collaboration (one doc per project file/room). */
+export const collabDocs = pgTable("collab_docs", {
+  room: text("room").primaryKey(), // `${projectId}:${path}`
+  projectId: text("project_id").notNull(),
+  state: text("state").notNull(), // base64 Yjs update
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
+/** Project files mirror (the sandbox is the source of truth during builds; this is the durable copy). */
+export const projectFiles = pgTable("project_files", {
+  projectId: text("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+  path: text("path").notNull(),
+  content: text("content").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.projectId, t.path] })]);

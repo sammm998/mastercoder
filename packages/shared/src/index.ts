@@ -8,3 +8,4 @@ export * from "./storage.js";
 export * from "./storage-factory.js";
 export * from "./logger.js";
 export * from "./json.js";
+export * from "./queues.js";
