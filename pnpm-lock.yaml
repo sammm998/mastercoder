@@ -214,6 +214,24 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
 
+  packages/billing:
+    dependencies:
+      '@forge/db':
+        specifier: workspace:*
+        version: link:../db
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      stripe:
+        specifier: ^23.1.0
+        version: 23.1.0(@types/node@26.6.6)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+
   packages/db:
     dependencies:
       drizzle-orm:
@@ -226,6 +244,49 @@ importers:
       drizzle-kit:
         specifier: ^0.30.1
         version: 0.30.6
+
+  packages/integrations:
+    dependencies:
+      '@aws-sdk/client-kms':
+        specifier: ^3.716.0
+        version: 3.1162.0
+      '@forge/db':
+        specifier: workspace:*
+        version: link:../db
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.32.2
+        version: 1.32.2(zod@3.25.76)
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/intent-router:
+    dependencies:
+      '@forge/billing':
+        specifier: workspace:*
+        version: link:../billing
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
 
   packages/llm:
     dependencies:
@@ -468,6 +529,10 @@ packages:
 
   '@aws-sdk/checksums@3.1002.2':
     resolution: {integrity: sha512-u57THWR5YOCqjIzg5og8r5dDc54n7hENs2eVy+aw1+Fd+QERa2x72qNlsiMNJI9svSpQp3WevkSKljzIG6x1YA==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-kms@3.1162.0':
+    resolution: {integrity: sha512-CqBLRR7/u0U6xMc8xKct4JTj3eYUakyEV14gLkFw3p7eIgCbeESDGc53Pk8opYsB0lvftqxtKVJpB9C2RPEXQA==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-s3@3.1162.0':
@@ -4479,6 +4544,15 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
 
+  stripe@23.1.0:
+    resolution: {integrity: sha512-fVUfMSfTPoukfoV//MUKAx2+YxyKmYaYtnAL9VkfnHfaPNQylFdWZMD+zgUFerI8rjbaiER8Vzj2XEUQ2AhAsQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@types/node': '>=20'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   style-loader@4.0.0:
     resolution: {integrity: sha512-1V4WqhhZZgjVAVJyt7TdDPZoPBPNHbekX4fWnCJL1yQukhCeZhJySUL+gL9y6sNdN95uEOS83Y55SqHcP7MzLA==}
     engines: {node: '>= 18.12.0'}
@@ -4943,6 +5017,17 @@ snapshots:
       '@aws-sdk/core': 3.980.0
       '@aws-sdk/types': 3.975.0
       '@smithy/core': 3.39.0
+      '@smithy/types': 4.20.0
+      tslib: 2.9.1
+
+  '@aws-sdk/client-kms@3.1162.0':
+    dependencies:
+      '@aws-sdk/core': 3.980.0
+      '@aws-sdk/credential-provider-node': 3.972.93
+      '@aws-sdk/types': 3.975.0
+      '@smithy/core': 3.39.0
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.14.2
       '@smithy/types': 4.20.0
       tslib: 2.9.1
 
@@ -9021,6 +9106,10 @@ snapshots:
   strip-final-newline@2.0.0: {}
 
   strip-json-comments@3.1.1: {}
+
+  stripe@23.1.0(@types/node@26.6.6):
+    optionalDependencies:
+      '@types/node': 26.6.6
 
   style-loader@4.0.0(webpack@5.105.0(esbuild@0.28.1)(postcss@8.5.32)):
     dependencies:
