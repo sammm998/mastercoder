@@ -2,7 +2,7 @@ import { MeteredLLM, type LLMProvider } from "@forge/llm";
 import { BuildAgent, type AgentDeps, type BuildOutcome, type SandboxPort } from "@forge/agent-core";
 import { BuildJobSchema, type BuildJob, type IntentKind } from "@forge/shared";
 import { withSpan, spanEventRecorder } from "@forge/observability";
-import { eq, projects, type Db } from "@forge/db";
+import { desc, eq, projects, projectFiles, tasks, type Db } from "@forge/db";
 import { DbUsageSink, WorkerEventSink, markTaskRunning, settleTask, type Settler, type TaskOutcome } from "../runtime.js";
 
 /** Non-code deliverables handled by dedicated pipelines (media, slides, agent builder, Q&A). */
@@ -27,6 +27,22 @@ export interface BuildJobDeps {
   isCancelled(taskId: string): Promise<boolean>;
 }
 
+/** Earlier requests (oldest first, with outcome) and the project's files, for follow-up prompts. */
+export async function projectHistory(db: Db, projectId: string, currentTaskId: string): Promise<{ text: string; fileCount: number }> {
+  const files = await db.select({ path: projectFiles.path }).from(projectFiles).where(eq(projectFiles.projectId, projectId));
+  const rows = await db
+    .select({ id: tasks.id, prompt: tasks.prompt, status: tasks.status, failureReason: tasks.failureReason })
+    .from(tasks)
+    .where(eq(tasks.projectId, projectId))
+    .orderBy(desc(tasks.createdAt))
+    .limit(9);
+  const earlier = rows.filter((r) => r.id !== currentTaskId).slice(0, 8).reverse();
+  const lines = earlier.map((r) => `- [${r.status}] ${r.prompt.replace(/\s+/g, " ").slice(0, 300)}${r.failureReason ? ` (failed: ${r.failureReason.slice(0, 160)})` : ""}`);
+  const real = files.map((f) => f.path).filter((p) => !/(^|\/)(node_modules|dist|\.next)(\/|$)/.test(p));
+  const text = [lines.length ? `Earlier requests:\n${lines.join("\n")}` : "", real.length ? `Files (${real.length}): ${real.slice(0, 80).join(", ")}` : ""].filter(Boolean).join("\n");
+  return { text, fileCount: real.length };
+}
+
 const CODE: IntentKind[] = ["app", "website", "mobile", "backend"];
 
 export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outcome: TaskOutcome; build?: BuildOutcome; chargedUsd: number }> {
@@ -46,6 +62,7 @@ export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outc
         const sandbox = await d.sandboxFor(job.projectId, job.workspaceId);
         const ports = await d.agentPorts(job, sandbox);
         const [project] = await d.db.select().from(projects).where(eq(projects.id, job.projectId));
+        const ctx = await projectHistory(d.db, job.projectId, job.taskId);
         build = await new BuildAgent({ ...ports, llm, events: d.events, usage, sandbox, isCancelled: () => d.isCancelled(job.taskId) }).run({
           taskId: job.taskId,
           projectId: job.projectId,
@@ -55,7 +72,9 @@ export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outc
           planMode: job.planMode,
           approvedSpec: job.approvedSpec,
           brand: project?.brand ?? undefined,
-          existingProject: Boolean(project?.template),
+          // A project that already has files is a follow-up even if its first build did not finish.
+          existingProject: Boolean(project?.template) || ctx.fileCount > 0,
+          history: ctx.text || undefined,
         });
         if (build.status === "succeeded" && build.template && !project?.template) await d.db.update(projects).set({ template: build.template }).where(eq(projects.id, job.projectId));
         outcome = build.status === "succeeded" ? "succeeded" : build.status === "awaiting_approval" ? "awaiting_approval" : build.status === "cancelled" ? "cancelled_by_user" : "failed_agent_error";

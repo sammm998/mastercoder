@@ -29,7 +29,14 @@ export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, inp
   if (input.mode === "chat") return createChatTask(ctx, project, input.prompt, input.source);
   const classifier = getService<IntentClassifier>(ctx.deps.services, "intent");
   if (!classifier) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intent router not configured" });
-  const result = await classifier.classify(input.prompt, { source: input.source });
+  // Follow-ups are classified with the project's history, so "analyse it" / "make it nicer" stay in context.
+  const earlier = await ctx.deps.db.select({ prompt: tasks.prompt, intents: tasks.intents }).from(tasks).where(eq(tasks.projectId, project.id)).orderBy(desc(tasks.createdAt)).limit(8);
+  const BUILD = ["app", "website", "mobile", "backend"];
+  const projectKind = earlier.flatMap((r) => ((r.intents as Intent[] | null) ?? []).map((i) => i.kind)).find((k) => BUILD.includes(k));
+  const result = await classifier.classify(input.prompt, {
+    source: input.source,
+    ...(earlier.length ? { project: { kind: projectKind, template: project.template ?? undefined, previousPrompts: earlier.map((r) => r.prompt).reverse() } } : {}),
+  });
   const spend = getService<SpendChecker>(ctx.deps.services, "spend");
   if (spend) await spend.check({ userId: ctx.user.id, workspaceId: project.workspaceId }, result.estimate.highUsd);
 

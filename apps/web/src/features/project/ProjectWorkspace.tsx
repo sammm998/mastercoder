@@ -35,6 +35,7 @@ const TAB_ICON = { preview: "eye", run: "users", code: "code", comments: "commen
 const WRITE_ROLES = new Set(["owner", "admin", "editor"]);
 const ROLES = ["owner", "admin", "editor", "viewer"];
 const CHAT_W_KEY = "forge.chatWidth";
+const CHAT_OPEN_KEY = "forge.chatOpen";
 const CHAT_MIN = 320;
 const CHAT_MAX = 760;
 
@@ -63,6 +64,23 @@ export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projec
   const [tab, setTab] = useState<Tab>(initialTab);
   const [visited, setVisited] = useState<Set<Tab>>(() => new Set([initialTab]));
   const [pane, setPane] = useState<"agent" | "workspace">("agent");
+  const [chatOpen, setChatOpen] = useState(true);
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(CHAT_OPEN_KEY) === "0") setChatOpen(false);
+    } catch {
+      /* storage unavailable: keep the chat open */
+    }
+  }, []);
+  const toggleChat = () =>
+    setChatOpen((open) => {
+      try {
+        window.localStorage.setItem(CHAT_OPEN_KEY, open ? "0" : "1");
+      } catch {
+        /* not persisted */
+      }
+      return !open;
+    });
   const [mode, setMode] = useState<PreviewMode>("browse");
   const [selection, setSelection] = useState<ForgeSelectMessage | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -219,7 +237,7 @@ export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projec
       </header>
       {!canWrite && <p className="notice ws-readonly">{t("project.readOnly")}</p>}
       <ErrorNotice error={setPublic.error ?? remix.error} compact />
-      <div className="ws-body" ref={bodyRef} style={chatW ? { ["--chat-w" as string]: `${chatW}px` } : undefined}>
+      <div className="ws-body" ref={bodyRef} data-chat={chatOpen ? "open" : "closed"} style={chatW ? { ["--chat-w" as string]: `${chatW}px` } : undefined}>
         <ChatPanel projectId={projectId} events={events} socket={state} canWrite={canWrite} onRestore={restore.run} />
         <div
           className="ws-resize"
@@ -236,6 +254,19 @@ export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projec
         />
         <section className="ws-main" aria-label={t("project.tabs.label")}>
           <div className="ws-tabbar">
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost btn-icon ws-chat-toggle"
+              aria-expanded={chatOpen}
+              aria-label={chatOpen ? t("project.chatHide") : t("project.chatShow")}
+              title={chatOpen ? t("project.chatHide") : t("project.chatShow")}
+              onClick={toggleChat}
+              data-testid="chat-toggle"
+            >
+              <span className="ws-chat-toggle-icon" data-open={chatOpen}>
+                <Icon name="chevron" size={16} />
+              </span>
+            </button>
             <div className="tabs ws-tabs" role="tablist" aria-label={t("project.tabs.label")}>
               {TABS.map((x) => (
                 <button key={x} type="button" role="tab" id={`tab-${x}`} aria-controls={`panel-${x}`} className="tab" aria-selected={tab === x} onClick={() => pick(x)} data-testid={`tab-${x}`}>

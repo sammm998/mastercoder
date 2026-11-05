@@ -32,6 +32,9 @@ export const meetingsRouter = router({
     .input(z.object({ workspaceId: z.string(), projectId: z.string().optional(), meetingUrl: z.string().url().max(2000), title: z.string().max(200).optional(), language: z.enum(["sv", "en"]).default("sv") }))
     .mutation(async ({ ctx, input }) => {
       await requireWorkspace(ctx, input.workspaceId, "project.write");
+      // Without a real bot provider nothing can join the call: say so instead of showing "Recording" forever.
+      if ((process.env.MEETING_BOT_PROVIDER ?? "mock") === "mock" && process.env.NODE_ENV === "production" && process.env.MEETINGS_ALLOW_MOCK_BOT !== "1")
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No meeting bot provider is configured (MEETING_BOT_PROVIDER), so the notetaker cannot join real calls. Record in person or import a transcript instead." });
       const parsed = requireService<MeetingUrlParser>(ctx.deps.services, "meetingUrls").parse(input.meetingUrl);
       if (!parsed) throw new TRPCError({ code: "BAD_REQUEST", message: "Not a Zoom, Teams or Google Meet link" });
       const id = newId("mtg");

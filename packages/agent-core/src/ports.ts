@@ -169,4 +169,6 @@ export interface BuildInput {
   brand?: unknown;
   /** True when the sandbox already holds a project (follow-up prompt). */
   existingProject?: boolean;
+  /** Earlier requests in this project (oldest first), so follow-ups are understood in context. */
+  history?: string;
 }

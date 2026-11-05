@@ -102,7 +102,7 @@ export class BuildAgent {
     } else {
       const hint = input.intents.find((i) => i.hint)?.hint;
       const templateHint = deps.templates.select(kind, hint);
-      const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, kind, templateHint });
+      const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, kind, templateHint });
       spec = p.spec;
       extraCost += p.costUsd;
     }
@@ -146,7 +146,8 @@ export class BuildAgent {
 
     // ---------- DESIGN ----------
     let designDirection = "";
-    if (deps.design && kind !== "backend") {
+    // Follow-ups keep the existing design: re-composing would overwrite the user's site.
+    if (deps.design && kind !== "backend" && !input.existingProject) {
       phase("design");
       team("scoutr", "pixel", "asking", "design", "team.design.ask", {}, "Pixel, can you set the art direction?");
       // A design-engine failure never ends the build: the builder designs from the plan instead.
@@ -248,7 +249,7 @@ export class BuildAgent {
           docs = hits.map((h) => `${h.title} ${h.url}\n${h.snippet}`).join("\n\n");
         }
         if (d.strategy === "replan") {
-          const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, kind, templateHint: templateId, failureContext: failureText.slice(0, 4000) });
+          const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, kind, templateHint: templateId, failureContext: failureText.slice(0, 4000) });
           spec = p.spec;
           extraCost += p.costUsd;
           ev({ type: "plan.ready", ...base, spec, requiresApproval: false });
@@ -261,7 +262,7 @@ export class BuildAgent {
     // ---------- BUILD ----------
     phase("build");
     team("scoutr", "byggo", "asking", "build", "team.build.ask", { tasks: spec.tasks.length || spec.userStories.length }, "Byggo, can you build it from the plan?");
-    const built = await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
+    const built = await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
     phaseDone("build");
     team("byggo", "scoutr", built.toolErrors.length ? "failed" : "done", "build", "team.build.done", { files: touched.size, tools: built.toolCalls }, `Done ✓ ${touched.size} files written with ${built.toolCalls} tool calls — over to Vakt for checks`);
     if (deps.isCancelled && (await deps.isCancelled())) return { status: "cancelled", charged: false, spec, summary: "Cancelled by user", costUsd: cost(), fixIterations: 0 };

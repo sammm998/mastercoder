@@ -35,7 +35,14 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     const [p] = await d.db.select().from(projects).where(eq(projects.id, projectId));
     const existing = p?.sandboxId ? await sandboxes.get(p.sandboxId) : null;
     const sb = existing ?? (await sandboxes.create({ projectId }));
-    if (!existing) await d.db.update(projects).set({ sandboxId: sb.id }).where(eq(projects.id, projectId));
+    if (!existing) {
+      await d.db.update(projects).set({ sandboxId: sb.id }).where(eq(projects.id, projectId));
+      // A fresh sandbox (e.g. after a worker restart) starts from the project's saved files, so follow-up
+      // prompts edit the existing project instead of an empty directory.
+      const saved = await d.db.select({ path: projectFiles.path, content: projectFiles.content }).from(projectFiles).where(eq(projectFiles.projectId, projectId));
+      for (const f of saved) await sb.writeFile(f.path, f.content);
+      if (saved.length) d.log.info("sandbox restored from saved files", { projectId, files: saved.length });
+    }
     live.set(projectId, sb);
     return sb;
   };

@@ -21,10 +21,13 @@ export interface PlanInput {
   templateHint?: string;
   /** Extra context when re-planning after repeated failures. */
   failureContext?: string;
+  /** Earlier requests and the current files when this is a follow-up in an existing project. */
+  projectContext?: string;
 }
 
 export async function plan(llm: LLMProvider, input: PlanInput): Promise<{ spec: Spec; costUsd: number }> {
   const user = [
+    input.projectContext ? `This is a FOLLOW-UP in an existing project. Keep what exists and plan only the change the request asks for (keep the same kind, template and title unless the user asks otherwise).\n${input.projectContext}` : "",
     `Request:\n${input.prompt}`,
     `Detected intents: ${input.intents.map((i) => `${i.kind}${i.hint ? `(${i.hint})` : ""}`).join(", ") || "none"}`,
     `Primary kind: ${input.kind}${input.templateHint ? `; template: ${input.templateHint}` : ""}`,

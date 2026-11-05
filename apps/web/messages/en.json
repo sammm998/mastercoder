@@ -885,7 +885,9 @@
       "deleted": "deleted",
       "idleTitle": "Nothing is running",
       "idleBody": "Describe what you want in the agent panel. The team's progress, the files being written and the live preview show up here."
-    }
+    },
+    "chatHide": "Hide chat",
+    "chatShow": "Show chat"
   },
   "deploy": {
     "title": "Deploy",

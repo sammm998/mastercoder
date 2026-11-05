@@ -17,7 +17,7 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
   const billing = await import("@forge/billing");
   const classifier: IntentClassifier = {
     async classify(prompt, opts) {
-      const r = await intent.classify(prompt, { llm: deps.llm, source: opts.source, usage: deps.usage });
+      const r = await intent.classify(prompt, { llm: deps.llm, source: opts.source, usage: deps.usage, project: opts.project });
       return { intents: r.intents, needsClarification: r.needsClarification, question: r.question, options: r.options, estimate: r.estimate, language: r.language };
     },
   };

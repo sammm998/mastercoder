@@ -84,7 +84,8 @@ consume(QUEUES.meetingBot, async (job) => {
   const p = MeetingBotJobSchema.parse(job.data);
   const r = await runMeetingBot(p, meetingDeps);
   // Keep polling bots that are still in the meeting.
-  if (p.action !== "leave" && !["ready", "left", "error"].includes(r.status)) await botQueue.add("poll", { ...p, action: "poll" }, { delay: 30_000 });
+  if (p.action === "leave") await botQueue.add("poll", { ...p, action: "poll" }, { delay: 5_000 });
+  else if (!["ready", "error"].includes(r.status)) await botQueue.add("poll", { ...p, action: "poll" }, { delay: r.status === "left" ? 5_000 : 30_000 });
   return r;
 });
 

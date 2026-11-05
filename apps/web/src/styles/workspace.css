@@ -57,6 +57,32 @@
   overflow: hidden;
 }
 
+.ws-body[data-chat="closed"] {
+  grid-template-columns: 0 0 minmax(0, 1fr);
+}
+.ws-body[data-chat="closed"] > .chat,
+.ws-body[data-chat="closed"] > .ws-resize {
+  visibility: hidden;
+  overflow: hidden;
+}
+.ws-tabbar .ws-chat-toggle {
+  flex: none;
+  margin-right: var(--space-2);
+}
+.ws-chat-toggle-icon {
+  display: inline-flex;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+/* Chevron points left ("collapse") when open, right ("expand") when closed. */
+.ws-chat-toggle-icon[data-open="true"] {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ws-chat-toggle-icon {
+    transition: none;
+  }
+}
+
 .ws-resize {
   position: relative;
   cursor: col-resize;
@@ -137,8 +163,15 @@
   .ws-body {
     grid-template-columns: minmax(0, 1fr);
   }
-  .ws-resize {
+  .ws-resize,
+  .ws-tabbar .ws-chat-toggle {
     display: none;
+  }
+  .ws-body[data-chat="closed"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ws-body[data-chat="closed"] > .chat {
+    visibility: visible;
   }
   .ws[data-pane="agent"] .ws-main,
   .ws[data-pane="workspace"] .chat {

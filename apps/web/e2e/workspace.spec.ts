@@ -52,3 +52,20 @@ test("composer: Build / Plan / Chat modes change the placeholder", async ({ page
   await input.fill("Hej");
   await expect(page.getByTestId("prompt-submit")).toBeEnabled();
 });
+
+test("the agent chat can be hidden and shown again, and the choice is remembered", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signup(page, { name: "Ada Lind", email: uniqueEmail("chat-toggle") });
+  await page.getByTestId("new-project-name").fill("Toggle");
+  await page.getByTestId("new-project-submit").click();
+  await expect(page).toHaveURL(/\/app\/p\/prj_/);
+  const toggle = page.getByTestId("chat-toggle");
+  await expect(page.getByTestId("prompt-input")).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByTestId("prompt-input")).toBeHidden();
+  await page.reload();
+  await expect(page.getByTestId("chat-toggle")).toHaveAttribute("aria-expanded", "false");
+  await page.getByTestId("chat-toggle").click();
+  await expect(page.getByTestId("prompt-input")).toBeVisible();
+});

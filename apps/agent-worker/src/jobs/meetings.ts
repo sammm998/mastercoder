@@ -64,10 +64,22 @@ export async function runMeetingBot(input: { meetingId: string; action: "join" |
   }
   if (!m.externalBotId) throw new ForgeError("BAD_INPUT", "No bot for this meeting");
   if (input.action === "leave") {
-    await d.bots.leave(m.externalBotId);
+    // The bot leaves; the next poll fetches the transcript and processes it.
+    await d.bots.leave(m.externalBotId).catch(() => undefined);
+    await d.db.update(meetings).set({ status: "processing" }).where(eq(meetings.id, m.id));
+    emitStatus(d, m, "processing");
     return { status: "left" };
   }
-  const s = await d.bots.getStatus(m.externalBotId);
+  let s: Awaited<ReturnType<MeetingBotProvider["getStatus"]>>;
+  try {
+    s = await d.bots.getStatus(m.externalBotId);
+  } catch (e) {
+    // The provider no longer knows this bot (e.g. a simulated bot lost on restart): stop, don't hang on "recording".
+    if ((e as { code?: string }).code !== "NOT_FOUND" && !d.bots.isMock) throw e;
+    await d.db.update(meetings).set({ status: "failed" }).where(eq(meetings.id, m.id));
+    emitStatus(d, m, "failed");
+    return { status: "error" };
+  }
   if (s.status === "done" || s.status === "left") {
     const t = await d.bots.getTranscript(m.externalBotId);
     await runTranscription({ meetingId: m.id, language: m.language, transcript: t.segments.map((x) => `${x.speaker ?? "Speaker"}: ${x.text}`).join("\n") || t.text }, d);

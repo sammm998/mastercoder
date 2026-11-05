@@ -12,6 +12,14 @@ function round(req: CompletionRequest): number {
 }
 const call = (id: string, name: string, inp: unknown): ContentBlock => ({ type: "tool_use", id, name, input: inp });
 
+/** Sandbox whose dev server "answers" the preview probe, so website builds don't wait on a real port. */
+function previewSandbox(): TempDirSandbox {
+  const sb = new TempDirSandbox();
+  const exec = sb.exec.bind(sb);
+  sb.exec = (cmd, opts) => (cmd.startsWith("curl ") ? Promise.resolve({ exitCode: 0, stdout: "200", stderr: "", durationMs: 1, timedOut: false }) : cmd.startsWith("nohup ") ? Promise.resolve({ exitCode: 0, stdout: "", stderr: "", durationMs: 1, timedOut: false }) : exec(cmd, opts));
+  return sb;
+}
+
 function deps(llm: MockLLMProvider, sandbox = new TempDirSandbox()): AgentDeps & { bus: EventBus } {
   const bus = new EventBus();
   return { llm, events: bus, usage: new MemoryUsageSink(), sandbox, templates: fakeTemplates, gates: testGates, bus };
@@ -136,12 +144,34 @@ describe("design engine failure", () => {
       const last = req.messages[req.messages.length - 1];
       return last?.role === "user" && typeof last.content === "string" ? [call(`w${req.messages.length}`, "write_file", { path: "src/math.js", content: "export const add = (a, b) => a + b;\n" })] : "Built.";
     });
-    const d = deps(llm);
+    const d = deps(llm, previewSandbox());
     const design = { artDirection: async () => { throw new Error("Structured output failed for design.copy: story.steps"); } };
     const out = await new BuildAgent({ ...d, design } as AgentDeps).run({ ...input, intents: [{ kind: "website" as const, confidence: 0.9, summary: "site" }] });
     expect(out.status).toBe("succeeded");
     expect(d.bus.ofType("team.message").some((m) => m.key === "team.design.fallback")).toBe(true);
     expect(d.bus.ofType("message").map((m) => m.text).join("\n")).toMatch(/Design engine failed, continuing without it/);
+  });
+});
+
+describe("follow-up prompts", () => {
+  it("edits the existing project: no re-scaffold, no design re-compose, history in the build prompt", async () => {
+    const sb = previewSandbox();
+    await sb.writeFile("src/math.js", "export const add = (a, b) => a + b;\n");
+    await sb.writeFile("test.js", 'import { add } from "./src/math.js"; if (add(2, 3) !== 5) process.exit(1);');
+    const prompts: string[] = [];
+    const llm = new MockLLMProvider().on("agent.build", (req) => {
+      const last = req.messages[req.messages.length - 1];
+      if (last?.role === "user" && typeof last.content === "string") prompts.push(last.content);
+      return "Updated.";
+    });
+    let designed = false;
+    const d = deps(llm, sb);
+    const design = { artDirection: async () => ((designed = true), { directionName: "x", tokensCss: "", tokens: {} }) };
+    const out = await new BuildAgent({ ...d, design } as AgentDeps).run({ ...input, prompt: "make the header blue", existingProject: true, history: "Earlier requests:\n- [failed] Build me a new website for https://remanis.se/" });
+    expect(out.status).toBe("succeeded");
+    expect(designed).toBe(false);
+    expect(d.bus.ofType("file.changed").filter((e) => e.change === "created")).toHaveLength(0);
+    expect(prompts[0]).toMatch(/Earlier in this project[\s\S]*remanis\.se[\s\S]*Follow-up request\nmake the header blue/);
   });
 });
 

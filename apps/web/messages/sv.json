@@ -885,7 +885,9 @@
       "deleted": "raderad",
       "idleTitle": "Inget körs just nu",
       "idleBody": "Beskriv vad du vill ha i agentpanelen. Teamets framsteg, filerna som skrivs och live-förhandsvisningen visas här."
-    }
+    },
+    "chatHide": "Dölj chatten",
+    "chatShow": "Visa chatten"
   },
   "deploy": {
     "title": "Driftsättning",
