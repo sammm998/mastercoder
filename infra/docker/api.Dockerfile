@@ -5,7 +5,7 @@ ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true NODE_ENV=production
 RUN corepack enable
 WORKDIR /app
 COPY . .
-RUN pnpm install --frozen-lockfile --prod=false
+RUN pnpm install --frozen-lockfile --prod=false --filter "@forge/api..." && pnpm store prune
 ARG SERVICE=api
 ENV SERVICE=${SERVICE}
 # Default to local object storage + mock providers unless the Railway variables say otherwise.
