@@ -1,0 +1,24 @@
+/* Split-text reveal: words translate up from a clip mask (transform only). */
+.split__mask {
+  display: inline-block;
+  overflow: clip;
+  overflow-clip-margin: 0.12em;
+  vertical-align: top;
+}
+.split__word {
+  display: inline-block;
+}
+.split__em {
+  color: var(--color-accent);
+  font-style: italic;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .split[data-motion="css"] .split__word {
+    transform: translateY(110%);
+    transition: transform var(--dur-slow) var(--ease);
+    transition-delay: calc(var(--i, 0) * var(--stagger));
+  }
+  .split[data-motion="css"].is-revealed .split__word {
+    transform: none;
+  }
+}

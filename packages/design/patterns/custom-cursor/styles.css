@@ -1,0 +1,28 @@
+/* Custom cursor ring — decorative, never blocks clicks, hidden for touch and reduced motion. */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 2rem;
+  height: 2rem;
+  border: 1.5px solid var(--color-accent);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 90;
+  opacity: 0;
+  mix-blend-mode: difference;
+  will-change: transform;
+}
+.cursor[data-visible="true"] {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cursor {
+    transition: opacity var(--dur-fast) var(--ease);
+  }
+}
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .cursor {
+    display: none;
+  }
+}

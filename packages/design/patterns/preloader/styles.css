@@ -1,0 +1,45 @@
+/* Preloader curtain: fixed overlay that never captures input; leaves with a transform wipe. */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: var(--space-6) var(--grid-margin);
+  background: var(--color-text);
+  color: var(--color-bg);
+  pointer-events: none;
+  transform-origin: top;
+}
+.preloader__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.preloader__count {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  font-variant-numeric: tabular-nums;
+}
+.preloader__bar {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 3px;
+  background: var(--color-accent);
+  transform-origin: left;
+}
+.preloader.is-leaving {
+  transform: translateY(-100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .preloader {
+    transition: transform var(--dur-slow) var(--ease);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
+}

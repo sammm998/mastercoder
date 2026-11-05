@@ -1,0 +1,14 @@
+/* Parallax layers — fixed-size stage, layers absolutely stacked, transform-only motion. */
+.parallax {
+  position: relative;
+  min-height: clamp(28rem, 80vh, 52rem);
+  overflow: clip;
+  isolation: isolate;
+}
+.parallax__layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  will-change: transform;
+}

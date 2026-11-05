@@ -1,0 +1,275 @@
+{
+  "generatedAt": "2026-11-05T12:54:16.813Z",
+  "note": "Heuristic critic = browser-measured metrics mapped to the checklist (no vision model; LLM_PROVIDER=mock). Lighthouse mobile preset (Lighthouse defaults: Moto G Power emulation, simulated slow 4G, 4x CPU throttle).",
+  "limits": {
+    "visualQA": 8,
+    "performance": 85,
+    "accessibility": 90
+  },
+  "allPassed": true,
+  "sites": [
+    {
+      "id": "ebike-landing",
+      "kind": "landing",
+      "direction": {
+        "name": "Voltage Noir",
+        "display": "Unbounded",
+        "body": "Onest",
+        "motion": "Liquid flow",
+        "scheme": "dark"
+      },
+      "patterns": [
+        "hero-3d",
+        "magnetic-button",
+        "split-text",
+        "bento-grid",
+        "sticky-story",
+        "animated-counter",
+        "marquee",
+        "motion-reveal",
+        "custom-cursor"
+      ],
+      "visualQA": {
+        "score": 9.5,
+        "critic": "heuristic",
+        "criteria": {
+          "hierarchy": 10,
+          "spacing": 9.8,
+          "contrast": 10,
+          "rhythm": 8,
+          "motion": 9,
+          "originality": 10
+        },
+        "passed": true,
+        "suggestions": []
+      },
+      "lighthouse": {
+        "preset": "mobile",
+        "runs": [
+          {
+            "performance": 97,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "preset": "mobile",
+            "metrics": {
+              "fcpMs": 761,
+              "lcpMs": 761,
+              "tbtMs": 70,
+              "cls": 0.103,
+              "speedIndexMs": 961
+            },
+            "lighthouseVersion": "13.6.0"
+          }
+        ],
+        "best": {
+          "performance": 97,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100,
+          "preset": "mobile",
+          "metrics": {
+            "fcpMs": 761,
+            "lcpMs": 761,
+            "tbtMs": 70,
+            "cls": 0.103,
+            "speedIndexMs": 961
+          },
+          "lighthouseVersion": "13.6.0"
+        },
+        "passed": true
+      },
+      "screenshots": [
+        {
+          "viewport": 375,
+          "bytes": 550260
+        },
+        {
+          "viewport": 768,
+          "bytes": 978949
+        },
+        {
+          "viewport": 1440,
+          "bytes": 1228215,
+          "video": true
+        }
+      ],
+      "buildMs": 19182
+    },
+    {
+      "id": "architect-portfolio",
+      "kind": "portfolio",
+      "direction": {
+        "name": "Quiet Monument",
+        "display": "Instrument Serif",
+        "body": "Inter Tight",
+        "motion": "Editorial glide",
+        "scheme": "light"
+      },
+      "patterns": [
+        "parallax-layers",
+        "magnetic-button",
+        "sticky-story",
+        "image-distortion",
+        "page-transition",
+        "split-text",
+        "horizontal-scroll",
+        "marquee",
+        "motion-reveal"
+      ],
+      "visualQA": {
+        "score": 9.8,
+        "critic": "heuristic",
+        "criteria": {
+          "hierarchy": 10,
+          "spacing": 10,
+          "contrast": 10,
+          "rhythm": 9,
+          "motion": 10,
+          "originality": 10
+        },
+        "passed": true,
+        "suggestions": []
+      },
+      "lighthouse": {
+        "preset": "mobile",
+        "runs": [
+          {
+            "performance": 91,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "preset": "mobile",
+            "metrics": {
+              "fcpMs": 861,
+              "lcpMs": 861,
+              "tbtMs": 379,
+              "cls": 0,
+              "speedIndexMs": 2359
+            },
+            "lighthouseVersion": "13.6.0"
+          }
+        ],
+        "best": {
+          "performance": 91,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100,
+          "preset": "mobile",
+          "metrics": {
+            "fcpMs": 861,
+            "lcpMs": 861,
+            "tbtMs": 379,
+            "cls": 0,
+            "speedIndexMs": 2359
+          },
+          "lighthouseVersion": "13.6.0"
+        },
+        "passed": true
+      },
+      "screenshots": [
+        {
+          "viewport": 375,
+          "bytes": 349171
+        },
+        {
+          "viewport": 768,
+          "bytes": 478739
+        },
+        {
+          "viewport": 1440,
+          "bytes": 740151,
+          "video": true
+        }
+      ],
+      "buildMs": 13314
+    },
+    {
+      "id": "fintech-launch",
+      "kind": "landing",
+      "direction": {
+        "name": "Signal Grid",
+        "display": "Space Grotesk",
+        "body": "IBM Plex Sans",
+        "motion": "Mechanical precision",
+        "scheme": "light"
+      },
+      "patterns": [
+        "parallax-layers",
+        "magnetic-button",
+        "split-text",
+        "horizontal-scroll",
+        "bento-grid",
+        "animated-counter",
+        "marquee",
+        "motion-reveal"
+      ],
+      "visualQA": {
+        "score": 9.7,
+        "critic": "heuristic",
+        "criteria": {
+          "hierarchy": 10,
+          "spacing": 9.9,
+          "contrast": 10,
+          "rhythm": 8,
+          "motion": 10,
+          "originality": 10
+        },
+        "passed": true,
+        "suggestions": []
+      },
+      "lighthouse": {
+        "preset": "mobile",
+        "runs": [
+          {
+            "performance": 97,
+            "accessibility": 100,
+            "bestPractices": 100,
+            "seo": 100,
+            "preset": "mobile",
+            "metrics": {
+              "fcpMs": 768,
+              "lcpMs": 768,
+              "tbtMs": 189,
+              "cls": 0,
+              "speedIndexMs": 781
+            },
+            "lighthouseVersion": "13.6.0"
+          }
+        ],
+        "best": {
+          "performance": 97,
+          "accessibility": 100,
+          "bestPractices": 100,
+          "seo": 100,
+          "preset": "mobile",
+          "metrics": {
+            "fcpMs": 768,
+            "lcpMs": 768,
+            "tbtMs": 189,
+            "cls": 0,
+            "speedIndexMs": 781
+          },
+          "lighthouseVersion": "13.6.0"
+        },
+        "passed": true
+      },
+      "screenshots": [
+        {
+          "viewport": 375,
+          "bytes": 270883
+        },
+        {
+          "viewport": 768,
+          "bytes": 350488
+        },
+        {
+          "viewport": 1440,
+          "bytes": 499190,
+          "video": true
+        }
+      ],
+      "buildMs": 9368
+    }
+  ]
+}

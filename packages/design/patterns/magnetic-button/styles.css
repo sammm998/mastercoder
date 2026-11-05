@@ -1,0 +1,36 @@
+/* Magnetic button — transform-only drift, AA colours from tokens, >=48px target. */
+.magnetic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  min-width: 3rem;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-button, var(--radius-2));
+  font: 600 var(--step-0) / 1 var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.magnetic--solid {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+.magnetic--ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+.magnetic__label {
+  display: inline-block;
+}
+.magnetic:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .magnetic,
+  .magnetic__label {
+    transition: transform var(--dur-base) var(--ease);
+  }
+}
