@@ -47,3 +47,11 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - Railway deploy: docs/deploy/railway.md, railway.json (api), apps/agent-worker/railway.json; api image verified locally (/health ok)
 - Wave 1 (W1-A..F), W3-C web, W3-D/E admin+mobile running as worktree subagents; merge each when its report arrives.
 - Lead is building agent-core (W2-A) against its own ports so it does not block on wave 1.
+
+## Production hardening (Railway, real Claude) — 2026-11-05
+- [x] Live preview while building (dev server starts as soon as a UI exists; node-based probe; worker image has curl, git, Chromium + libs)
+- [x] Follow-up prompts keep project context (router, planner, builder); fresh sandboxes restored from saved files
+- [x] Design proposals (3 directions as mock-ups, pick one to build) and multi-question clarifications with own answers
+- [x] Per-project integrations, Composio v3.1 connect links; redesigned catalog
+- [x] Cost: incremental prompt caching in tool loops, planner on Sonnet, browser gates that cannot run are skipped (not "fixed").
+      Live test website build: 432 s, $0.87 model cost, preview after 79 s, all gates green (was $5.09).
