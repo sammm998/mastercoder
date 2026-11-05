@@ -173,6 +173,9 @@ export const agentRuns = pgTable("agent_runs", {
   status: text("status").notNull(), // running | awaiting_approval | succeeded | failed
   input: jsonb("input"),
   log: jsonb("log").notNull().default([]),
+  /** Resumable runner state (conversation + pending irreversible call) while awaiting approval. */
+  state: jsonb("state"),
+  output: text("output"),
   costUsd: doublePrecision("cost_usd").notNull().default(0),
   startedAt: ts("started_at").notNull().defaultNow(),
   endedAt: ts("ended_at"),
@@ -345,3 +348,11 @@ export const projectFiles = pgTable("project_files", {
   content: text("content").notNull(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 }, (t) => [primaryKey({ columns: [t.projectId, t.path] })]);
+
+/** Long-term memory for user agents (key/value per agent). */
+export const agentMemory = pgTable("agent_memory", {
+  agentId: text("agent_id").notNull().references(() => userAgents.id, { onDelete: "cascade" }),
+  key: text("key").notNull(),
+  value: jsonb("value").notNull(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+}, (t) => [primaryKey({ columns: [t.agentId, t.key] })]);

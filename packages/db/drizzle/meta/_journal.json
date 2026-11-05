@@ -15,6 +15,20 @@
       "when": 1793879206255,
       "tag": "0001_collab",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793880984280,
+      "tag": "0002_agent_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793881034997,
+      "tag": "0003_agent_run_state",
+      "breakpoints": true
     }
   ]
 }
