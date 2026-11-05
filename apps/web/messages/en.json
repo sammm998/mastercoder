@@ -1276,7 +1276,8 @@
     },
     "design": {
       "ask": "Pixel, can you set the art direction?",
-      "done": "Done ✓ art direction “{direction}”, {files, plural, one {# file} other {# files}} composed — back to you, Scoutr"
+      "done": "Done ✓ art direction “{direction}”, {files, plural, one {# file} other {# files}} composed — back to you, Scoutr",
+      "fallback": "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan."
     },
     "build": {
       "ask": "Byggo, can you build it from the plan? ({tasks, plural, one {# task} other {# tasks}})",

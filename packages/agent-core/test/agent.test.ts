@@ -130,6 +130,21 @@ describe("BuildAgent", () => {
   });
 });
 
+describe("design engine failure", () => {
+  it("continues the build without the design engine instead of failing", async () => {
+    const llm = new MockLLMProvider().on("agent.build", (req) => {
+      const last = req.messages[req.messages.length - 1];
+      return last?.role === "user" && typeof last.content === "string" ? [call(`w${req.messages.length}`, "write_file", { path: "src/math.js", content: "export const add = (a, b) => a + b;\n" })] : "Built.";
+    });
+    const d = deps(llm);
+    const design = { artDirection: async () => { throw new Error("Structured output failed for design.copy: story.steps"); } };
+    const out = await new BuildAgent({ ...d, design } as AgentDeps).run({ ...input, intents: [{ kind: "website" as const, confidence: 0.9, summary: "site" }] });
+    expect(out.status).toBe("succeeded");
+    expect(d.bus.ofType("team.message").some((m) => m.key === "team.design.fallback")).toBe(true);
+    expect(d.bus.ofType("message").map((m) => m.text).join("\n")).toMatch(/Design engine failed, continuing without it/);
+  });
+});
+
 describe("mock reviewer", () => {
   it("does not mistake a Todo entity for unfinished code, but flags TODO comments", async () => {
     const llm = new MockLLMProvider();

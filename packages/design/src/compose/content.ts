@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getModels, structured, type LLMProvider } from "@forge/llm";
+import { getModels, structured, StructuredOutputError, type LLMProvider } from "@forge/llm";
 import { briefTags, hashString } from "../curated.js";
 import { DesignBriefSchema, type DesignBrief, type DesignBriefInput } from "../types.js";
 
@@ -68,21 +68,122 @@ for the brief: no clichés ("unlock", "revolutionize", "seamless", "next-level")
 statistics — stats only from facts stated in the brief (omit the stats items otherwise). Short headlines
 (max 8 words), ledes under 30 words, body copy under 35 words. Write in the brief's locale.`;
 
+/** Exact JSON shape the copy must follow (shown to the model so it does not guess structure). */
+const COPY_SHAPE = `{
+  "meta": {"title": "max 70 chars", "description": "max 170 chars"},
+  "brand": "string",
+  "nav": [{"label": "string", "href": "#section"}],
+  "hero": {"eyebrow": "string", "headline": "string", "emphasis": "word from headline", "lede": "string", "primaryCta": {"label": "string", "href": "string"}, "secondaryCta": {"label": "string", "href": "string"}},
+  "statement": {"text": "string", "emphasis": [0, 1]},
+  "features": {"title": "string", "intro": "string", "items": [{"title": "string", "body": "string", "kicker": "string"}]},
+  "story": {"title": "string", "intro": "string", "steps": [{"kicker": "string", "title": "string", "body": "string"}]},
+  "horizontal": {"title": "string", "intro": "string", "items": [{"title": "string", "body": "string", "meta": "string"}]},
+  "stats": {"title": "string", "items": [{"value": 12, "suffix": "%", "label": "string"}]},
+  "marquee": ["string"],
+  "cta": {"title": "string", "body": "string", "button": {"label": "string", "href": "string"}},
+  "footer": {"tagline": "string", "links": [{"label": "string", "href": "string"}], "legal": "string"}
+}
+Counts: nav 0-6, features.items 3-7, story.steps 3-6, horizontal.items 3-8, stats.items 0-4 (stats is an OBJECT, never an array), marquee 3-12.`;
+
 export function copyPrompt(brief: DesignBrief, sections: string[]): string {
-  return `<brief>${JSON.stringify(brief)}</brief>\n<sections>${JSON.stringify(sections)}</sections>\nReturn SiteContent JSON with keys: meta, brand, nav, hero, statement, features, story, horizontal, stats, marquee, cta, footer${
-    brief.kind === "portfolio" ? ", projects (4-6 projects with slug/title/year/role/location/summary/body/tags)" : ""
-  }.`;
+  return `<brief>${JSON.stringify(brief)}</brief>\n<sections>${JSON.stringify(sections)}</sections>\nReturn SiteContent JSON with exactly this shape:\n${COPY_SHAPE}${
+    brief.kind === "portfolio" ? `\nAlso include "projects": 4-6 items of {"slug": "kebab-case", "title", "year", "role", "location", "summary", "body", "tags": []}.` : ""
+  }`;
 }
 
-/** Generate site copy with an LLM (purpose "design.copy", MODEL_BUILDER). */
-export async function generateContent(llm: LLMProvider, briefIn: DesignBriefInput, sections: string[] = [], opts: { model?: string } = {}): Promise<SiteContent> {
+type Json = Record<string, unknown>;
+const isObj = (v: unknown): v is Json => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Repair common structural drift in model output before validation: an array where an object with
+ * `items`/`steps` is expected, string numbers in stats, over-long lists. Content is never invented here.
+ */
+export function normalizeContent(raw: unknown): unknown {
+  if (!isObj(raw)) return raw;
+  const o: Json = { ...raw };
+  const wrap = (key: string, list: string) => {
+    if (Array.isArray(o[key])) o[key] = { title: "", [list]: o[key] };
+  };
+  wrap("features", "items");
+  wrap("story", "steps");
+  wrap("horizontal", "items");
+  wrap("stats", "items");
+  if (isObj(o.stats) && Array.isArray(o.stats.items)) {
+    o.stats = {
+      ...o.stats,
+      items: (o.stats.items as unknown[])
+        .filter(isObj)
+        .map((it) => {
+          if (typeof it.value === "string") {
+            const m = /^([^\d-]*)(-?[\d.,]+)(.*)$/.exec(it.value.trim());
+            if (m) return { ...it, prefix: it.prefix ?? (m[1] || undefined), value: Number(m[2]!.replace(",", ".")), suffix: it.suffix ?? (m[3]?.trim() || undefined) };
+          }
+          return it;
+        })
+        .filter((it) => typeof it.value === "number" && Number.isFinite(it.value))
+        .slice(0, 4),
+    };
+  }
+  const cap = (obj: unknown, key: string, max: number) => {
+    if (isObj(obj) && Array.isArray(obj[key])) obj[key] = (obj[key] as unknown[]).slice(0, max);
+  };
+  cap(o.features, "items", 7);
+  cap(o.story, "steps", 6);
+  cap(o.horizontal, "items", 8);
+  if (Array.isArray(o.nav)) o.nav = o.nav.slice(0, 6);
+  if (Array.isArray(o.marquee)) o.marquee = o.marquee.filter((x) => typeof x === "string").slice(0, 12);
+  if (isObj(o.footer) && Array.isArray(o.footer.links)) o.footer = { ...o.footer, links: o.footer.links.slice(0, 6) };
+  if (isObj(o.meta)) {
+    const m = o.meta;
+    o.meta = { ...m, title: typeof m.title === "string" ? m.title.slice(0, 70) : m.title, description: typeof m.description === "string" ? m.description.slice(0, 170) : m.description };
+  }
+  return o;
+}
+
+/**
+ * Keep every top-level section of the model's copy that validates; replace only the invalid sections
+ * with the rule-based copy. Returns the merged content and the names of replaced sections.
+ */
+export function mergeWithFallback(raw: unknown, fallback: SiteContent): { content: SiteContent; replaced: string[] } {
+  const src = isObj(raw) ? raw : {};
+  const shape = SiteContentSchema.shape;
+  const out: Json = {};
+  const replaced: string[] = [];
+  for (const key of Object.keys(shape) as Array<keyof typeof shape>) {
+    if (key === "generatedBy") continue;
+    const r = shape[key].safeParse(src[key]);
+    if (r.success && src[key] !== undefined) out[key] = r.data;
+    else {
+      out[key] = fallback[key];
+      if (key !== "projects" || fallback.projects.length) replaced.push(key);
+    }
+  }
+  out.generatedBy = replaced.length ? `llm (rule-based fallback for: ${replaced.join(", ")})` : "llm";
+  return { content: SiteContentSchema.parse(out), replaced };
+}
+
+/**
+ * Generate site copy with an LLM (purpose "design.copy", MODEL_BUILDER). Invalid output is repaired,
+ * retried with the validation errors, and as a last resort individual sections fall back to the
+ * rule-based copywriter, so copy generation never stops a build.
+ */
+export async function generateContent(
+  llm: LLMProvider,
+  briefIn: DesignBriefInput,
+  sections: string[] = [],
+  opts: { model?: string; onFallback?: (replaced: string[], error: string) => void } = {},
+): Promise<SiteContent> {
   const brief = DesignBriefSchema.parse(briefIn);
-  const { value } = await structured(
-    llm,
-    { purpose: "design.copy", model: opts.model ?? getModels().builder, system: COPY_SYSTEM, messages: [{ role: "user", content: copyPrompt(brief, sections) }], maxTokens: 6000 },
-    SiteContentSchema,
-  );
-  return SiteContentSchema.parse(value);
+  const req = { purpose: "design.copy", model: opts.model ?? getModels().builder, system: COPY_SYSTEM, messages: [{ role: "user" as const, content: copyPrompt(brief, sections) }], maxTokens: 6000 };
+  try {
+    const { value } = await structured(llm, req, SiteContentSchema, { retries: 2, normalize: normalizeContent });
+    return value;
+  } catch (e) {
+    const raw = e instanceof StructuredOutputError ? e.lastValue : undefined;
+    const { content, replaced } = mergeWithFallback(normalizeContent(raw), mockCopy(brief));
+    opts.onFallback?.(replaced, (e as Error).message);
+    return content;
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------

@@ -1276,7 +1276,8 @@
     },
     "design": {
       "ask": "Pixel, kan du sätta den konstnärliga riktningen?",
-      "done": "Klart ✓ konstnärlig riktning ”{direction}”, {files, plural, one {# fil} other {# filer}} komponerade — tillbaka till dig, Scoutr"
+      "done": "Klart ✓ konstnärlig riktning ”{direction}”, {files, plural, one {# fil} other {# filer}} komponerade — tillbaka till dig, Scoutr",
+      "fallback": "Pixel stötte på problem med formspråket, så Byggo designar direkt utifrån planen."
     },
     "build": {
       "ask": "Byggo, kan du bygga det enligt planen? ({tasks, plural, one {# uppgift} other {# uppgifter}})",

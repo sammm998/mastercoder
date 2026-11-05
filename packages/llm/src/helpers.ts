@@ -14,39 +14,49 @@ export function toolUses(r: { content: ContentBlock[] }): Array<Extract<ContentB
 }
 
 export class StructuredOutputError extends Error {
-  constructor(message: string, public readonly raw: string) {
+  /** `raw` is the last validation error; `lastValue` the last parsed (invalid) JSON, if any. */
+  constructor(message: string, public readonly raw: string, public readonly lastValue?: unknown) {
     super(message);
   }
 }
 
+/** Readable validation errors ("story.steps: Array must contain at least 3 element(s)") for the model. */
+export function formatZodIssues(issues: Array<{ path: Array<string | number>; message: string }>): string {
+  return issues.map((i) => `- ${i.path.join(".") || "(root)"}: ${i.message}`).join("\n");
+}
+
 /**
- * Ask for JSON matching a zod schema. Retries once with the validation error fed back.
+ * Ask for JSON matching a zod schema. Retries (default twice) with the validation errors fed back;
+ * `normalize` may repair structural drift before validation.
  * Returns the parsed value plus the responses (for metering).
  */
 export async function structured<S extends ZodTypeAny>(
   llm: LLMProvider,
   req: CompletionRequest,
   schema: S,
-  opts: { retries?: number } = {},
+  opts: { retries?: number; normalize?: (v: unknown) => unknown } = {},
 ): Promise<{ value: output<S>; responses: CompletionResponse[] }> {
   const responses: CompletionResponse[] = [];
   const messages = [...req.messages];
   const system = `${req.system ?? ""}\n\nRespond with a single JSON value only. No prose, no markdown fences.`.trim();
-  const retries = opts.retries ?? 1;
+  const retries = opts.retries ?? 2;
   let lastErr = "";
+  let lastValue: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
     const r = await llm.complete({ ...req, system, messages });
     responses.push(r);
     const raw = textOf(r);
     try {
-      const parsed = schema.safeParse(extractJson(raw));
+      const json = extractJson(raw);
+      lastValue = opts.normalize ? opts.normalize(json) : json;
+      const parsed = schema.safeParse(lastValue);
       if (parsed.success) return { value: parsed.data as output<S>, responses };
-      lastErr = parsed.error.message;
+      lastErr = formatZodIssues(parsed.error.issues);
     } catch (e) {
       lastErr = (e as Error).message;
     }
     messages.push({ role: "assistant", content: raw || "(empty)" });
-    messages.push({ role: "user", content: `That output was invalid: ${lastErr.slice(0, 2000)}\nReturn corrected JSON only.` });
+    messages.push({ role: "user", content: `That output did not match the required shape:\n${lastErr.slice(0, 2000)}\nFix exactly these fields, keep everything else, and return the complete corrected JSON only.` });
   }
-  throw new StructuredOutputError(`Structured output failed for ${req.purpose}: ${lastErr}`, lastErr);
+  throw new StructuredOutputError(`Structured output failed for ${req.purpose}: ${lastErr}`, lastErr, lastValue);
 }

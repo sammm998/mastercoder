@@ -149,55 +149,63 @@ export class BuildAgent {
     if (deps.design && kind !== "backend") {
       phase("design");
       team("scoutr", "pixel", "asking", "design", "team.design.ask", {}, "Pixel, can you set the art direction?");
-      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand });
-      designDirection = d.directionName;
-      const tokenFiles = allFiles.filter((f) => f.endsWith("tokens.css"));
-      for (const f of tokenFiles.length ? tokenFiles : ["src/styles/tokens.css"]) {
-        await deps.sandbox.writeFile(f, d.tokensCss);
-        touched.add(f);
-        await repoMap.update(f, d.tokensCss);
-      }
-      const composed = d.files ?? {};
-      if (composed["package.json"]) {
-        // The design engine composed a complete project: drop scaffold files it does not contain (their
-        // tests/imports target the starter app) and align forge.json + the manifest with its scripts.
-        for (const f of allFiles) {
-          if (composed[f] || f === "forge.json" || f.startsWith(".git")) continue;
-          await deps.sandbox.exec(`rm -f -- ${JSON.stringify(f)}`, { timeoutMs: 10_000 });
-          repoMap.remove(f);
-          await index.removeFile(input.projectId, f);
+      // A design-engine failure never ends the build: the builder designs from the plan instead.
+      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand }).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        ev({ type: "message", ...base, role: "system", text: `Design engine failed, continuing without it: ${msg.slice(0, 800)}` });
+        team("pixel", "byggo", "failed", "design", "team.design.fallback", {}, "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan.");
+        return null;
+      });
+      if (d) {
+        designDirection = d.directionName;
+        const tokenFiles = allFiles.filter((f) => f.endsWith("tokens.css"));
+        for (const f of tokenFiles.length ? tokenFiles : ["src/styles/tokens.css"]) {
+          await deps.sandbox.writeFile(f, d.tokensCss);
+          touched.add(f);
+          await repoMap.update(f, d.tokensCss);
         }
-        const scripts = (JSON.parse(composed["package.json"]) as { scripts?: Record<string, string> }).scripts ?? {};
-        const port = manifest?.port ?? 5173;
-        manifest = {
-          id: manifest?.id ?? templateId,
-          kind: manifest?.kind ?? kind,
-          install: "npm install",
-          dev: scripts.dev ? `npm run dev -- --host 0.0.0.0 --port ${port}` : (manifest?.dev ?? "npm run dev"),
-          build: scripts.build ? "npm run build" : undefined,
-          typecheck: scripts.typecheck ? "npm run typecheck" : undefined,
-          lint: scripts.lint ? "npm run lint" : undefined,
-          // A composed site has no unit tests; the production build (tsc + vite build) is its test.
-          test: scripts.test ? "npm test" : scripts.build ? "npm run build" : undefined,
-          port,
-          lighthouse: manifest?.lighthouse,
-        };
-        const forgeJson = { ...manifest, typecheck: manifest.typecheck ?? null, lint: manifest.lint ?? null, test: manifest.test ?? null, e2e: null, publicRoutes: ["/"] };
-        await deps.sandbox.writeFile("forge.json", JSON.stringify(forgeJson, null, 2) + "\n");
+        const composed = d.files ?? {};
+        if (composed["package.json"]) {
+          // The design engine composed a complete project: drop scaffold files it does not contain (their
+          // tests/imports target the starter app) and align forge.json + the manifest with its scripts.
+          for (const f of allFiles) {
+            if (composed[f] || f === "forge.json" || f.startsWith(".git")) continue;
+            await deps.sandbox.exec(`rm -f -- ${JSON.stringify(f)}`, { timeoutMs: 10_000 });
+            repoMap.remove(f);
+            await index.removeFile(input.projectId, f);
+          }
+          const scripts = (JSON.parse(composed["package.json"]) as { scripts?: Record<string, string> }).scripts ?? {};
+          const port = manifest?.port ?? 5173;
+          manifest = {
+            id: manifest?.id ?? templateId,
+            kind: manifest?.kind ?? kind,
+            install: "npm install",
+            dev: scripts.dev ? `npm run dev -- --host 0.0.0.0 --port ${port}` : (manifest?.dev ?? "npm run dev"),
+            build: scripts.build ? "npm run build" : undefined,
+            typecheck: scripts.typecheck ? "npm run typecheck" : undefined,
+            lint: scripts.lint ? "npm run lint" : undefined,
+            // A composed site has no unit tests; the production build (tsc + vite build) is its test.
+            test: scripts.test ? "npm test" : scripts.build ? "npm run build" : undefined,
+            port,
+            lighthouse: manifest?.lighthouse,
+          };
+          const forgeJson = { ...manifest, typecheck: manifest.typecheck ?? null, lint: manifest.lint ?? null, test: manifest.test ?? null, e2e: null, publicRoutes: ["/"] };
+          await deps.sandbox.writeFile("forge.json", JSON.stringify(forgeJson, null, 2) + "\n");
+        }
+        for (const [p, c] of Object.entries(composed)) {
+          await deps.sandbox.writeFile(p, c);
+          touched.add(p);
+          ev({ type: "file.changed", ...base, path: p, change: "modified" });
+          await repoMap.update(p, c);
+          await index.upsertFile(input.projectId, p, c);
+        }
+        if (composed["package.json"] && manifest?.install) {
+          const r = await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
+          ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
+        }
+        ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
+        team("pixel", "scoutr", "done", "design", "team.design.done", { direction: d.directionName, files: Object.keys(d.files ?? {}).length }, `Done ✓ art direction "${d.directionName}"${d.files ? `, composed ${Object.keys(d.files).length} files` : ""} — back to you, Scoutr`);
       }
-      for (const [p, c] of Object.entries(composed)) {
-        await deps.sandbox.writeFile(p, c);
-        touched.add(p);
-        ev({ type: "file.changed", ...base, path: p, change: "modified" });
-        await repoMap.update(p, c);
-        await index.upsertFile(input.projectId, p, c);
-      }
-      if (composed["package.json"] && manifest?.install) {
-        const r = await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
-        ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
-      }
-      ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
-      team("pixel", "scoutr", "done", "design", "team.design.done", { direction: d.directionName, files: Object.keys(d.files ?? {}).length }, `Done ✓ art direction "${d.directionName}"${d.files ? `, composed ${Object.keys(d.files).length} files` : ""} — back to you, Scoutr`);
       phaseDone("design");
     }
 
@@ -267,13 +275,18 @@ export class BuildAgent {
       phase("verify");
       if (manifest && kind !== "backend" && !previewUrl) previewUrl = await this.startPreview(manifest, input);
       if (deps.design?.visualQa && previewUrl && kind === "website") {
-        const qa = await deps.design.visualQa(previewUrl, { brief: input.prompt });
-        designScore = qa.score;
-        ev({ type: "design.score", ...base, score: qa.score, notes: `${qa.critic}: ${qa.notes}` });
-        if (qa.score < this.o.designThreshold && designRoundsUsed < this.o.designRounds) {
-          designRoundsUsed++;
-          await round(`The design critic scored the site ${qa.score}/10 (needs ${this.o.designThreshold}). Revise per these notes, keeping performance and accessibility:\n${qa.notes}`, { phase: "fix", description: "design revision" });
-          continue;
+        const qa = await deps.design.visualQa(previewUrl, { brief: input.prompt }).catch((e: unknown) => {
+          ev({ type: "message", ...base, role: "system", text: `Visual QA unavailable, skipping the design score: ${(e instanceof Error ? e.message : String(e)).slice(0, 500)}` });
+          return null;
+        });
+        if (qa) {
+          designScore = qa.score;
+          ev({ type: "design.score", ...base, score: qa.score, notes: `${qa.critic}: ${qa.notes}` });
+          if (qa.score < this.o.designThreshold && designRoundsUsed < this.o.designRounds) {
+            designRoundsUsed++;
+            await round(`The design critic scored the site ${qa.score}/10 (needs ${this.o.designThreshold}). Revise per these notes, keeping performance and accessibility:\n${qa.notes}`, { phase: "fix", description: "design revision" });
+            continue;
+          }
         }
       }
       gateReport = await deps.gates.run(deps.sandbox, { previewUrl: previewUrl ?? undefined, visualScore: designScore });
