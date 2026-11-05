@@ -77,8 +77,8 @@ export function registerGateway(app: FastifyInstance, deps: ApiDeps, collab: Col
   app.get("/ws/audio/:projectId", { websocket: true }, async (socket: WebSocket, req: FastifyRequest) => {
     const { projectId } = req.params as { projectId: string };
     const language = String((req.query as Record<string, string>).lang ?? "sv");
-    const pending: Buffer[] = [];
-    const buffer = (m: Buffer) => pending.push(m);
+    const pending: Array<[Buffer, boolean]> = [];
+    const buffer = (m: Buffer, isBinary: boolean) => pending.push([m, isBinary]);
     socket.on("message", buffer);
     try {
       const ctx = await wsContext(deps, req);
@@ -86,7 +86,7 @@ export function registerGateway(app: FastifyInstance, deps: ApiDeps, collab: Col
       if (!audio || !ctx.user) return socket.close(4501, "speech not configured");
       audio.handle(socket, { userId: ctx.user.id, projectId: project.id, language });
       socket.off("message", buffer);
-      for (const m of pending) socket.emit("message", m, false);
+      for (const [m, isBinary] of pending) socket.emit("message", m, isBinary);
     } catch (e) {
       socket.close(4403, (e as Error).message.slice(0, 100));
     }

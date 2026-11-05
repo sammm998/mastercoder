@@ -83,9 +83,21 @@ importers:
       '@forge/llm':
         specifier: workspace:*
         version: link:../../packages/llm
+      '@forge/media':
+        specifier: workspace:*
+        version: link:../../packages/media
+      '@forge/meetings':
+        specifier: workspace:*
+        version: link:../../packages/meetings
       '@forge/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@forge/slides':
+        specifier: workspace:*
+        version: link:../../packages/slides
+      '@forge/speech':
+        specifier: workspace:*
+        version: link:../../packages/speech
       '@trpc/server':
         specifier: ^11.24.0
         version: 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(typescript@5.9.3)
