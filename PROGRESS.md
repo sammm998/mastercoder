@@ -14,8 +14,8 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] W1-A sandbox + quality-gates
 - [ ] W1-B templates + app-kit
 - [ ] W1-C design
-- [ ] W1-D media + slides
-- [ ] W1-E speech + meetings
+- [x] W1-D media + slides — fal/Replicate/mock, moderation (62 cases), Remotion (renders mp4), MediaJobService; decks/docs, PPTX/PDF/DOCX; 93+4 / 19 tests
+- [x] W1-E speech + meetings — ElevenLabs/Deepgram/Whisper/mock STT, WER, Swedish Piper fixtures; Recall/MeetStream/Vexa/mock bots, consent, calendar, chunked upload, meeting→spec; 49 / 38+1 tests
 - [ ] W1-F integrations + billing + intent-router
 
 ## Wave 2 — Orchestration
