@@ -1,6 +1,7 @@
 import type { Job } from "bullmq";
-import { and, eq, projects, deployments } from "@forge/db";
+import { and, eq, projects, deployments, projectFiles } from "@forge/db";
 import { MeteredLLM } from "@forge/llm";
+import { signPreviewToken, type ForgeEventInput } from "@forge/shared";
 import { QUEUES, newId, BuildJobSchema, DeployJobSchema, type BuildJob } from "@forge/shared";
 import type { AgentDeps, SandboxPort, DesignPort, CheckpointPort, GatesPort, TemplatesPort, BrowserPort } from "@forge/agent-core";
 import { createSandboxProvider, type Sandbox, type SandboxProvider } from "@forge/sandbox";
@@ -13,6 +14,8 @@ import { billingSettler } from "./settle.js";
 import { runBuildJob } from "./jobs/build.js";
 import { runMediaRequest } from "./jobs/media.js";
 import { runSlidesRequest } from "./jobs/slides.js";
+import { runChat } from "./jobs/chat.js";
+import "./mock-llm.js";
 import { createMediaProvider } from "@forge/media";
 import type { BuildQueueDeps } from "./build-queue.js";
 
@@ -83,6 +86,37 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   });
 
   const cps = createCheckpointing(d.db, dbBranches);
+
+  // Preview links: the agent sees the dev server's internal URL; users get a signed link to the preview
+  // proxy (its own origin), which forwards to this worker over the private network.
+  const previewBase = process.env.PREVIEW_PUBLIC_URL?.replace(/\/$/, "");
+  const secret = process.env.AUTH_SECRET;
+  const wsink = d.events as { transform?: ((e: ForgeEventInput) => ForgeEventInput) | null };
+  if (previewBase && secret && "transform" in wsink) {
+    wsink.transform = (e) => {
+      if (e.type !== "preview.ready") return e;
+      const u = new URL(e.url);
+      if (["127.0.0.1", "localhost", "0.0.0.0"].includes(u.hostname)) u.hostname = process.env.RAILWAY_PRIVATE_DOMAIN || process.env.PREVIEW_TARGET_HOST || u.hostname;
+      const token = signPreviewToken({ projectId: e.projectId, target: u.origin, exp: Math.floor(Date.now() / 1000) + 24 * 3600 }, secret);
+      return { ...e, url: `${previewBase}/__forge/open?t=${encodeURIComponent(token)}` };
+    };
+  }
+
+  // Live file mirror: every file the agent writes lands in project_files immediately (not only at
+  // checkpoints), so the editor and file tree update while the build runs.
+  const sink = d.events as { onEvent?: (fn: (e: { type: string; projectId: string; path?: string; change?: string }) => void) => () => void };
+  sink.onEvent?.((e) => {
+    if (e.type !== "file.changed" || !e.path || /(^|\/)(node_modules|\.git|dist|\.next)(\/|$)/.test(e.path)) return;
+    const sb = live.get(e.projectId);
+    if (!sb) return;
+    const path = e.path;
+    void (async () => {
+      if (e.change === "deleted") return d.db.delete(projectFiles).where(and(eq(projectFiles.projectId, e.projectId), eq(projectFiles.path, path)));
+      const content = await sb.readFile(path).catch(() => null);
+      if (content === null || content.length > 500_000 || content.includes("\u0000")) return;
+      await d.db.insert(projectFiles).values({ projectId: e.projectId, path, content }).onConflictDoUpdate({ target: [projectFiles.projectId, projectFiles.path], set: { content, updatedAt: new Date() } });
+    })().catch(() => undefined);
+  });
   const checkpointsPort = (_job: BuildJob): CheckpointPort => ({ create: (i) => cps.create(i) });
 
   const browser: BrowserPort = {
@@ -138,6 +172,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
             slides: { createDeck: async (i) => ({ artifactId: (await runSlidesRequest({ taskId: j.taskId, projectId: i.projectId, workspaceId: j.workspaceId, kind: "deck", prompt: i.prompt, slideCount: i.slideCount }, { db: d.db, llm, store: d.store, usage: d.usage, events: d.events })).artifactId }) },
           }) satisfies Omit<AgentDeps, "llm" | "events" | "usage" | "sandbox">,
         pipelines: {
+          question: async (j, pd) => void (await runChat(j, { db: d.db, llm: pd.llm, events: pd.events })),
           media: async (j, kind) => void (await runMediaRequest({ taskId: j.taskId, projectId: j.projectId, workspaceId: j.workspaceId, kind: kind === "image" ? (/\b(set|images|bilder|\d+ (product )?images)\b/i.test(j.prompt) ? "image-set" : "image") : j.intents.some((i) => i.kind === "video" && i.hint === "remotion") ? "remotion" : "video", prompt: j.prompt, options: { durationSec: Number(j.prompt.match(/(\d+)[- ]?(?:second|sekund|s\b)/i)?.[1] ?? 10) } }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events, renderRemotion })),
           slides: async (j, kind) => void (await runSlidesRequest({ taskId: j.taskId, projectId: j.projectId, workspaceId: j.workspaceId, kind: kind === "slides" ? "deck" : "document", prompt: j.prompt, slideCount: Number(j.prompt.match(/(\d+)[- ]slide/)?.[1] ?? 10) }, { db: d.db, llm, store: d.store, usage: d.usage, events: d.events })),
         },

@@ -49,6 +49,9 @@ export class MockLLMProvider implements LLMProvider {
           : "end_turn";
     const inText = (req.system ?? "") + JSON.stringify(req.messages) + JSON.stringify(req.tools ?? []);
     const usage = { inputTokens: estimateTokens(inText), outputTokens: estimateTokens(JSON.stringify(content)), cacheReadTokens: 0, cacheWriteTokens: 0 };
-    return { content, stopReason, usage, model: req.model, costUsd: costFor(req.model, usage), provider: this.name };
+    // Mock calls cost nothing. MOCK_LLM_COST=estimate prices the estimated tokens at the requested
+    // model's list price instead (benchmarks/tests that exercise metering and caps).
+    const costUsd = process.env.MOCK_LLM_COST === "estimate" ? costFor(req.model, usage) : 0;
+    return { content, stopReason, usage, model: req.model, costUsd, provider: this.name };
   }
 }

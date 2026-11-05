@@ -12,7 +12,21 @@ async function enqueueBuild(ctx: AuthedContext, project: ProjectRow, taskId: str
 
 
 /** Classify → estimate → spend-cap check → persist → enqueue (or ask one clarifying question). */
-export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, input: { prompt: string; source: z.infer<typeof PromptSource>; planMode: boolean }) {
+export const TaskMode = z.enum(["build", "plan", "chat"]);
+
+async function createChatTask(ctx: AuthedContext, project: ProjectRow, prompt: string, source: z.infer<typeof PromptSource>) {
+  const id = newId("tsk");
+  const intents: Intent[] = [{ kind: "question", confidence: 1, summary: prompt.slice(0, 120) }];
+  const estimate = { lowUsd: 0, highUsd: 0.02, breakdown: [{ label: "chat reply", usd: 0.01 }] };
+  await ctx.deps.db.insert(tasks).values({ id, projectId: project.id, userId: ctx.user.id, prompt, source, intents, status: "queued", estimateLowUsd: estimate.lowUsd, estimateHighUsd: estimate.highUsd });
+  await ctx.deps.events.publish({ type: "message", projectId: project.id, taskId: id, role: "system", text: prompt });
+  await enqueueBuild(ctx, project, id, prompt, source, intents, false);
+  return { id, status: "queued", intents, estimate, question: undefined as string | undefined };
+}
+
+export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, input: { prompt: string; source: z.infer<typeof PromptSource>; planMode: boolean; mode?: z.infer<typeof TaskMode> }) {
+  // Chat mode: just talk to Forge — no classification, no build, nothing to approve.
+  if (input.mode === "chat") return createChatTask(ctx, project, input.prompt, input.source);
   const classifier = getService<IntentClassifier>(ctx.deps.services, "intent");
   if (!classifier) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intent router not configured" });
   const result = await classifier.classify(input.prompt, { source: input.source });
@@ -46,10 +60,10 @@ export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, inp
 
 export const taskRouter = router({
   create: authedProcedure
-    .input(z.object({ projectId: z.string(), prompt: z.string().min(1).max(20_000), source: PromptSource.default("typed"), planMode: z.boolean().default(false) }))
+    .input(z.object({ projectId: z.string(), prompt: z.string().min(1).max(20_000), source: PromptSource.default("typed"), planMode: z.boolean().default(false), mode: TaskMode.default("build") }))
     .mutation(async ({ ctx, input }) => {
       const { project } = await requireProject(ctx, input.projectId, "project.write");
-      return createTaskFor(ctx, project, input);
+      return createTaskFor(ctx, project, { ...input, planMode: input.planMode || input.mode === "plan" });
     }),
 
   answerClarification: authedProcedure.input(z.object({ taskId: z.string(), answer: z.string().min(1).max(2000) })).mutation(async ({ ctx, input }) => {

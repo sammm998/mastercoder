@@ -46,7 +46,10 @@ export class WorkerEventSink implements EventSink {
     private readonly db: Db,
     private readonly redis: Redis | null,
   ) {}
-  emit(input: ForgeEventInput): void {
+  /** Optional rewrite before persisting/publishing (e.g. internal preview URL → signed public proxy link). */
+  transform: ((e: ForgeEventInput) => ForgeEventInput) | null = null;
+  emit(raw: ForgeEventInput): void {
+    const input = this.transform ? this.transform(raw) : raw;
     const parsed = ForgeEventSchema.safeParse({ ...input, id: newId("evt", 8), at: new Date().toISOString() });
     if (!parsed.success) return;
     const e = parsed.data;

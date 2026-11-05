@@ -85,12 +85,17 @@ export class BuildAgent {
       ev({ type: "phase.started", ...base, phase: p });
     };
     const phaseDone = (p: string) => ev({ type: "phase.completed", ...base, phase: p, durationMs: Date.now() - (phaseStart.get(p) ?? Date.now()) });
+    type Member = "scoutr" | "plania" | "pixel" | "byggo" | "vakt" | "revy";
+    /** Agent-team conversation reflecting the real work of each step (rendered with avatars in the UI). */
+    const team = (from: Member, to: Member | "user" | undefined, status: "asking" | "working" | "done" | "failed", step: string, key: string, params: Record<string, string | number>, text: string) =>
+      ev({ type: "team.message", ...base, from, to, status, step, key, params, text });
     let extraCost = 0;
     const cost = () => this.costOf(deps.llm) || extraCost;
     const kind = primaryKind(input.intents);
 
     // ---------- PLAN ----------
     phase("plan");
+    team("scoutr", "plania", "asking", "plan", "team.plan.ask", { request: input.prompt.slice(0, 140) }, `Plania, can you plan this? "${input.prompt.slice(0, 140)}"`);
     let spec: Spec;
     if (input.approvedSpec) {
       spec = SpecSchema.parse(input.approvedSpec);
@@ -102,6 +107,13 @@ export class BuildAgent {
       extraCost += p.costUsd;
     }
     phaseDone("plan");
+    team("plania", "scoutr", "done", "plan", "team.plan.done", { title: spec.title, stories: spec.userStories.length, entities: spec.entities.length, tests: spec.acceptanceTests.length }, `Done ✓ "${spec.title}": ${spec.userStories.length} user stories, ${spec.entities.length} data entities, ${spec.acceptanceTests.length} acceptance tests — back to you, Scoutr`);
+    {
+      // Pre-build review: Vakt flags what the spec requires security-wise before any code is written.
+      const owner = spec.entities.filter((e) => e.ownerScoped).length;
+      const checks = [spec.auth ? "auth on every non-public route" : null, owner ? `row-level security on ${owner} table(s)` : null, spec.entities.length ? "zod validation on every write" : null, "no secrets in client code"].filter(Boolean) as string[];
+      team("vakt", "byggo", "done", "kickoff", "team.kickoff.security", { checks: checks.join(" · ") }, `Before you start, Byggo: the gates will require ${checks.join(", ")}.`);
+    }
     if (input.planMode && !input.approvedSpec) {
       ev({ type: "plan.ready", ...base, spec, requiresApproval: true });
       return { status: "awaiting_approval", charged: false, spec, summary: "Plan ready for approval.", costUsd: cost(), fixIterations: 0 };
@@ -128,7 +140,7 @@ export class BuildAgent {
     await repoMap.refresh(allFiles, (p) => deps.sandbox.readFile(p));
     for (const s of repoMap.symbols()) await index.upsertFile(input.projectId, s.path, await deps.sandbox.readFile(s.path));
     if (manifest?.install) {
-      const r = await deps.sandbox.exec(manifest.install, { timeoutMs: 900_000 });
+      const r = await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
       ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
     }
 
@@ -136,6 +148,7 @@ export class BuildAgent {
     let designDirection = "";
     if (deps.design && kind !== "backend") {
       phase("design");
+      team("scoutr", "pixel", "asking", "design", "team.design.ask", {}, "Pixel, can you set the art direction?");
       const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand });
       designDirection = d.directionName;
       const tokenFiles = allFiles.filter((f) => f.endsWith("tokens.css"));
@@ -144,13 +157,47 @@ export class BuildAgent {
         touched.add(f);
         await repoMap.update(f, d.tokensCss);
       }
-      for (const [p, c] of Object.entries(d.files ?? {})) {
+      const composed = d.files ?? {};
+      if (composed["package.json"]) {
+        // The design engine composed a complete project: drop scaffold files it does not contain (their
+        // tests/imports target the starter app) and align forge.json + the manifest with its scripts.
+        for (const f of allFiles) {
+          if (composed[f] || f === "forge.json" || f.startsWith(".git")) continue;
+          await deps.sandbox.exec(`rm -f -- ${JSON.stringify(f)}`, { timeoutMs: 10_000 });
+          repoMap.remove(f);
+          await index.removeFile(input.projectId, f);
+        }
+        const scripts = (JSON.parse(composed["package.json"]) as { scripts?: Record<string, string> }).scripts ?? {};
+        const port = manifest?.port ?? 5173;
+        manifest = {
+          id: manifest?.id ?? templateId,
+          kind: manifest?.kind ?? kind,
+          install: "npm install",
+          dev: scripts.dev ? `npm run dev -- --host 0.0.0.0 --port ${port}` : (manifest?.dev ?? "npm run dev"),
+          build: scripts.build ? "npm run build" : undefined,
+          typecheck: scripts.typecheck ? "npm run typecheck" : undefined,
+          lint: scripts.lint ? "npm run lint" : undefined,
+          // A composed site has no unit tests; the production build (tsc + vite build) is its test.
+          test: scripts.test ? "npm test" : scripts.build ? "npm run build" : undefined,
+          port,
+          lighthouse: manifest?.lighthouse,
+        };
+        const forgeJson = { ...manifest, typecheck: manifest.typecheck ?? null, lint: manifest.lint ?? null, test: manifest.test ?? null, e2e: null, publicRoutes: ["/"] };
+        await deps.sandbox.writeFile("forge.json", JSON.stringify(forgeJson, null, 2) + "\n");
+      }
+      for (const [p, c] of Object.entries(composed)) {
         await deps.sandbox.writeFile(p, c);
         touched.add(p);
+        ev({ type: "file.changed", ...base, path: p, change: "modified" });
         await repoMap.update(p, c);
         await index.upsertFile(input.projectId, p, c);
       }
+      if (composed["package.json"] && manifest?.install) {
+        const r = await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
+        ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
+      }
       ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
+      team("pixel", "scoutr", "done", "design", "team.design.done", { direction: d.directionName, files: Object.keys(d.files ?? {}).length }, `Done ✓ art direction "${d.directionName}"${d.files ? `, composed ${Object.keys(d.files).length} files` : ""} — back to you, Scoutr`);
       phaseDone("design");
     }
 
@@ -179,6 +226,7 @@ export class BuildAgent {
       return r;
     };
     const fail = (reason: string, blockedOn: string, gateReport?: GateReportLike): BuildOutcome => {
+      team("scoutr", "user", "failed", "finish", "team.failed", { reason, blockedOn }, `I couldn't finish: ${reason}. You won't be charged.`);
       ev({ type: "task.failed", ...base, reason, charged: false, blockedOn });
       return { status: "failed", charged: false, reason, blockedOn, spec, template: templateId, gateReport, summary: reason, costUsd: cost(), fixIterations: guard.count, previewUrl: previewUrl ?? undefined };
     };
@@ -204,8 +252,10 @@ export class BuildAgent {
 
     // ---------- BUILD ----------
     phase("build");
-    await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
+    team("scoutr", "byggo", "asking", "build", "team.build.ask", { tasks: spec.tasks.length || spec.userStories.length }, "Byggo, can you build it from the plan?");
+    const built = await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
     phaseDone("build");
+    team("byggo", "scoutr", built.toolErrors.length ? "failed" : "done", "build", "team.build.done", { files: touched.size, tools: built.toolCalls }, `Done ✓ ${touched.size} files written with ${built.toolCalls} tool calls — over to Vakt for checks`);
     if (deps.isCancelled && (await deps.isCancelled())) return { status: "cancelled", charged: false, spec, summary: "Cancelled by user", costUsd: cost(), fixIterations: 0 };
 
     // ---------- VERIFY + REVIEW loop ----------
@@ -232,10 +282,18 @@ export class BuildAgent {
         ev({ type: "gate.result", ...base, gate: r.gate, passed: r.passed || Boolean(r.skipped), details: (r.skipped ? `skipped: ${r.details}` : `${r.details}${finds ? `\n${finds}` : ""}`).slice(0, 2000), fix: r.fix });
       }
       phaseDone("verify");
+      {
+        const ran = gateReport.results.filter((r) => !r.skipped);
+        const failed = gateReport.blockers.map((b) => b.gate);
+        team("vakt", failed.length ? "byggo" : "scoutr", failed.length ? "failed" : "done", "verify", failed.length ? "team.verify.failed" : "team.verify.done", { passed: ran.filter((r) => r.passed).length, total: ran.length, failed: failed.join(", ") }, failed.length ? `${failed.length} check(s) failing: ${failed.join(", ")} — Byggo, please fix` : `Done ✓ ${ran.length} quality checks passed`);
+      }
       if (!gateReport.passed) {
         const text = summarizeGates(gateReport);
         if ((await onGuard(guard.recordFailure(text), text)) === "stop") return fail(`Quality gates still failing after ${guard.count} fix attempts`, gateReport.blockers.map((b) => b.gate).join(", "), gateReport);
-        await round(fixPrompt(text), { phase: "fix", failures: guard.count, description: text });
+        const fixed = await round(fixPrompt(text), { phase: "fix", failures: guard.count, description: text });
+        // The agent declined or could not act (no tool calls): re-running the same gates cannot help — stop now
+        // instead of burning the remaining iterations (time and money).
+        if (fixed.toolCalls === 0) return fail(`The agent could not fix the failing quality gates: ${gateReport.blockers.map((b) => b.gate).join(", ")}`, gateReport.blockers.map((b) => b.gate).join(", "), gateReport);
         continue;
       }
       if (!reviewed) {
@@ -245,11 +303,13 @@ export class BuildAgent {
         const rv = await review(deps.llm, spec, files);
         extraCost += rv.costUsd;
         phaseDone("review");
+        team("revy", "scoutr", rv.review.approved ? "done" : "failed", "review", rv.review.approved ? "team.review.done" : "team.review.issues", { issues: rv.review.issues.length }, rv.review.approved ? "Done ✓ code matches the plan — no blocking issues" : `${rv.review.issues.length} issue(s) found — sending back to Byggo`);
         if (!rv.review.approved && rv.review.issues.length) {
           const text = rv.review.issues.map((i) => `- ${i.file ? `${i.file}: ` : ""}${i.problem}\n  Fix: ${i.fix}`).join("\n");
           ev({ type: "message", ...base, role: "system", text: `Reviewer found ${rv.review.issues.length} issue(s)` });
           if ((await onGuard(guard.recordFailure(text), text)) === "stop") return fail("Reviewer issues could not be resolved", "review");
-          await round(`A reviewer with fresh context found these problems. Fix them:\n${text}`, { phase: "fix", failures: guard.count, description: text });
+          const fixed = await round(`A reviewer with fresh context found these problems. Fix them:\n${text}`, { phase: "fix", failures: guard.count, description: text });
+          if (fixed.toolCalls === 0) return fail("Reviewer issues could not be resolved", "review");
           continue;
         }
       }
@@ -274,13 +334,16 @@ export class BuildAgent {
       }
     }
     const summary = await this.summarize(spec, gateReport, designScore, touched.size);
+    team("scoutr", "user", "done", "finish", "team.finish", { title: spec.title, files: touched.size }, `"${spec.title}" is ready and every check passed.`);
     phaseDone("finish");
     return { status: "succeeded", charged: true, spec, template: templateId, gateReport, designScore, checkpoint, previewUrl: previewUrl ?? undefined, summary, costUsd: cost(), fixIterations: guard.count };
   }
 
   private async startPreview(manifest: TemplateManifestLike, input: BuildInput): Promise<string | null> {
     const { sandbox, events } = this.deps;
-    await sandbox.exec(`nohup sh -c ${JSON.stringify(manifest.dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
+    // FORGE_DEV_HOST (e.g. "::") lets the dev server listen on IPv6 private networks (Railway) for the preview proxy.
+    const dev = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
+    await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
     for (let i = 0; i < 60; i++) {
       const r = await sandbox.exec(`curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${manifest.port}/ || true`, { timeoutMs: 10_000 });
       if (/^[23]\d\d$/.test(r.stdout.trim())) {
@@ -303,6 +366,11 @@ export class BuildAgent {
       return facts;
     }
   }
+}
+
+/** npm installs skip the audit/fund network round-trips (the osv gate audits dependencies) and reuse the cache. */
+export function fastInstall(cmd: string): string {
+  return /^npm (install|i|ci)\b/.test(cmd.trim()) && !/--prefer-offline/.test(cmd) ? `${cmd} --prefer-offline --no-audit --no-fund --loglevel=error` : cmd;
 }
 
 function slug(s: string): string {

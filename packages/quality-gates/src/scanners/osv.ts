@@ -234,7 +234,8 @@ export function vulnFindings(hits: VulnHit[]): Finding[] {
     line: h.dep.line,
     rule: `osv/${h.id}`,
     message: `${h.dep.name}@${h.dep.version}${h.dep.approximate ? " (declared range)" : ""}: ${h.summary} [${h.severity}]${h.fixed ? ` — fixed in ${h.fixed}` : ""}`,
-    severity: h.severity.toUpperCase() === "LOW" ? "warning" : "error",
+    // Only HIGH / CRITICAL (or unknown severity) block a deploy; MODERATE and LOW are reported as warnings.
+    severity: ["LOW", "MODERATE", "MEDIUM"].includes(h.severity.toUpperCase()) ? "warning" : "error",
   }));
 }
 

@@ -38,6 +38,21 @@ export const ForgeEventSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("usage"), costUsd: z.number(), tokensIn: z.number(), tokensOut: z.number() }),
   z.object({ ...base, type: z.literal("task.completed"), summary: z.string(), chargedUsd: z.number() }),
   z.object({ ...base, type: z.literal("task.failed"), reason: z.string(), charged: z.boolean(), blockedOn: z.string().optional() }),
+  /**
+   * Agent-team conversation (Scoutr lead + role agents). `key` + `params` are i18n-friendly; `text` is an
+   * English fallback. Content always reflects real work (plan, design, gates, review), never filler.
+   */
+  z.object({
+    ...base,
+    type: z.literal("team.message"),
+    from: z.enum(["scoutr", "plania", "pixel", "byggo", "vakt", "revy", "chatti", "mailo"]),
+    to: z.enum(["scoutr", "plania", "pixel", "byggo", "vakt", "revy", "chatti", "mailo", "user"]).optional(),
+    status: z.enum(["asking", "working", "done", "failed"]),
+    step: z.string(),
+    key: z.string(),
+    params: z.record(z.union([z.string(), z.number()])).default({}),
+    text: z.string(),
+  }),
   z.object({ ...base, type: z.literal("preview.ready"), url: z.string(), port: z.number().optional() }),
   z.object({ ...base, type: z.literal("terminal.output"), stream: z.enum(["stdout", "stderr"]), text: z.string() }),
   z.object({ ...base, type: z.literal("deploy.status"), deploymentId: z.string(), status: z.string(), url: z.string().optional() }),

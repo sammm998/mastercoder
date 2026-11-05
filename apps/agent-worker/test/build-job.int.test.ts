@@ -108,6 +108,6 @@ describe("build job", () => {
     expect(r.outcome).toBe("failed_agent_error");
     const [t] = await h.db.select().from(tasks).where(eq(tasks.id, s.tsk));
     expect(t).toMatchObject({ status: "failed", charged: false, chargedUsd: 0 });
-    expect(t?.failureReason).toMatch(/Quality gates still failing/);
+    expect(t?.failureReason).toMatch(/could not fix the failing quality gates|Quality gates still failing/);
   });
 });
