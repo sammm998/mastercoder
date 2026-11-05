@@ -1,0 +1,42 @@
+{
+  "name": "@forge/visual-edit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Visual edit: JSX source tags (Babel/Vite), preview inspector, and AST-based source edits",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./babel": "./src/babel-plugin.ts",
+    "./vite": "./src/vite-plugin.ts",
+    "./inspector-script": "./src/inspector-script.ts",
+    "./protocol": "./src/protocol.ts"
+  },
+  "scripts": {
+    "build:inspector": "tsx scripts/build-inspector.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src test scripts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/types": "^7.29.0",
+    "magic-string": "^0.30.17"
+  },
+  "peerDependencies": {
+    "vite": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@types/babel__core": "^7.20.5",
+    "esbuild": "^0.25.0",
+    "jsdom": "^25.0.1",
+    "vite": "^6.0.0"
+  }
+}

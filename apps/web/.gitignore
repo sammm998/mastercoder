@@ -1,0 +1,7 @@
+.next
+*.tsbuildinfo
+playwright-report
+test-results
+e2e/.auth
+lighthouse-report*
+next-env.d.ts
