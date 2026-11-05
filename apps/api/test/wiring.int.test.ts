@@ -88,3 +88,32 @@ describe("wired domain services", () => {
     expect(bad.status).toBe(401);
   });
 });
+
+describe("wired intent, billing, integrations, agents", () => {
+  it("classifies benchmark prompts and creates tasks with estimates", async () => {
+    const a = await signup(deps, `in${uniq()}@test.local`);
+    const { id: projectId } = await a.c.project.create({ workspaceId: a.workspaceId, name: "I" });
+    const t = await a.c.task.create({ projectId, prompt: "Create a 10-slide pitch deck for a startup that sells AI bookkeeping to small businesses.", source: "typed", planMode: false });
+    expect(t.intents.map((i) => i.kind)).toContain("slides");
+    expect(t.estimate.highUsd).toBeGreaterThan(0);
+  });
+  it("lists apps with scopes, imports OpenAPI and stores write-only secrets", async () => {
+    const a = await signup(deps, `ig${uniq()}@test.local`);
+    const apps = await a.c.integrations.apps({ locale: "sv" });
+    expect(apps.find((x) => x.app === "hubspot")?.scopes.length).toBeGreaterThan(0);
+    const spec = JSON.parse(readFileSync(fileURLToPath(new URL("../../../evals/fixtures/weather-openapi.json", import.meta.url)), "utf8"));
+    const imp = await a.c.integrations.importOpenApi({ workspaceId: a.workspaceId, source: spec });
+    expect(imp.operations.length).toBeGreaterThanOrEqual(2);
+    await a.c.integrations.setSecret({ workspaceId: a.workspaceId, name: "WEATHER_API_KEY", value: "s3cr3t-value" });
+    expect(await a.c.integrations.secretNames({ workspaceId: a.workspaceId })).toEqual(["WEATHER_API_KEY"]);
+    const plans = await a.c.billing.plans();
+    expect(plans.map((p) => p.id)).toEqual(expect.arrayContaining(["free", "pro", "team", "enterprise"]));
+  });
+  it("drafts and creates an agent from a prompt", async () => {
+    const a = await signup(deps, `ag${uniq()}@test.local`);
+    const d = await a.c.agents.draftFromPrompt({ workspaceId: a.workspaceId, prompt: "Every Monday at 8, summarize new HubSpot leads from the past week and email the sales team." });
+    const { id } = await a.c.agents.create({ workspaceId: a.workspaceId, name: d.name, definition: d.definition });
+    const got = await a.c.agents.get({ agentId: id });
+    expect(got.channels.webhookUrl).toContain(id);
+  });
+});

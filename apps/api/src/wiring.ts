@@ -2,7 +2,7 @@ import type { WebSocket } from "ws";
 import type { ApiDeps } from "./deps.js";
 import type { HttpExtension } from "./server.js";
 import type { AudioStreamHandler } from "./ws/gateway.js";
-import type { MediaEstimator, SlidesExporter, UploadService, MeetingUrlParser } from "./services.js";
+import type { MediaEstimator, SlidesExporter, UploadService, MeetingUrlParser, IntentClassifier, SpendChecker, BillingPort, ConnectorPort, OpenApiImporter, VaultPort, AgentDefiner } from "./services.js";
 
 /**
  * Connects domain packages to the API through the ports in services.ts. Each package is imported
@@ -11,6 +11,94 @@ import type { MediaEstimator, SlidesExporter, UploadService, MeetingUrlParser } 
 export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExtension[]; audio?: AudioStreamHandler }> {
   const extensions: HttpExtension[] = [];
   const s = deps.services;
+
+  // ---- intent router + billing ----
+  const intent = await import("@forge/intent-router");
+  const billing = await import("@forge/billing");
+  const classifier: IntentClassifier = {
+    async classify(prompt, opts) {
+      const r = await intent.classify(prompt, { llm: deps.llm, source: opts.source, usage: deps.usage });
+      return { intents: r.intents, needsClarification: r.needsClarification, question: r.question, options: r.options, estimate: r.estimate, language: r.language };
+    },
+  };
+  s.intent = classifier;
+  const guard = new billing.SpendGuard(new billing.DrizzleUsageRepo(deps.db), new billing.DrizzleSpendCapSource(deps.db));
+  const spend: SpendChecker = {
+    async check(scope, projectedUsd) {
+      await guard.check(scope, projectedUsd);
+    },
+  };
+  s.spend = spend;
+  const billingProvider = billing.createBillingProvider();
+  const billingPort: BillingPort = {
+    plans: () =>
+      Object.values(billing.PLANS).map((p) => ({ id: p.id, name: p.name, monthlyUsd: p.monthlyUsd ?? 0, includedUsd: p.includedCreditUsd, limits: p.limits as unknown as Record<string, number | null>, features: p.features.map(String) })),
+    async checkoutUrl(o) {
+      const customerId = o.customerId ?? (await billingProvider.createCustomer({ workspaceId: o.workspaceId, email: o.email })).customerId;
+      const r = await billingProvider.createCheckoutSession({ customerId, workspaceId: o.workspaceId, plan: o.plan as Parameters<typeof billingProvider.createCheckoutSession>[0]["plan"], successUrl: o.successUrl, cancelUrl: o.cancelUrl });
+      return { url: r.url, customerId };
+    },
+    portalUrl: (o) => billingProvider.createPortalSession(o),
+    priceUsage: (records) => records.reduce((a, r) => a + billing.priceUsage({ kind: r.kind as Parameters<typeof billing.priceUsage>[0]["kind"], quantity: r.quantity, costUsd: r.costUsd }), 0),
+  };
+  s.billing = billingPort;
+
+  // ---- integrations: connectors, OpenAPI, vault ----
+  const integ = await import("@forge/integrations");
+  const connectors = integ.createConnectorProvider();
+  const connectorPort: ConnectorPort = {
+    provider: connectors.name,
+    async listApps(locale) {
+      return integ.CATALOG.map((a) => ({ app: a.slug, name: a.displayName, scopes: integ.describeScopes(a.slug, [], locale) }));
+    },
+    async initiate(o) {
+      const r = await connectors.initiateConnection({ workspaceId: o.workspaceId, userId: o.userId, app: o.app, scopes: o.scopes, redirectUrl: o.redirectUrl });
+      return { connectionId: r.connectionId, redirectUrl: r.redirectUrl, externalId: r.connectionId };
+    },
+    async status(id) {
+      const c = await connectors.getConnection(id);
+      return { status: c.status, scopes: c.scopes };
+    },
+    revoke: (id) => connectors.revoke(id),
+  };
+  s.connectors = connectorPort;
+  s.connectorProvider = connectors;
+  const openapi: OpenApiImporter = {
+    async import(source) {
+      const api = await integ.importOpenApi(source, { llm: deps.llm });
+      return { title: api.title, operations: api.operations.map((o) => ({ id: o.id, method: o.method, path: o.path, summary: o.summary })), spec: api.document };
+    },
+    async generateClient(spec) {
+      return integ.generateTypedClient(await integ.importOpenApi(spec));
+    },
+  };
+  s.openapi = openapi;
+  const vault = new integ.Vault(new integ.DrizzleSecretStore(deps.db), integ.createKeyProvider());
+  const vaultPort: VaultPort = {
+    async put(scope, name, value) {
+      await vault.put({ workspaceId: scope.workspaceId, projectId: scope.projectId ?? null, name, value });
+    },
+    listNames: (scope) => vault.listNames({ workspaceId: scope.workspaceId, projectId: scope.projectId ?? null }),
+    async delete(scope, name) {
+      await vault.delete({ workspaceId: scope.workspaceId, projectId: scope.projectId ?? null }, name);
+    },
+  };
+  s.vault = vaultPort;
+  s.vaultImpl = vault;
+
+  // ---- agents ----
+  const agents = await import("@forge/agents-runtime");
+  const definer: AgentDefiner = {
+    async generate(prompt) {
+      const r = await agents.generateDefinition(deps.llm, prompt);
+      return { name: r.name, definition: r.definition as unknown as Record<string, unknown> };
+    },
+    validate(def) {
+      const v = agents.validateDefinition(def);
+      return v.ok ? { ok: true, definition: v.definition as unknown as Record<string, unknown> } : v;
+    },
+  };
+  s.agents = definer;
 
   // ---- media ----
   const media = await import("@forge/media");

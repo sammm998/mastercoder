@@ -36,7 +36,11 @@
     "@forge/media": "workspace:*",
     "@forge/slides": "workspace:*",
     "@forge/meetings": "workspace:*",
-    "@forge/speech": "workspace:*"
+    "@forge/speech": "workspace:*",
+    "@forge/intent-router": "workspace:*",
+    "@forge/billing": "workspace:*",
+    "@forge/integrations": "workspace:*",
+    "@forge/agents-runtime": "workspace:*"
   },
   "devDependencies": {
     "@types/nodemailer": "^6.4.17",

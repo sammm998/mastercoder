@@ -95,9 +95,21 @@ importers:
       '@fastify/websocket':
         specifier: ^11.0.2
         version: 11.3.7
+      '@forge/agents-runtime':
+        specifier: workspace:*
+        version: link:../../packages/agents-runtime
+      '@forge/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@forge/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@forge/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
+      '@forge/intent-router':
+        specifier: workspace:*
+        version: link:../../packages/intent-router
       '@forge/llm':
         specifier: workspace:*
         version: link:../../packages/llm
