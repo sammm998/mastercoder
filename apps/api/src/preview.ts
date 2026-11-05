@@ -31,7 +31,7 @@ const server = createServer((req, res) => {
     const t = url.searchParams.get("t") ?? "";
     const claims = verifyPreviewToken(t, secret);
     if (!claims) return page(res, 403, "Preview expired", "This preview link is invalid or has expired. Open it again from the project.");
-    res.writeHead(302, { location: "/", "set-cookie": `${COOKIE}=${encodeURIComponent(t)}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${Math.max(60, claims.exp - Math.floor(Date.now() / 1000))}` });
+    res.writeHead(302, { location: "/", "set-cookie": `${COOKIE}=${encodeURIComponent(t)}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${Math.max(60, claims.exp - Math.floor(Date.now() / 1000))}` });
     return void res.end();
   }
   const claims = verifyPreviewToken(cookieToken(req) ?? "", secret);
