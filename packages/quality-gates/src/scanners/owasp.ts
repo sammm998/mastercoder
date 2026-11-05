@@ -19,7 +19,8 @@ const SQL_UPPER = /\b(SELECT\s[\s\S]*\bFROM|INSERT\s+INTO|UPDATE\s+\S+\s+SET|DEL
 const SQL_ANY = /\b(select\s[\s\S]*\bfrom|insert\s+into|update\s+\S+\s+set|delete\s+from)\b/i;
 const DB_CALL = /(\.(query|execute|exec|raw|unsafe|prepare|run|all|queryRawUnsafe|executeRawUnsafe)|\$queryRawUnsafe|\$executeRawUnsafe)\s*\(\s*$/;
 const REQUEST_INPUT = /\b(req|request|ctx|c\.req|params|query|body|searchParams|formData|input|args|event)\b/;
-const SANITIZED = /(sanitize|DOMPurify|purify|escapeHtml|escape\(|xss\(|sanitizeHtml)/i;
+// serializeJsonLd = app-kit JSON-LD serializer that escapes "<" as \u003c (safe inside <script type="application/ld+json">).
+const SANITIZED = /(sanitize|DOMPurify|purify|escapeHtml|escape\(|xss\(|sanitizeHtml|serializeJsonLd\()/i;
 
 const isComment = (t: string): boolean => /^\s*(\/\/|#|\*|\/\*)/.test(t);
 
