@@ -362,6 +362,9 @@ importers:
       '@forge/db':
         specifier: workspace:*
         version: link:../db
+      '@forge/integrations':
+        specifier: workspace:*
+        version: link:../integrations
       '@forge/llm':
         specifier: workspace:*
         version: link:../llm
@@ -377,6 +380,19 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    devDependencies:
+      '@forge/app-kit':
+        specifier: workspace:*
+        version: link:../app-kit
+      '@forge/quality-gates':
+        specifier: workspace:*
+        version: link:../quality-gates
+      '@forge/sandbox':
+        specifier: workspace:*
+        version: link:../sandbox
+      '@forge/templates':
+        specifier: workspace:*
+        version: link:../templates
 
   packages/agents-runtime:
     dependencies:

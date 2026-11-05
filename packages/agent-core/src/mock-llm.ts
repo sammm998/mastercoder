@@ -1,5 +1,6 @@
 import { registerMockHandler, type CompletionRequest } from "@forge/llm";
 import type { Entity, Spec } from "./spec.js";
+import { mockBuildHandler } from "./mock-builder/index.js";
 
 /**
  * Rule-based stand-ins for the planner / reviewer / summary model calls, used when LLM_PROVIDER=mock.
@@ -206,3 +207,6 @@ registerMockHandler("agent.review", (req) => {
 });
 
 registerMockHandler("agent.summary", (req) => lastUserText(req).split("\n")[0] ?? "Build completed.");
+
+/** Offline builder: rule-based, template-based code generation (see src/mock-builder). */
+registerMockHandler("agent.build", mockBuildHandler);
