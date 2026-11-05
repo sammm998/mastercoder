@@ -30,7 +30,7 @@ function bearer(req: FastifyRequest): string | null {
 }
 
 export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}): Promise<{ app: FastifyInstance; collab: CollabServer }> {
-  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 25 * 1024 * 1024, trustProxy: true });
+  const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 25 * 1024 * 1024, trustProxy: true, maxParamLength: 5000 });
   await app.register(cookie);
   await app.register(cors, {
     origin: [deps.config.appUrl, process.env.ADMIN_URL || "http://localhost:3001", /^exp:\/\//, /^http:\/\/localhost:\d+$/],

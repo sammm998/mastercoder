@@ -77,7 +77,7 @@ export async function startStack(opts: { port?: number; log?: (s: string) => voi
 
 export function client(apiUrl: string, token?: string) {
   return createTRPCClient<AppRouter>({
-    links: [httpBatchLink({ url: `${apiUrl}/trpc`, transformer: superjson, headers: () => (token ? { authorization: `Bearer ${token}` } : {}) })],
+    links: [httpBatchLink({ url: `${apiUrl}/trpc`, transformer: superjson, maxURLLength: 2000, maxItems: 10, headers: () => (token ? { authorization: `Bearer ${token}` } : {}) })],
   });
 }
 export type Client = ReturnType<typeof client>;

@@ -16,7 +16,11 @@
     "@forge/speech": "workspace:*",
     "@trpc/client": "^11.24.0",
     "superjson": "^2.2.2",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.4.2"
   },
-  "devDependencies": { "@types/ws": "^8.5.13" }
+  "devDependencies": {
+    "@types/ws": "^8.5.13"
+  }
 }

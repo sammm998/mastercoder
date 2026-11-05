@@ -33,14 +33,14 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 
 ## Wave 4 — Verification (Definition of done §19)
 - [ ] DoD1 docker compose up + one command starts platform
-- [ ] DoD2 benchmark 20 prompts, >=16 succeed
+- [~] DoD2 benchmark runner done; non-code cases 10-16 pass (7/7 + #14 fixed); code cases pending mock builder
 - [x] DoD3 insecure app blocked by gates (packages/quality-gates fixtures, all 7 static gates block)
 - [~] DoD4 DB branch restore verified (app-kit pg-clone int test); end-to-end checkpoint (code+DB) pending worker wiring
 - [x] DoD5 3 benchmark sites (packages/design int test; heuristic critic, 3D shown as poster headless) with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
-- [ ] DoD6 cron user agent asks approval before sending, logs run + cost
+- [x] DoD6 cron agent approval before send, run log + cost (agents-runtime int test + bench #15)
 - [ ] DoD7 two browsers edit same project live
 - [x] DoD8 sandbox escape tests (packages/sandbox/test/escape.int.test.ts, real docker)
-- [ ] DoD9 load test 50 concurrent builds
+- [~] DoD9 load test: 50 concurrent tasks (light mix), 3 workers, 0 failures (evals/load). Code-build mix pending mock builder
 - [ ] DoD10 all tests pass + FINAL_REPORT.md
 
 ## Notes
