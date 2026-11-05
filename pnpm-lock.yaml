@@ -36,6 +36,33 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.5)
 
+  apps/agent-worker:
+    dependencies:
+      '@forge/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
+      '@forge/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
+      '@forge/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      bullmq:
+        specifier: ^5.34.0
+        version: 5.81.5
+      ioredis:
+        specifier: ^5.4.2
+        version: 5.11.1
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+
   apps/api:
     dependencies:
       '@fastify/cookie':
