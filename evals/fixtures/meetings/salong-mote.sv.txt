@@ -1,0 +1,34 @@
+Maria: Hej Jonas, tack för att du kom hit till salongen.
+Jonas: Hej Maria! Kul att ses. Berätta, vad är det ni behöver?
+Maria: Ja, alltså, idag tar vi alla bokningar per telefon och i en pappersbok, och det blir kaos ibland. Vi behöver ett bokningssystem på nätet.
+Jonas: Okej. Vilka tjänster erbjuder ni?
+Maria: Klippning, färgning, slingor, permanent och skäggtrimning. Varje tjänst har ett eget pris och en egen tidsåtgång, färgning tar till exempel två timmar.
+Jonas: Så kunden väljer först en tjänst och sedan en tid?
+Maria: Precis. Kunden vill kunna välja tjänst, välja vilken stylist hon vill gå till och sedan se lediga tider.
+Jonas: Hur många stylister är ni?
+Maria: Vi är fyra stylister, och alla jobbar inte samma dagar. Den ska kunna hantera arbetsscheman för varje stylist, så att bara deras lediga tidsluckor visas.
+Jonas: Hur långa tidsluckor tänker du? Kvart, halvtimme?
+Maria: Kvartar är bra, men en bokning ska ta så många tidsluckor som tjänsten kräver.
+Jonas: Det viktigaste blir väl att det aldrig blir dubbelbokningar.
+Maria: Ja, verkligen. Det får aldrig hända att två kunder bokas på samma stylist samtidigt. Det har hänt med pappersboken och det var pinsamt.
+Jonas: Det löser vi i databasen med en spärr, så att två bokningar på samma stylist inte kan överlappa.
+Maria: Bra. Och kunden vill få en bekräftelse direkt, helst både via sms och e-post.
+Jonas: Ska vi skicka en påminnelse också, dagen innan?
+Maria: Ja, gärna en påminnelse via sms dagen innan. Det minskar antalet uteblivna besök.
+Jonas: Vad gäller vid avbokning?
+Maria: Kunden ska kunna avboka eller boka om själv via en länk i bekräftelsen, fram till tjugofyra timmar innan.
+Jonas: Och om någon avbokar senare än så?
+Maria: Då får de ringa oss. Vi bestämde förra veckan att vi inte tar någon avgift för sena avbokningar i början.
+Jonas: Okej. Hur vill ni som personal se bokningarna?
+Maria: Vi behöver en dagsvy för personalen, där varje stylist ser sina kunder för dagen, med namn, telefonnummer och vilken tjänst det gäller.
+Jonas: Ska personalen kunna lägga in bokningar själva, när någon ringer?
+Maria: Ja, absolut. Den ska kunna lägga in bokningar manuellt också, och blockera tid för lunch eller ledighet.
+Jonas: Behöver ni ta betalt online?
+Maria: Nej, inte nu. Beslut: betalning sker i salongen, vi tar online-betalning senare.
+Jonas: Bra, det förenklar. Vilket språk ska sidan vara på?
+Maria: Svenska först, men gärna engelska också, vi har en del turister på sommaren.
+Jonas: Ska vi koppla det till Google Kalender för personalen?
+Maria: Hmm, det vet jag inte riktigt. Det får vi fundera på.
+Jonas: Då sammanfattar jag. Jag tar fram en första version med tjänster, stylister, tidsluckor, bokningar och bekräftelser, och skickar en länk till dig nästa fredag.
+Maria: Perfekt. Action: Maria skickar listan med tjänster, priser och tidsåtgång till Jonas senast på måndag.
+Jonas: Toppen, då hörs vi!
