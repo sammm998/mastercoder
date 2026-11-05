@@ -38,6 +38,10 @@ export const ForgeEventSchema = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("usage"), costUsd: z.number(), tokensIn: z.number(), tokensOut: z.number() }),
   z.object({ ...base, type: z.literal("task.completed"), summary: z.string(), chargedUsd: z.number() }),
   z.object({ ...base, type: z.literal("task.failed"), reason: z.string(), charged: z.boolean(), blockedOn: z.string().optional() }),
+  z.object({ ...base, type: z.literal("preview.ready"), url: z.string(), port: z.number().optional() }),
+  z.object({ ...base, type: z.literal("terminal.output"), stream: z.enum(["stdout", "stderr"]), text: z.string() }),
+  z.object({ ...base, type: z.literal("deploy.status"), deploymentId: z.string(), status: z.string(), url: z.string().optional() }),
+  z.object({ ...base, type: z.literal("meeting.status"), meetingId: z.string(), status: z.string() }),
   z.object({ ...base, type: z.literal("presence"), userId: z.string(), name: z.string(), cursor: z.unknown().optional() }),
 ]);
 export type ForgeEvent = z.infer<typeof ForgeEventSchema>;
