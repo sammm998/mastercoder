@@ -31,6 +31,9 @@
     "@forge/billing": "workspace:*",
     "@forge/sandbox": "workspace:*",
     "@forge/quality-gates": "workspace:*",
-    "@forge/design": "workspace:*"
+    "@forge/design": "workspace:*",
+    "@forge/templates": "workspace:*",
+    "@forge/app-kit": "workspace:*",
+    "playwright": "1.63.0"
   }
 }
