@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "{{projectName}}",
+    "slug": "{{projectSlug}}",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "{{projectSlug}}",
+    "userInterfaceStyle": "automatic",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "eu.forge.{{projectSlug}}" },
+    "android": { "package": "eu.forge.{{projectSlug}}" },
+    "web": { "output": "single", "bundler": "metro" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

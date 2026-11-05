@@ -1,0 +1,53 @@
+---
+import KitBody from "../kit/Body.astro";
+import KitHead from "../kit/Head.astro";
+import { resolveMeta, websiteJsonLd } from "../lib/seo";
+import { site } from "../lib/site";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  lang?: string;
+}
+
+const { title, description, image, lang = site.locale } = Astro.props;
+const origin = (Astro.site ?? Astro.url).origin;
+const meta = resolveMeta({ title, description, image, path: Astro.url.pathname }, origin);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{meta.title}</title>
+    <meta name="description" content={meta.description} />
+    <link rel="canonical" href={meta.canonical} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    {Object.entries(meta.openGraph).map(([property, content]) => <meta property={property} content={content} />)}
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={websiteJsonLd(origin)} />
+    <KitHead />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <nav class="container" aria-label="Main">
+        <a class="brand" href="/">{site.name}</a>
+      </nav>
+    </header>
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <p>© {year} {site.name}</p>
+      </div>
+    </footer>
+    <KitBody />
+  </body>
+</html>

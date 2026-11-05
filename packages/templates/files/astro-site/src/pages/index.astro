@@ -1,0 +1,19 @@
+---
+import Base from "../layouts/Base.astro";
+import { site } from "../lib/site";
+---
+
+<Base>
+  <section class="hero container reveal" aria-labelledby="hero-title">
+    <h1 id="hero-title">{site.name}</h1>
+    <p class="lead">{site.description}</p>
+    <a class="button" href="#get-started">Get started</a>
+  </section>
+  <section id="get-started" class="container" aria-labelledby="start-title">
+    <h2 id="start-title">Get started</h2>
+    <p>
+      Edit <code>src/pages/index.astro</code> to change this page. Colours, type and spacing come from
+      <code>src/styles/tokens.css</code>.
+    </p>
+  </section>
+</Base>

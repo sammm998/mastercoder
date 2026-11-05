@@ -1,0 +1,16 @@
+{
+  "id": "fastapi",
+  "name": "FastAPI (Python)",
+  "kind": "backend",
+  "language": "python",
+  "install": "python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt",
+  "dev": ".venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+  "build": ".venv/bin/python -m compileall -q app",
+  "test": ".venv/bin/pytest -q",
+  "typecheck": ".venv/bin/mypy app tests",
+  "lint": ".venv/bin/ruff check . && .venv/bin/ruff format --check .",
+  "port": 8000,
+  "publicRoutes": ["/health"],
+  "lighthouse": false,
+  "healthPath": "/health"
+}

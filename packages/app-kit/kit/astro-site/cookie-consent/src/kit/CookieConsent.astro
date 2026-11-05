@@ -1,0 +1,92 @@
+---
+/*
+ * Accessible cookie banner. Non-essential scripts stay blocked until accepted: write them as
+ *   <script type="text/plain" data-consent="analytics" data-src="https://..."></script>
+ * and they are activated after the visitor grants that category.
+ */
+import { consentText } from "./consent";
+
+const lang = Astro.currentLocale ?? "en";
+const t = consentText(lang);
+---
+
+<div id="forge-consent" role="dialog" aria-modal="false" aria-labelledby="forge-consent-title" aria-describedby="forge-consent-body" hidden>
+  <h2 id="forge-consent-title">{t.title}</h2>
+  <p id="forge-consent-body">{t.body}</p>
+  <fieldset id="forge-consent-choices" hidden>
+    <label><input type="checkbox" checked disabled /> {t.necessary}</label>
+    <label><input type="checkbox" name="analytics" /> {t.analytics}</label>
+    <label><input type="checkbox" name="marketing" /> {t.marketing}</label>
+  </fieldset>
+  <div class="forge-consent-actions">
+    <button type="button" class="button" data-action="accept">{t.acceptAll}</button>
+    <button type="button" class="button" data-action="reject">{t.rejectAll}</button>
+    <button type="button" class="button" data-variant="ghost" data-action="choose" aria-controls="forge-consent-choices" aria-expanded="false">{t.choose}</button>
+    <button type="button" class="button" data-variant="ghost" data-action="save" hidden>{t.save}</button>
+  </div>
+</div>
+
+<style>
+  #forge-consent {
+    position: fixed;
+    inset-inline: var(--space-4);
+    bottom: var(--space-4);
+    z-index: 1000;
+    max-width: 36rem;
+    margin-inline: auto;
+    padding: var(--space-6);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px rgb(0 0 0 / 0.15);
+  }
+  #forge-consent[hidden] {
+    display: none;
+  }
+  #forge-consent h2 {
+    font-size: 1.125rem;
+    margin: 0 0 var(--space-2);
+  }
+  #forge-consent fieldset {
+    border: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  #forge-consent fieldset[hidden] {
+    display: none;
+  }
+  .forge-consent-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+</style>
+
+<script>
+  import { activateConsentedScripts, getConsent, setConsent } from "./consent";
+
+  const root = document.getElementById("forge-consent");
+  if (root) {
+    const choices = root.querySelector<HTMLFieldSetElement>("#forge-consent-choices");
+    const save = root.querySelector<HTMLButtonElement>('[data-action="save"]');
+    const choose = root.querySelector<HTMLButtonElement>('[data-action="choose"]');
+    const checked = (name: string) => root.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.checked ?? false;
+    const decide = (analytics: boolean, marketing: boolean) => {
+      setConsent({ analytics, marketing });
+      root.hidden = true;
+    };
+    if (getConsent() === null) root.hidden = false;
+    activateConsentedScripts();
+    root.querySelector('[data-action="accept"]')?.addEventListener("click", () => decide(true, true));
+    root.querySelector('[data-action="reject"]')?.addEventListener("click", () => decide(false, false));
+    save?.addEventListener("click", () => decide(checked("analytics"), checked("marketing")));
+    choose?.addEventListener("click", () => {
+      if (choices) choices.hidden = false;
+      if (save) save.hidden = false;
+      choose.hidden = true;
+      choose.setAttribute("aria-expanded", "true");
+    });
+  }
+</script>

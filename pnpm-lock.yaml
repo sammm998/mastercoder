@@ -399,6 +399,34 @@ importers:
         specifier: ^3.24.1
         version: 3.25.76
 
+  packages/app-kit:
+    dependencies:
+      '@forge/llm':
+        specifier: workspace:*
+        version: link:../llm
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@forge/templates':
+        specifier: workspace:*
+        version: link:../templates
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      '@types/qrcode':
+        specifier: ^1.5.6
+        version: 1.5.6
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
   packages/billing:
     dependencies:
       '@forge/db':
@@ -710,6 +738,19 @@ importers:
       '@types/ws':
         specifier: ^8.5.13
         version: 8.18.2
+
+  packages/templates:
+    dependencies:
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
 packages:
 

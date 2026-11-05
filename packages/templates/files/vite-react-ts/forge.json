@@ -1,0 +1,17 @@
+{
+  "id": "vite-react-ts",
+  "name": "Vite + React + TypeScript",
+  "kind": "app",
+  "install": "npm install",
+  "dev": "npm run dev -- --host 0.0.0.0 --port 5173",
+  "build": "npm run build",
+  "test": "npm test",
+  "typecheck": "npm run typecheck",
+  "lint": "npm run lint",
+  "e2e": "npm run e2e",
+  "port": 5173,
+  "containerPort": 8080,
+  "publicRoutes": ["/"],
+  "lighthouse": true,
+  "healthPath": "/healthz"
+}
