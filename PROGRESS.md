@@ -12,7 +12,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 
 ## Wave 1 — Packages
 - [x] W1-A sandbox + quality-gates — docker (hardened, internal net + egress proxy), e2b, daytona, local; 14 gates incl. built-in semgrep/gitleaks/osv fallbacks, RLS/auth/validation/client-secrets; insecure fixture blocked; 66+18 / 50+2 tests
-- [ ] W1-B templates + app-kit
+- [x] W1-B templates + app-kit — 6 templates (forge.json, tokens.css, Dockerfile, tests), kit features (auth/db+RLS/storage/ai/payments/email/cron/seo/analytics/consent/i18n/cms/observability), Neon/pg-clone branching, Fly/local deploy, AI gateway, GitHub export, error ingest; 55+9 / 71 tests
 - [x] W1-C design — 3 directions w/ contrast, tokens, brand import (logo/Figma), 15 patterns, composer, heuristic + vision critic, Lighthouse; 3/3 benchmark sites QA>=9.5, mobile perf 91-97, a11y 100; 83 tests
 - [x] W1-D media + slides — fal/Replicate/mock, moderation (62 cases), Remotion (renders mp4), MediaJobService; decks/docs, PPTX/PDF/DOCX; 93+4 / 19 tests
 - [x] W1-E speech + meetings — ElevenLabs/Deepgram/Whisper/mock STT, WER, Swedish Piper fixtures; Recall/MeetStream/Vexa/mock bots, consent, calendar, chunked upload, meeting→spec; 49 / 38+1 tests
@@ -26,8 +26,8 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [x] W3-A apps/api — auth (password, magic link, OIDC Google/MS), RBAC, projects/files/remix, tasks (classify→estimate→queue, clarify, plan approval), GDPR, events WS, Yjs collab WS (2-client test), domain routers via ports, hooks; 13 tests
 - [~] W3-B apps/agent-worker — build job runner + settlement + persisted events/usage (2 int tests). TODO: BullMQ wiring of all queues + domain ports
 - [ ] W3-C apps/web
-- [ ] W3-D apps/admin
-- [ ] W3-E apps/mobile
+- [x] W3-D apps/admin — stats, users, projects, cost chart + spike flag, provider health, abuse queue; 48 tests + e2e smoke
+- [x] W3-E apps/mobile — Expo: chat + live events, voice streaming, meeting recording w/ resumable upload, previews/QR, sv/en; 56 tests, web export verified (native not device-tested)
 
 - [x] observability package — OTel tracing, Sentry adapter, health checks, cost spike/provider-down alerts
 
@@ -35,7 +35,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] DoD1 docker compose up + one command starts platform
 - [ ] DoD2 benchmark 20 prompts, >=16 succeed
 - [x] DoD3 insecure app blocked by gates (packages/quality-gates fixtures, all 7 static gates block)
-- [ ] DoD4 checkpoint restore restores code + DB data
+- [~] DoD4 DB branch restore verified (app-kit pg-clone int test); end-to-end checkpoint (code+DB) pending worker wiring
 - [x] DoD5 3 benchmark sites (packages/design int test; heuristic critic, 3D shown as poster headless) with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
 - [ ] DoD6 cron user agent asks approval before sending, logs run + cost
 - [ ] DoD7 two browsers edit same project live

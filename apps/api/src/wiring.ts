@@ -191,12 +191,25 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
   // ---- speech: streaming mic transcription over /ws/audio ----
   const speech = await import("@forge/speech");
   const conns = new Map<string, WebSocket>();
+  const simpleClients = new Set<string>();
   let seq = 0;
   const manager = new speech.StreamingSessionManager({
     provider: speech.createSttProvider(),
     send: (id, msg) => {
       const ws = conns.get(id);
-      if (ws?.readyState === 1) ws.send(JSON.stringify(msg));
+      if (ws?.readyState !== 1) return;
+      // Simple protocol (mobile): {type:"transcript", text, isFinal} / {type:"error"} / {type:"done"}.
+      if (simpleClients.has(id)) {
+        const m = msg as { type: string; text?: string; message?: string; segment?: { text: string }; transcript?: { text: string } };
+        if (m.type === "transcript.partial") ws.send(JSON.stringify({ type: "transcript", text: m.text ?? m.segment?.text ?? "", isFinal: false }));
+        else if (m.type === "transcript.error") ws.send(JSON.stringify({ type: "error", message: m.message ?? "transcription failed" }));
+        else if (m.type === "transcript.done") {
+          ws.send(JSON.stringify({ type: "transcript", text: m.transcript?.text ?? "", isFinal: true }));
+          ws.send(JSON.stringify({ type: "done" }));
+        }
+        return;
+      }
+      ws.send(JSON.stringify(msg));
     },
     logger: deps.log,
   });
@@ -222,6 +235,23 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
           return;
         }
         const text = data.toString();
+        let parsed: { type?: string; language?: string; sampleRate?: number } | null = null;
+        try {
+          parsed = JSON.parse(text) as { type?: string };
+        } catch {
+          parsed = null;
+        }
+        if (parsed?.type === "start") {
+          simpleClients.add(id);
+          implicit = { streamId: `s${seq}`, seq: 0 };
+          handle({ type: "audio.start", streamId: implicit.streamId, language: parsed.language ?? language, sampleRate: parsed.sampleRate ?? 16000, encoding: "pcm16" });
+          return;
+        }
+        if (parsed?.type === "stop" && implicit) {
+          handle({ type: "audio.stop", streamId: implicit.streamId });
+          implicit = null;
+          return;
+        }
         if (implicit && /"type"\s*:\s*"audio\.stop"/.test(text) && !/"streamId"/.test(text)) {
           handle({ type: "audio.stop", streamId: implicit.streamId });
           implicit = null;
@@ -230,7 +260,10 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
         handle(text);
       });
       ws.on("close", () => {
-        chain = chain.then(() => manager.disconnect(id)).finally(() => conns.delete(id));
+        chain = chain.then(() => manager.disconnect(id)).finally(() => {
+          conns.delete(id);
+          simpleClients.delete(id);
+        });
       });
     },
   };

@@ -14,7 +14,8 @@ export interface AudioStreamHandler {
 
 async function wsContext(deps: ApiDeps, req: FastifyRequest): Promise<Context> {
   const q = req.query as Record<string, string | undefined>;
-  const token = (req.cookies as Record<string, string | undefined>)[SESSION_COOKIE] ?? q.token ?? null;
+  const auth0 = String(req.headers.authorization ?? "");
+  const token = (req.cookies as Record<string, string | undefined>)[SESSION_COOKIE] ?? (auth0.startsWith("Bearer ") ? auth0.slice(7) : undefined) ?? q.token ?? null;
   const auth = new AuthService({ db: deps.db, email: deps.email, appUrl: deps.config.appUrl, sessionDays: deps.config.sessionDays });
   const user = await auth.userFromToken(token);
   return { deps, user, sessionToken: token, ip: req.ip, userAgent: String(req.headers["user-agent"] ?? ""), setCookie: () => undefined, clearCookie: () => undefined };
