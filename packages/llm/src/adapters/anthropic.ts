@@ -24,6 +24,25 @@ function toAnthropicContent(content: string | ContentBlock[]): Anthropic.Content
   });
 }
 
+/**
+ * Incremental prompt caching for multi-turn tool loops: a cache breakpoint on the last cacheable block of
+ * the last message means the next turn reads the whole earlier conversation from cache (~10x cheaper)
+ * instead of paying full input price for it on every tool call.
+ */
+export function withHistoryCache(messages: Array<{ role: "user" | "assistant"; content: Anthropic.ContentBlockParam[] | string }>) {
+  const last = messages[messages.length - 1];
+  if (!last) return messages;
+  const blocks: Anthropic.ContentBlockParam[] = typeof last.content === "string" ? [{ type: "text", text: last.content }] : [...last.content];
+  for (let i = blocks.length - 1; i >= 0; i--) {
+    const b = blocks[i]!;
+    if (b.type === "text" || b.type === "tool_result" || b.type === "tool_use" || b.type === "image") {
+      blocks[i] = { ...b, cache_control: { type: "ephemeral" } } as Anthropic.ContentBlockParam;
+      return [...messages.slice(0, -1), { ...last, content: blocks }];
+    }
+  }
+  return messages;
+}
+
 function fromAnthropicBlocks(blocks: Anthropic.ContentBlock[]): ContentBlock[] {
   const out: ContentBlock[] = [];
   for (const b of blocks) {
@@ -65,7 +84,7 @@ export class AnthropicProvider implements LLMProvider {
       system,
       tools,
       tool_choice: tools?.length ? { type: "auto" as const } : undefined,
-      messages: req.messages.map((m) => ({ role: m.role, content: toAnthropicContent(m.content) })),
+      messages: req.cache ? withHistoryCache(req.messages.map((m) => ({ role: m.role, content: toAnthropicContent(m.content) }))) : req.messages.map((m) => ({ role: m.role, content: toAnthropicContent(m.content) })),
       thinking: { type: "adaptive" as const },
       output_config: { effort: req.effort ?? "medium" },
       ...(useFallback ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" } : {}),
