@@ -49,16 +49,16 @@ importers:
         version: 5.106.1(@types/react@19.3.0)(react@19.3.1)
       '@trpc/client':
         specifier: ^11.24.0
-        version: 11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)
+        version: 11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/react-query':
         specifier: ^11.24.0
-        version: 11.24.0(@tanstack/react-query@5.106.1(@types/react@19.3.0)(react@19.3.1))(@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(react@19.3.1)(typescript@5.9.3)
+        version: 11.24.0(@tanstack/react-query@5.106.1(@types/react@19.3.0)(react@19.3.1))(@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(react@19.3.1)(typescript@5.9.3)
       '@trpc/server':
         specifier: ^11.24.0
-        version: 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
+        version: 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
       next:
         specifier: ^16.4.5
-        version: 16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        version: 16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react:
         specifier: ^19.2.0
         version: 19.3.1
@@ -153,6 +153,10 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    devDependencies:
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
 
   apps/api:
     dependencies:
@@ -12531,11 +12535,6 @@ snapshots:
       '@trpc/server': 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(typescript@5.9.3)
       typescript: 5.9.3
 
-  '@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)':
-    dependencies:
-      '@trpc/server': 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
-      typescript: 5.9.3
-
   '@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
       '@trpc/server': 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
@@ -12549,11 +12548,11 @@ snapshots:
       react: 19.3.0
       typescript: 5.9.3
 
-  '@trpc/react-query@11.24.0(@tanstack/react-query@5.106.1(@types/react@19.3.0)(react@19.3.1))(@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(react@19.3.1)(typescript@5.9.3)':
+  '@trpc/react-query@11.24.0(@tanstack/react-query@5.106.1(@types/react@19.3.0)(react@19.3.1))(@trpc/client@11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(react@19.3.1)(typescript@5.9.3)':
     dependencies:
       '@tanstack/react-query': 5.106.1(@types/react@19.3.0)(react@19.3.1)
-      '@trpc/client': 11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)
-      '@trpc/server': 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
+      '@trpc/client': 11.24.0(@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3))(typescript@5.9.3)
+      '@trpc/server': 11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)
       react: 19.3.1
       typescript: 5.9.3
 
@@ -12564,14 +12563,6 @@ snapshots:
       '@types/ws': 8.18.2
       fastify: 5.12.8
       next: 16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-
-  '@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)':
-    dependencies:
-      typescript: 5.9.3
-    optionalDependencies:
-      '@types/ws': 8.18.2
-      fastify: 5.12.8
-      next: 16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
   '@trpc/server@11.24.0(@types/ws@8.18.2)(fastify@5.12.8)(next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(typescript@5.9.3)':
     dependencies:
@@ -15682,33 +15673,6 @@ snapshots:
       - babel-plugin-macros
     optional: true
 
-  next@16.4.5(@babel/core@7.29.13)(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
-    dependencies:
-      '@next/env': 16.4.5
-      '@swc/helpers': 0.5.23
-      baseline-browser-mapping: 2.11.35
-      caniuse-lite: 1.0.30001822
-      postcss: 8.5.23
-      react: 19.3.1
-      react-dom: 19.3.1(react@19.3.1)
-      styled-jsx: 5.1.6(@babel/core@7.29.13)(react@19.3.1)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.4.5
-      '@next/swc-darwin-x64': 16.4.5
-      '@next/swc-linux-arm64-gnu': 16.4.5
-      '@next/swc-linux-arm64-musl': 16.4.5
-      '@next/swc-linux-x64-gnu': 16.4.5
-      '@next/swc-linux-x64-musl': 16.4.5
-      '@next/swc-win32-arm64-msvc': 16.4.5
-      '@next/swc-win32-x64-msvc': 16.4.5
-      '@opentelemetry/api': 1.10.0
-      babel-plugin-react-compiler: 1.0.0
-      sharp: 0.35.5(@types/node@22.20.5)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-plugin-macros
-
   next@16.4.5(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
       '@next/env': 16.4.5
@@ -15735,7 +15699,6 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
-    optional: true
 
   node-abort-controller@3.1.1: {}
 
@@ -17051,18 +17014,10 @@ snapshots:
       '@babel/core': 7.29.13
     optional: true
 
-  styled-jsx@5.1.6(@babel/core@7.29.13)(react@19.3.1):
-    dependencies:
-      client-only: 0.0.1
-      react: 19.3.1
-    optionalDependencies:
-      '@babel/core': 7.29.13
-
   styled-jsx@5.1.6(react@19.3.1):
     dependencies:
       client-only: 0.0.1
       react: 19.3.1
-    optional: true
 
   styleq@0.1.3: {}
 

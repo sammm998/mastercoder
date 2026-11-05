@@ -35,7 +35,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] DoD1 docker compose up + one command starts platform
 - [~] DoD2 benchmark runner done; non-code cases 10-16 pass (7/7 + #14 fixed); code cases pending mock builder
 - [x] DoD3 insecure app blocked by gates (packages/quality-gates fixtures, all 7 static gates block)
-- [~] DoD4 DB branch restore verified (app-kit pg-clone int test); end-to-end checkpoint (code+DB) pending worker wiring
+- [x] DoD4 checkpoint restore restores code + DB data (apps/agent-worker/test/checkpoint.int.test.ts)
 - [x] DoD5 3 benchmark sites (packages/design int test; heuristic critic, 3D shown as poster headless) with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
 - [x] DoD6 cron agent approval before send, run log + cost (agents-runtime int test + bench #15)
 - [ ] DoD7 two browsers edit same project live

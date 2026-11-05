@@ -1,12 +1,13 @@
 import type { Job } from "bullmq";
-import { and, eq, checkpoints, projects, projectFiles, deployments } from "@forge/db";
+import { and, eq, projects, deployments } from "@forge/db";
 import { MeteredLLM } from "@forge/llm";
 import { QUEUES, newId, BuildJobSchema, DeployJobSchema, type BuildJob } from "@forge/shared";
 import type { AgentDeps, SandboxPort, DesignPort, CheckpointPort, GatesPort, TemplatesPort, BrowserPort } from "@forge/agent-core";
 import { createSandboxProvider, type Sandbox, type SandboxProvider } from "@forge/sandbox";
 import { runGates } from "@forge/quality-gates";
 import { selectTemplate, getManifest, templateFiles, isTemplateId } from "@forge/templates";
-import { kitFilesFor, createDbBranchProvider, createDeployProvider, PgCloneBranchProvider, type KitFeature } from "@forge/app-kit";
+import { kitFilesFor, createDbBranchProvider, createDeployProvider, type KitFeature } from "@forge/app-kit";
+import { createCheckpointing } from "./checkpoints.js";
 import { generateDirections, pickDirection, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
 import { billingSettler } from "./settle.js";
 import { runBuildJob } from "./jobs/build.js";
@@ -73,40 +74,8 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     lighthouse: (url) => runLighthouse(url),
   });
 
-  const checkpointsPort = (job: BuildJob): CheckpointPort => ({
-    async create({ sandbox, projectId, taskId, label }) {
-      await sandbox.exec(`git init -q 2>/dev/null; git -c user.email=agent@forge.local -c user.name="Forge" add -A && git -c user.email=agent@forge.local -c user.name="Forge" commit -qm ${JSON.stringify(`checkpoint: ${label}`)} --allow-empty`, { timeoutMs: 60_000 });
-      const commit = (await sandbox.exec("git rev-parse HEAD")).stdout.trim() || "unknown";
-      const { snapshotId } = await sandbox.snapshot(label);
-      let dbBranchId: string | undefined;
-      const [p] = await d.db.select().from(projects).where(eq(projects.id, projectId));
-      const root = p?.dbBranchRoot ?? (await ensureProjectDb(projectId));
-      if (root) dbBranchId = (await dbBranches.createBranch(root, `cp_${Date.now().toString(36)}`)).branchId;
-      const id = newId("cp");
-      await d.db.insert(checkpoints).values({ id, projectId, taskId, label, commitSha: commit, sandboxSnapshotId: snapshotId, dbBranchId });
-      await mirrorFiles(sandbox, projectId);
-      void job;
-      return { checkpointId: id, commit, snapshotId, dbBranchId };
-    },
-  });
-
-  async function ensureProjectDb(projectId: string): Promise<string | null> {
-    if (!(dbBranches instanceof PgCloneBranchProvider)) return null;
-    const root = `app_${projectId.replace(/[^a-z0-9]/g, "_")}`.slice(0, 40);
-    if (!(await dbBranches.exists(root))) await dbBranches.createDatabase(root);
-    await d.db.update(projects).set({ dbBranchRoot: root }).where(eq(projects.id, projectId));
-    return root;
-  }
-
-  /** Durable copy of the project's source files for the editor, remix and export. */
-  async function mirrorFiles(sandbox: SandboxPort, projectId: string) {
-    const files = (await sandbox.listFiles(".", { recursive: true })).filter((f) => !/(^|\/)(node_modules|\.git|\.next|dist|\.venv|__pycache__)(\/|$)/.test(f)).slice(0, 2000);
-    for (const path of files) {
-      const content = await sandbox.readFile(path).catch(() => null);
-      if (content === null || content.length > 500_000 || content.includes("\u0000")) continue;
-      await d.db.insert(projectFiles).values({ projectId, path, content }).onConflictDoUpdate({ target: [projectFiles.projectId, projectFiles.path], set: { content, updatedAt: new Date() } });
-    }
-  }
+  const cps = createCheckpointing(d.db, dbBranches);
+  const checkpointsPort = (_job: BuildJob): CheckpointPort => ({ create: (i) => cps.create(i) });
 
   const browser: BrowserPort = {
     async screenshot(url, viewport) {
@@ -171,13 +140,8 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   );
 
   async function restoreCheckpoint(i: { projectId: string; checkpointId: string }) {
-    const [cp] = await d.db.select().from(checkpoints).where(and(eq(checkpoints.id, i.checkpointId), eq(checkpoints.projectId, i.projectId)));
-    if (!cp) throw new Error("Checkpoint not found");
     const sb = await sandboxFor(i.projectId);
-    if (cp.sandboxSnapshotId) await sb.restore(cp.sandboxSnapshotId);
-    const [p] = await d.db.select().from(projects).where(eq(projects.id, i.projectId));
-    if (cp.dbBranchId && p?.dbBranchRoot) await dbBranches.restoreBranch(p.dbBranchRoot, cp.dbBranchId);
-    await mirrorFiles(sb as unknown as SandboxPort, i.projectId);
+    const cp = await cps.restore({ sandbox: sb as unknown as SandboxPort, projectId: i.projectId, checkpointId: i.checkpointId });
     d.events.emit({ type: "checkpoint.created", projectId: i.projectId, checkpointId: cp.id, commit: cp.commitSha, label: `restored: ${cp.label}` });
     return { restored: cp.id };
   }
