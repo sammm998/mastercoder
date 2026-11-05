@@ -40,7 +40,17 @@ export class ConnectionToolExecutor implements ToolExecutor {
     const args = (input ?? {}) as Record<string, unknown>;
     if (ref.type === "integration") {
       const c = await this.connection(ctx.workspaceId, { app: ref.app });
-      return this.connectors.executeAction({ connectionId: c.externalId ?? c.id, action: ref.action, input: args });
+      try {
+        return await this.connectors.executeAction({ connectionId: c.externalId ?? c.id, action: ref.action, input: args });
+      } catch (e) {
+        // MockConnectorProvider keeps connections in process memory; a connection made through the API
+        // process is unknown here, so in mock mode only, re-create it in this process and retry.
+        if (!this.connectors.isMock || (e as { code?: string }).code !== "NOT_FOUND") throw e;
+        const r = await this.connectors.initiateConnection({ workspaceId: ctx.workspaceId, userId: c.userId, app: ref.app, scopes: (c.scopes as string[]) ?? [], redirectUrl: "http://localhost/mock" });
+        await this.connectors.getConnection(r.connectionId);
+        await this.db.update(connections).set({ externalId: r.connectionId, status: "active" }).where(eq(connections.id, c.id));
+        return this.connectors.executeAction({ connectionId: r.connectionId, action: ref.action, input: args });
+      }
     }
     if (ref.type === "openapi") {
       const c = await this.connection(ctx.workspaceId, { id: ref.connectionId });

@@ -126,6 +126,10 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   };
 
   const settle = billingSettler(d.db);
+  const renderRemotion = async (o: { composition: "Explainer" | "ProductDemo" | "AnimatedText"; props: unknown; durationSec: number }) => {
+    const { renderRemotionVideo } = await import("@forge/media/remotion");
+    return renderRemotionVideo(o);
+  };
 
   d.consume(
     QUEUES.build,
@@ -157,7 +161,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
             slides: { createDeck: async (i) => ({ artifactId: (await runSlidesRequest({ taskId: j.taskId, projectId: i.projectId, workspaceId: j.workspaceId, kind: "deck", prompt: i.prompt, slideCount: i.slideCount }, { db: d.db, llm, store: d.store, usage: d.usage, events: d.events })).artifactId }) },
           }) satisfies Omit<AgentDeps, "llm" | "events" | "usage" | "sandbox">,
         pipelines: {
-          media: async (j, kind) => void (await runMediaRequest({ taskId: j.taskId, projectId: j.projectId, workspaceId: j.workspaceId, kind: kind === "image" ? (/\b(set|images|bilder|\d+ (product )?images)\b/i.test(j.prompt) ? "image-set" : "image") : "video", prompt: j.prompt, options: {} }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events })),
+          media: async (j, kind) => void (await runMediaRequest({ taskId: j.taskId, projectId: j.projectId, workspaceId: j.workspaceId, kind: kind === "image" ? (/\b(set|images|bilder|\d+ (product )?images)\b/i.test(j.prompt) ? "image-set" : "image") : j.intents.some((i) => i.kind === "video" && i.hint === "remotion") ? "remotion" : "video", prompt: j.prompt, options: { durationSec: Number(j.prompt.match(/(\d+)[- ]?(?:second|sekund|s\b)/i)?.[1] ?? 10) } }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events, renderRemotion })),
           slides: async (j, kind) => void (await runSlidesRequest({ taskId: j.taskId, projectId: j.projectId, workspaceId: j.workspaceId, kind: kind === "slides" ? "deck" : "document", prompt: j.prompt, slideCount: Number(j.prompt.match(/(\d+)[- ]slide/)?.[1] ?? 10) }, { db: d.db, llm, store: d.store, usage: d.usage, events: d.events })),
         },
         isCancelled: async () => false,

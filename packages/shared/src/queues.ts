@@ -52,6 +52,8 @@ export const TranscriptionJobSchema = z.object({
   workspaceId: z.string(),
   audioKey: z.string().optional(),
   language: z.string().default("sv"),
+  /** Text transcript (uploaded or from a bot vendor) instead of audio. */
+  transcript: z.string().max(400_000).optional(),
 });
 export type TranscriptionJob = z.infer<typeof TranscriptionJobSchema>;
 

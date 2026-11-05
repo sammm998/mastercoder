@@ -69,6 +69,17 @@ export const meetingsRouter = router({
       return { meetingId: id, uploadId: up.uploadId, chunkSize: input.chunkSize };
     }),
 
+  /** Upload a meeting transcript (text with "Name: line" speaker labels) instead of audio. */
+  importTranscript: authedProcedure
+    .input(z.object({ workspaceId: z.string(), projectId: z.string().optional(), title: z.string().max(200).optional(), language: z.enum(["sv", "en"]).default("sv"), transcript: z.string().min(20).max(400_000) }))
+    .mutation(async ({ ctx, input }) => {
+      await requireWorkspace(ctx, input.workspaceId, "project.write");
+      const id = newId("mtg");
+      await ctx.deps.db.insert(meetings).values({ id, workspaceId: input.workspaceId, projectId: input.projectId, source: "upload", title: input.title ?? "Uploaded transcript", language: input.language, status: "processing", consentNoticePosted: true, retentionUntil: await retentionDate(ctx, input.workspaceId) });
+      await ctx.deps.queue.add(QUEUES.transcription, "transcribe", { meetingId: id, workspaceId: input.workspaceId, language: input.language, transcript: input.transcript });
+      return { meetingId: id };
+    }),
+
   uploadStatus: authedProcedure.input(z.object({ uploadId: z.string() })).query(async ({ ctx, input }) => {
     const raw = await ctx.deps.kv.get(`upload:${input.uploadId}`);
     if (!raw) throw new TRPCError({ code: "NOT_FOUND", message: "Upload not found" });

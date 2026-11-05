@@ -58,7 +58,7 @@ function consume(queue: string, handler: Handler, concurrency = Number(process.e
 
 consume(QUEUES.media, async (job) => {
   const p = MediaJobSchema.parse(job.data);
-  const out = await runMediaRequest({ ...p, options: p.options }, { db, provider: media, store, usage: usage.withDefaults({ workspaceId: p.workspaceId, projectId: p.projectId, taskId: p.taskId }), events });
+  const out = await runMediaRequest({ ...p, options: p.options }, { db, provider: media, store, usage: usage.withDefaults({ workspaceId: p.workspaceId, projectId: p.projectId, taskId: p.taskId }), events, renderRemotion: async (o) => (await import("@forge/media/remotion")).renderRemotionVideo(o) });
   await usage.flush();
   await events.flush();
   return { artifacts: out.map((a) => a.id) };

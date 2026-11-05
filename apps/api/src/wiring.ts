@@ -190,6 +190,24 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
 
   // ---- speech: streaming mic transcription over /ws/audio ----
   const speech = await import("@forge/speech");
+  // Mock STT: register reference transcripts for the eval fixtures (STT_MOCK_FIXTURES=evals/speech/fixtures.json)
+  // so streamed fixture audio returns its known text. Labelled mock behaviour; real adapters ignore this.
+  if (process.env.STT_MOCK_FIXTURES && (process.env.STT_PROVIDER ?? "mock") === "mock") {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, resolve } = await import("node:path");
+    const file = resolve(process.env.STT_MOCK_FIXTURES);
+    const root = resolve(dirname(file), "../..");
+    const fx = JSON.parse(readFileSync(file, "utf8")) as { fixtures: Array<{ text: string; language: string; file: string }> };
+    for (const f of fx.fixtures) {
+      try {
+        const wav = new Uint8Array(readFileSync(resolve(root, f.file)));
+        speech.mockTranscriptRegistry.registerAudio(wav, { text: f.text, language: f.language });
+        speech.mockTranscriptRegistry.registerAudio(speech.wavPcm(wav).pcm, { text: f.text, language: f.language });
+      } catch (e) {
+        deps.log.warn("stt fixture missing", { file: f.file, error: (e as Error).message });
+      }
+    }
+  }
   const conns = new Map<string, WebSocket>();
   const simpleClients = new Set<string>();
   let seq = 0;
