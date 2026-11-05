@@ -7,7 +7,7 @@ all built from this repository with config-as-code.
 |---|---|---|
 | `api` | `apps/api/railway.json` (also the repo-root `railway.json`) | Fastify + tRPC + WebSockets, port `$PORT` |
 | `worker` | `apps/agent-worker/railway.json` | BullMQ workers (media, slides, meetings, agent runs, scans, builds) |
-| `web` | `apps/web/railway.json` (added with the web app) | Next.js platform UI |
+| `web` | `apps/web/railway.json` | Next.js platform UI (port `$PORT`) |
 | Postgres | Railway **pgvector** template (needs the `vector` extension) | database |
 | Redis | Railway Redis | queues, pub/sub, rate limits |
 
@@ -16,7 +16,7 @@ Pick the **EU West (Amsterdam)** region for every service to keep data in the EU
 ## Steps
 
 1. **New project → Deploy from GitHub repo → `sammm998/mastercoder`.** Choose branch
-   `claude/ecstatic-cray-uqnhhd` (the repository has no `main` branch yet). If Railway shows
+   `main`. If Railway shows
    "Failed to fetch repository files", check GitHub → Settings → Applications → Railway → Repository access
    includes this repo, and check Railway's status banner.
 2. The first service uses the root `railway.json` → it becomes the **api**. Rename it `api`.
@@ -41,9 +41,14 @@ Pick the **EU West (Amsterdam)** region for every service to keep data in the EU
    ```
    APP_URL=https://<web domain>
    API_URL=https://<api domain>
+   COOKIE_SAME_SITE=none   # only when web and api use the default *.up.railway.app domains
    ```
 6. **api → Settings → Networking → Generate domain.** Health check: `GET /health`.
-7. Migrations run automatically when the api and worker start.
+7. **+ New → GitHub repo** (same repo, branch `main`) for the **web**; config-as-code path `apps/web/railway.json`.
+   Variable `NEXT_PUBLIC_API_URL=https://<api domain>` (used at build time — redeploy web after changing it).
+   Generate a domain, then set the api's `APP_URL` to it. Sessions use cookies, so put api and web on the
+   same parent domain (e.g. `api.example.com` + `app.example.com`) with a custom domain on each.
+8. Migrations run automatically when the api and worker start.
 
 ## Notes
 - `STORAGE_PROVIDER=local` stores files on the container disk (lost on redeploy). Attach a Railway volume at

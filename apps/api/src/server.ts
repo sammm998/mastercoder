@@ -33,13 +33,16 @@ export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}):
   const app = Fastify({ logger: opts.logger ?? false, bodyLimit: 25 * 1024 * 1024, trustProxy: true, maxParamLength: 5000 });
   await app.register(cookie);
   await app.register(cors, {
-    origin: [deps.config.appUrl, process.env.ADMIN_URL || "http://localhost:3001", /^exp:\/\//, /^http:\/\/localhost:\d+$/],
+    origin: [deps.config.appUrl, process.env.ADMIN_URL || "http://localhost:3001", ...(process.env.CORS_ORIGINS ?? "").split(",").filter(Boolean), /^exp:\/\//, /^http:\/\/localhost:\d+$/],
     credentials: true,
   });
   await app.register(websocket, { options: { maxPayload: 4 * 1024 * 1024 } });
 
   const auth = new AuthService({ db: deps.db, email: deps.email, appUrl: deps.config.appUrl, sessionDays: deps.config.sessionDays });
-  const cookieOpts = { path: "/", httpOnly: true, sameSite: "lax" as const, secure: deps.config.cookieSecure };
+  // COOKIE_SAME_SITE=none is needed when web and api are on different sites (e.g. two *.up.railway.app
+  // domains, a public suffix); it requires HTTPS. Default lax for same-site deployments.
+  const sameSite = process.env.COOKIE_SAME_SITE === "none" ? ("none" as const) : ("lax" as const);
+  const cookieOpts = { path: "/", httpOnly: true, sameSite, secure: sameSite === "none" ? true : deps.config.cookieSecure };
 
   const createContext = async ({ req, res }: { req: FastifyRequest; res: FastifyReply }): Promise<Context> => {
     const token = (req.cookies[SESSION_COOKIE] as string | undefined) ?? bearer(req);
@@ -97,6 +100,7 @@ export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}):
   });
 
   const collab = new CollabServer(deps.db, deps.log, opts.collabRelay ?? null);
+  deps.services.collab = collab;
   registerGateway(app, deps, collab, opts.audio);
   registerHooks(app, deps);
   for (const ext of opts.extensions ?? []) await ext.register(app, deps);

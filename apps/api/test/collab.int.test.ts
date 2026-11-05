@@ -74,3 +74,24 @@ describe("realtime collaboration (Yjs)", () => {
     expect(code).toBe(4403);
   });
 });
+
+describe("writes outside the editor", () => {
+  it("reach open rooms and are not reverted by stale Yjs state", async () => {
+    const a = await signup(deps, `wf${uniq()}@test.local`);
+    const { id: projectId } = await a.c.project.create({ workspaceId: a.workspaceId, name: "WF" });
+    await a.c.project.writeFile({ projectId, path: "a.ts", content: "one" });
+    const doc = new Y.Doc();
+    const p = new WebsocketProvider(`${base}/ws/collab`, projectId, doc, { WebSocketPolyfill: WebSocket as unknown as typeof globalThis.WebSocket, params: { doc: "a.ts", token: a.token } });
+    await until(() => p.synced);
+    await a.c.project.writeFile({ projectId, path: "a.ts", content: "two (from agent)" });
+    await until(() => doc.getText("content").toString() === "two (from agent)");
+    p.destroy();
+    await new Promise((r) => setTimeout(r, 1500));
+    await a.c.project.writeFile({ projectId, path: "a.ts", content: "three (closed)" });
+    const doc2 = new Y.Doc();
+    const p2 = new WebsocketProvider(`${base}/ws/collab`, projectId, doc2, { WebSocketPolyfill: WebSocket as unknown as typeof globalThis.WebSocket, params: { doc: "a.ts", token: a.token } });
+    await until(() => p2.synced);
+    expect(doc2.getText("content").toString()).toBe("three (closed)");
+    p2.destroy();
+  });
+});

@@ -25,7 +25,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 ## Wave 3 — Apps
 - [x] W3-A apps/api — auth (password, magic link, OIDC Google/MS), RBAC, projects/files/remix, tasks (classify→estimate→queue, clarify, plan approval), GDPR, events WS, Yjs collab WS (2-client test), domain routers via ports, hooks; 13 tests
 - [~] W3-B apps/agent-worker — build job runner + settlement + persisted events/usage (2 int tests). TODO: BullMQ wiring of all queues + domain ports
-- [ ] W3-C apps/web
+- [x] W3-C apps/web — all §5 pages, chat/events, plan mode, preview + visual edit (packages/visual-edit), Monaco + Yjs collab, checkpoints, studio, agents, meetings, integrations, billing, settings, legal; sv/en; Lighthouse mobile 90/100; 60 unit + 9 e2e
 - [x] W3-D apps/admin — stats, users, projects, cost chart + spike flag, provider health, abuse queue; 48 tests + e2e smoke
 - [x] W3-E apps/mobile — Expo: chat + live events, voice streaming, meeting recording w/ resumable upload, previews/QR, sv/en; 56 tests, web export verified (native not device-tested)
 
@@ -38,7 +38,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [x] DoD4 checkpoint restore restores code + DB data (apps/agent-worker/test/checkpoint.int.test.ts)
 - [x] DoD5 3 benchmark sites (packages/design int test; heuristic critic, 3D shown as poster headless) with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
 - [x] DoD6 cron agent approval before send, run log + cost (agents-runtime int test + bench #15)
-- [ ] DoD7 two browsers edit same project live
+- [x] DoD7 two browsers edit same project live (apps/web/e2e/collab.spec.ts + api collab int tests)
 - [x] DoD8 sandbox escape tests (packages/sandbox/test/escape.int.test.ts, real docker)
 - [~] DoD9 load test: 50 concurrent tasks (light mix), 3 workers, 0 failures (evals/load). Code-build mix pending mock builder
 - [ ] DoD10 all tests pass + FINAL_REPORT.md

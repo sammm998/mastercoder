@@ -125,6 +125,8 @@ export const projectRouter = router({
         .insert(projectFiles)
         .values({ projectId: input.projectId, path: input.path, content: input.content })
         .onConflictDoUpdate({ target: [projectFiles.projectId, projectFiles.path], set: { content: input.content, updatedAt: new Date() } });
+      const collab = ctx.deps.services.collab as { replaceText(p: string, path: string, c: string): Promise<void> } | undefined;
+      await collab?.replaceText(input.projectId, input.path, input.content);
       await ctx.deps.events.publish({ type: "file.changed", projectId: input.projectId, path: input.path, change: "modified" });
       return { ok: true };
     }),

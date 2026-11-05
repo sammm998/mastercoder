@@ -102,6 +102,27 @@ export class CollabServer {
     }
   }
 
+  /**
+   * A file was written outside the editor (API, agent, visual edit): push the new text into the live
+   * room, or drop the stored Yjs state so the next open starts from project_files.
+   */
+  async replaceText(projectId: string, path: string, content: string): Promise<void> {
+    const name = `${projectId}:${path}`;
+    const p = this.rooms.get(name);
+    if (p) {
+      const room = await p;
+      const text = room.doc.getText("content");
+      if (text.toString() !== content) {
+        room.doc.transact(() => {
+          text.delete(0, text.length);
+          text.insert(0, content);
+        });
+      }
+      return;
+    }
+    await this.db.delete(collabDocs).where(eq(collabDocs.room, name));
+  }
+
   async flushAll(): Promise<void> {
     for (const p of this.rooms.values()) {
       const r = await p;
