@@ -684,7 +684,12 @@
       "previewReady": "Preview is live",
       "thinking": "Thinking…",
       "stop": "Stop",
-      "systemNote": "System note"
+      "systemNote": "System note",
+      "directionsChoose": "Pick a design direction",
+      "directionPick": "Build this one",
+      "directionPicked": "Chosen",
+      "clarifyOwn": "Or write your own answer…",
+      "clarifyThanks": "Thanks — building with your answers."
     },
     "comments": {
       "title": "Comments",
@@ -1307,7 +1312,9 @@
     "design": {
       "ask": "Pixel, can you set the art direction?",
       "done": "Done ✓ art direction “{direction}”, {files, plural, one {# file} other {# files}} composed — back to you, Scoutr",
-      "fallback": "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan."
+      "fallback": "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan.",
+      "propose": "Pixel, can you sketch three design directions to choose from?",
+      "proposed": "Here are {count} directions — pick the one you like and I'll build it."
     },
     "build": {
       "ask": "Byggo, can you build it from the plan? ({tasks, plural, one {# task} other {# tasks}})",

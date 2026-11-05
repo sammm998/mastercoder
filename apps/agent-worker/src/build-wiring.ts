@@ -9,7 +9,7 @@ import { runGates, type GateName } from "@forge/quality-gates";
 import { selectTemplate, getManifest, templateFiles, isTemplateId } from "@forge/templates";
 import { kitFilesFor, createDbBranchProvider, createDeployProvider, type KitFeature } from "@forge/app-kit";
 import { createCheckpointing } from "./checkpoints.js";
-import { generateDirections, pickDirection, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
+import { generateDirections, pickDirection, normalizeDirection, ArtDirectionSchema, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
 import { billingSettler } from "./settle.js";
 import { runBuildJob } from "./jobs/build.js";
 import { runMediaRequest } from "./jobs/media.js";
@@ -72,11 +72,17 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     },
   };
 
+  const briefFor = (brief: string, spec: { title: string }, kind: string) =>
+    ({ name: spec.title.replace(/ (Landing Page|Portfolio)$/, ""), description: brief.slice(0, 1000), kind: kind === "website" ? (/portfolio/i.test(spec.title) ? "portfolio" : "landing") : "app", features: /3d/i.test(brief) ? ["3d"] : /scroll/i.test(brief) ? ["scroll storytelling"] : [] }) as const;
   const design = (llm: MeteredLLM): DesignPort => ({
-    async artDirection({ brief, spec, kind, brand }) {
-      const briefIn = { name: spec.title.replace(/ (Landing Page|Portfolio)$/, ""), description: brief.slice(0, 1000), kind: kind === "website" ? (/portfolio/i.test(spec.title) ? "portfolio" : "landing") : "app", features: /3d/i.test(brief) ? ["3d"] : /scroll/i.test(brief) ? ["scroll storytelling"] : [] } as const;
-      const dirs = await generateDirections(llm, briefIn, brand as never);
-      const dir = pickDirection(dirs, briefIn);
+    async proposeDirections({ brief, spec, kind, brand }) {
+      return generateDirections(llm, briefFor(brief, spec, kind), brand as never);
+    },
+    async artDirection({ brief, spec, kind, brand, direction }) {
+      const briefIn = briefFor(brief, spec, kind);
+      // A direction the user picked from the proposals is used as-is (no new generation, no extra cost).
+      const chosen = direction ? ArtDirectionSchema.safeParse(direction) : null;
+      const dir = chosen?.success ? normalizeDirection(chosen.data) : pickDirection(await generateDirections(llm, briefIn, brand as never), briefIn);
       const tokensCss = tokensToCss(tokensFromDirection(dir));
       let files: Record<string, string> | undefined;
       if (kind === "website") {

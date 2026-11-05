@@ -93,7 +93,9 @@ export interface VisualQaResult {
 }
 
 export interface DesignPort {
-  artDirection(input: { brief: string; spec: Spec; kind: string; brand?: unknown }): Promise<DesignResult>;
+  artDirection(input: { brief: string; spec: Spec; kind: string; brand?: unknown; direction?: unknown }): Promise<DesignResult>;
+  /** Three distinct art directions to choose from before building (name, mood, palette, fonts …). */
+  proposeDirections?(input: { brief: string; spec: Spec; kind: string; brand?: unknown }): Promise<unknown[]>;
   visualQa?(url: string, ctx: { brief: string }): Promise<VisualQaResult>;
   lighthouse?(url: string): Promise<{ performance: number; accessibility: number }>;
 }
@@ -171,4 +173,8 @@ export interface BuildInput {
   existingProject?: boolean;
   /** Earlier requests in this project (oldest first), so follow-ups are understood in context. */
   history?: string;
+  /** The user asked to see design proposals first: show 3 directions and wait for a choice. */
+  wantsDesignOptions?: boolean;
+  /** The direction the user picked from the proposals. */
+  designDirection?: unknown;
 }

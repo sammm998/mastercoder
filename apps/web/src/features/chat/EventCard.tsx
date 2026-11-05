@@ -77,46 +77,147 @@ function ClarifyCard({ e, task }: { e: EventOf<"clarify.question">; task?: Task 
   const t = useT();
   const trpc = useTRPC();
   const qc = useQueryClient();
-  const [answer, setAnswer] = useState("");
+  const questions = e.questions?.length ? e.questions : [{ question: e.question, options: e.options ?? [] }];
+  // Per question: a picked option, or the user's own words ("Other").
+  const [picked, setPicked] = useState<Record<number, string>>({});
+  const [own, setOwn] = useState<Record<number, string>>({});
   const m = useMutation(trpc.task.answerClarification.mutationOptions({ onSuccess: () => qc.invalidateQueries({ queryKey: trpc.task.list.queryKey() }) }));
   const open = task?.status === "awaiting_clarification" && !m.isSuccess;
-  const send = (a: string) => e.taskId && a.trim() && m.mutate({ taskId: e.taskId, answer: a.trim() });
+  const answerFor = (i: number) => (own[i]?.trim() ? own[i]!.trim() : (picked[i] ?? ""));
+  const complete = questions.every((_, i) => answerFor(i));
+  const submit = () => {
+    if (!e.taskId || !complete) return;
+    const answer = questions.length === 1 ? answerFor(0) : questions.map((q, i) => `${q.question} → ${answerFor(i)}`).join("\n");
+    m.mutate({ taskId: e.taskId, answer });
+  };
   return (
     <div className="ev-card ev-accent">
       <div className="ev-head">
         <CrewAvatar id="scoutr" size={26} />
         <p className="ev-title">{t("project.chat.clarifyTitle")}</p>
       </div>
-      <p className="ev-question">{e.question}</p>
-      {open && (
-        <>
-          {e.options?.length ? (
-            <div className="chips">
-              {e.options.map((o) => (
-                <button key={o} type="button" className="chip" onClick={() => send(o)} disabled={m.isPending}>
-                  {o}
-                </button>
-              ))}
-            </div>
-          ) : null}
-          <form
-            className="ev-inline-form"
-            onSubmit={(ev) => {
-              ev.preventDefault();
-              send(answer);
-            }}
-          >
-            <label htmlFor={`clarify-${e.id}`} className="sr-only">
-              {t("project.chat.clarifyAnswer")}
-            </label>
-            <input id={`clarify-${e.id}`} className="input" value={answer} onChange={(ev) => setAnswer(ev.target.value)} placeholder={t("project.chat.clarifyAnswer")} maxLength={2000} />
-            <button type="submit" className="btn btn-primary btn-sm" disabled={!answer.trim() || m.isPending}>
-              {t("project.chat.clarifySend")}
-            </button>
-          </form>
-        </>
-      )}
+      <form
+        className="clarify"
+        onSubmit={(ev) => {
+          ev.preventDefault();
+          submit();
+        }}
+      >
+        {questions.map((q, i) => (
+          <fieldset key={i} className="clarify-q" disabled={!open || m.isPending}>
+            <legend className="ev-question">{q.question}</legend>
+            {q.options.length > 0 && (
+              <div className="chips" role="radiogroup" aria-label={q.question}>
+                {q.options.map((o) => (
+                  <button
+                    key={o}
+                    type="button"
+                    role="radio"
+                    aria-checked={picked[i] === o && !own[i]?.trim()}
+                    className="chip"
+                    onClick={() => {
+                      setPicked((p) => ({ ...p, [i]: o }));
+                      setOwn((p) => ({ ...p, [i]: "" }));
+                      if (questions.length === 1 && e.taskId) m.mutate({ taskId: e.taskId, answer: o });
+                    }}
+                  >
+                    {o}
+                  </button>
+                ))}
+              </div>
+            )}
+            {open && (
+              <>
+                <label htmlFor={`clarify-${e.id}-${i}`} className="sr-only">
+                  {t("project.chat.clarifyOwn")}
+                </label>
+                <input
+                  id={`clarify-${e.id}-${i}`}
+                  className="input"
+                  value={own[i] ?? ""}
+                  onChange={(ev) => setOwn((p) => ({ ...p, [i]: ev.target.value }))}
+                  placeholder={q.options.length ? t("project.chat.clarifyOwn") : t("project.chat.clarifyAnswer")}
+                  maxLength={600}
+                />
+              </>
+            )}
+          </fieldset>
+        ))}
+        {open && (
+          <button type="submit" className="btn btn-primary btn-sm" style={{ justifySelf: "start" }} disabled={!complete || m.isPending} data-testid="clarify-send">
+            {t("project.chat.clarifySend")}
+          </button>
+        )}
+      </form>
+      {m.isSuccess && <p className="badge badge-ok">{t("project.chat.clarifyThanks")}</p>}
       <ErrorNotice error={m.error} compact />
+    </div>
+  );
+}
+
+type Direction = {
+  id?: string;
+  name?: string;
+  mood?: string;
+  rationale?: string;
+  palette?: { scheme?: string; bg?: string; surface?: string; text?: string; muted?: string; accent?: string; accent2?: string; onAccent?: string };
+  typography?: { display?: { family?: string }; body?: { family?: string } };
+  radius?: number;
+};
+
+const HEX = /^#[0-9a-f]{3,8}$/i;
+const col = (v: string | undefined, fallback: string) => (v && HEX.test(v) ? v : fallback);
+
+/** Three art directions as mini site mock-ups; when the task waits for a choice, each can be picked. */
+function DirectionsCard({ e, task }: { e: EventOf<"design.directions">; task?: Task }) {
+  const t = useT();
+  const trpc = useTRPC();
+  const qc = useQueryClient();
+  const pick = useMutation(trpc.task.approvePlan.mutationOptions({ onSuccess: () => qc.invalidateQueries({ queryKey: trpc.task.list.queryKey() }) }));
+  const choosing = !!e.requiresChoice && task?.status === "awaiting_approval" && !pick.isSuccess;
+  return (
+    <div className="ev-card">
+      <div className="ev-head">
+        <CrewAvatar id="pixel" size={26} />
+        <p className="ev-title">{choosing ? t("project.chat.directionsChoose") : t("project.chat.directionsTitle")}</p>
+      </div>
+      <div className="directions directions-mock">
+        {e.directions.map((d, i) => {
+          const dir = d as Direction;
+          const p = dir.palette ?? {};
+          const display = dir.typography?.display?.family;
+          const body = dir.typography?.body?.family;
+          const picked = pick.isSuccess && pick.variables?.direction?.id === dir.id;
+          return (
+            <div key={dir.id ?? i} className="direction" data-picked={picked}>
+              <div
+                className="direction-mock"
+                aria-hidden="true"
+                style={{ background: col(p.bg, "#fff"), color: col(p.text, "#111"), borderRadius: Math.min(dir.radius ?? 12, 18) }}
+              >
+                <span className="direction-mock-nav" style={{ background: col(p.surface, "#eee") }} />
+                <span className="direction-mock-title" style={{ fontFamily: display ? `"${display}", serif` : undefined }}>
+                  {dir.name ?? `#${i + 1}`}
+                </span>
+                <span className="direction-mock-line" style={{ background: col(p.muted, "#999") }} />
+                <span className="direction-mock-line short" style={{ background: col(p.muted, "#999") }} />
+                <span className="direction-mock-cta" style={{ background: col(p.accent, "#7c3aed"), color: col(p.onAccent, "#fff") }} />
+                <span className="direction-mock-dot" style={{ background: col(p.accent2, "#f472b6") }} />
+              </div>
+              <strong>{dir.name ?? `#${i + 1}`}</strong>
+              {dir.mood && <span className="subtle">{dir.mood}</span>}
+              {(display || body) && <span className="mono subtle direction-fonts">{[display, body].filter(Boolean).join(" · ")}</span>}
+              {choosing && (
+                <button type="button" className="btn btn-sm btn-primary" disabled={pick.isPending} onClick={() => e.taskId && pick.mutate({ taskId: e.taskId, direction: d as Record<string, unknown> })} data-testid={`pick-direction-${i}`}>
+                  {t("project.chat.directionPick")}
+                </button>
+              )}
+              {picked && <span className="badge badge-ok">{t("project.chat.directionPicked")}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <ErrorNotice error={pick.error} compact />
     </div>
   );
 }
@@ -409,33 +510,7 @@ export function EventCard({ e, tasks, summaries, onRestore, onShowScreenshot }: 
     case "phase.completed":
       return <p className="ev-phase ev-phase-done">{t("project.chat.phaseCompleted", { phase: phaseName(t, e.phase), seconds: Math.round(e.durationMs / 100) / 10 })}</p>;
     case "design.directions":
-      return (
-        <div className="ev-card">
-          <div className="ev-head">
-            <CrewAvatar id="pixel" size={26} />
-            <p className="ev-title">{t("project.chat.directionsTitle")}</p>
-          </div>
-          <div className="directions">
-            {e.directions.map((d, i) => {
-              const dir = d as { name?: string; mood?: string; palette?: Record<string, string> };
-              return (
-                <div key={i} className="direction">
-                  <div className="direction-swatches" aria-hidden="true">
-                    {Object.values(dir.palette ?? {})
-                      .filter((c) => typeof c === "string" && /^#|^rgb|^hsl|^oklch/.test(c))
-                      .slice(0, 6)
-                      .map((c, k) => (
-                        <span key={k} style={{ background: c }} />
-                      ))}
-                  </div>
-                  <strong>{dir.name ?? `#${i + 1}`}</strong>
-                  {dir.mood && <span className="subtle">{dir.mood}</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
+      return <DirectionsCard e={e} task={task} />;
     case "design.score":
       return (
         <div className="ev-card ev-compact">

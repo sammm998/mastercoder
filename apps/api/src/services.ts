@@ -12,7 +12,7 @@ export interface IntentClassifier {
   classify(
     prompt: string,
     opts: { source: PromptSource; project?: { kind?: string; template?: string; previousPrompts?: string[] } },
-  ): Promise<{ intents: Intent[]; needsClarification: boolean; question?: string; options?: string[]; estimate: CostEstimate; language: string }>;
+  ): Promise<{ intents: Intent[]; needsClarification: boolean; question?: string; options?: string[]; questions?: Array<{ question: string; options: string[] }>; estimate: CostEstimate; language: string }>;
 }
 
 export interface SpendChecker {

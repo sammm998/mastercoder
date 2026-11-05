@@ -24,6 +24,8 @@ export const BuildJobSchema = z.object({
   intents: z.array(IntentSchema),
   planMode: z.boolean().default(false),
   approvedSpec: z.unknown().optional(),
+  /** A design direction the user picked from the proposals (skips generating new ones). */
+  designDirection: z.unknown().optional(),
 });
 export type BuildJob = z.infer<typeof BuildJobSchema>;
 

@@ -186,6 +186,31 @@ describe("mock reviewer", () => {
   });
 });
 
+describe("design proposals", () => {
+  it("shows 3 directions and waits for a choice; the picked direction is passed to the design engine", async () => {
+    const dirs = [{ id: "a", name: "Nordic" }, { id: "b", name: "Bold" }, { id: "c", name: "Soft" }];
+    const seen: unknown[] = [];
+    const design = {
+      proposeDirections: async () => dirs,
+      artDirection: async (i: { direction?: unknown }) => (seen.push(i.direction), { directionName: "Bold", tokensCss: ":root{}", tokens: {} }),
+    };
+    const d = deps(new MockLLMProvider(), previewSandbox());
+    const site = { ...input, intents: [{ kind: "website" as const, confidence: 0.9, summary: "site" }], prompt: "Visa tre designförslag för ett kafé" };
+    const first = await new BuildAgent({ ...d, design } as AgentDeps).run({ ...site, wantsDesignOptions: true });
+    expect(first.status).toBe("awaiting_approval");
+    expect(d.bus.ofType("design.directions")[0]).toMatchObject({ requiresChoice: true, directions: dirs });
+    expect(seen).toHaveLength(0);
+    const llm = new MockLLMProvider().on("agent.build", (req) => {
+      const last = req.messages[req.messages.length - 1];
+      return last?.role === "user" && typeof last.content === "string" ? [call("w", "write_file", { path: "src/math.js", content: "export const add = (a, b) => a + b;\n" })] : "Built.";
+    });
+    const d2 = deps(llm, previewSandbox());
+    const second = await new BuildAgent({ ...d2, design } as AgentDeps).run({ ...site, wantsDesignOptions: true, approvedSpec: first.spec, designDirection: dirs[1] });
+    expect(second.status).toBe("succeeded");
+    expect(seen).toEqual([dirs[1]]);
+  });
+});
+
 describe("preview probe", () => {
   it("detects a running dev server without curl and reports a closed port as down", async () => {
     const server = createServer((_req, res) => res.end("ok"));

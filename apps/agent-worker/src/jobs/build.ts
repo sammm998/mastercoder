@@ -43,6 +43,9 @@ export async function projectHistory(db: Db, projectId: string, currentTaskId: s
   return { text, fileCount: real.length };
 }
 
+/** "show me 3 design proposals first", "designförslag", "olika design alternativ" … */
+export const DESIGN_OPTIONS = /design\s*-?\s*(förslag|forslag|alternativ|options|proposals|directions|concepts|koncept)|(förslag|alternativ|options|proposals|concepts)\s+(på|till|for|of|för)\s+(en\s+|the\s+|a\s+)?design|\b(tre|3|three|några|several)\s+(olika\s+|different\s+)?(design|stilar|styles|looks|utseenden)/i;
+
 const CODE: IntentKind[] = ["app", "website", "mobile", "backend"];
 
 export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outcome: TaskOutcome; build?: BuildOutcome; chargedUsd: number }> {
@@ -75,6 +78,8 @@ export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outc
           // A project that already has files is a follow-up even if its first build did not finish.
           existingProject: Boolean(project?.template) || ctx.fileCount > 0,
           history: ctx.text || undefined,
+          wantsDesignOptions: DESIGN_OPTIONS.test(job.prompt),
+          designDirection: job.designDirection,
         });
         if (build.status === "succeeded" && build.template && !project?.template) await d.db.update(projects).set({ template: build.template }).where(eq(projects.id, job.projectId));
         outcome = build.status === "succeeded" ? "succeeded" : build.status === "awaiting_approval" ? "awaiting_approval" : build.status === "cancelled" ? "cancelled_by_user" : "failed_agent_error";

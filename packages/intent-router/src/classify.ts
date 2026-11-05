@@ -16,6 +16,8 @@ export const LlmClassificationSchema = z.object({
   ambiguityReason: z.string().max(200).optional(),
   question: z.string().max(400).optional(),
   options: z.array(z.string().max(80)).max(6).optional(),
+  /** Up to 3 short questions, each with 2-4 answer options (the user may also write their own answer). */
+  questions: z.array(z.object({ question: z.string().max(300), options: z.array(z.string().max(80)).max(4).default([]) })).max(3).optional(),
   complexity: z.enum(["trivial", "normal", "complex"]),
   quantities: z.object({ mediaSeconds: z.number().min(0).max(3600).optional(), images: z.number().int().min(0).max(100).optional(), slides: z.number().int().min(0).max(200).optional() }).default({}),
 });
@@ -25,7 +27,7 @@ export interface ClassifyOptions {
   llm: LLMProvider;
   source?: PromptSource;
   attachments?: Attachment[];
-  /** Ask a clarifying question only when the estimate's highUsd exceeds this (default INTENT_CLARIFY_ABOVE_USD or 1.5). */
+  /** Ask about cheap media/docs only when the estimate's highUsd exceeds this (default INTENT_CLARIFY_ABOVE_USD or 1.5). Unclear code builds always ask. */
   clarifyAboveUsd?: number;
   /** Below this top confidence a request counts as ambiguous (default 0.6). */
   minConfidence?: number;
@@ -47,6 +49,8 @@ export interface ClassifyResult {
   /** Exactly one question, only when needsClarification. */
   question?: string;
   options?: string[];
+  /** All clarifying questions (the first one is also in question/options). */
+  questions?: Array<{ question: string; options: string[] }>;
   estimate: CostEstimate;
   language: Language;
   complexity: StepComplexity;
@@ -66,6 +70,9 @@ One prompt may contain several deliverables (e.g. landing page + hero video + pi
 Mentions of an existing product ("a video for my app") are not a request to build that product.
 Set ambiguous=true only if it is genuinely unclear WHAT to build (no deliverable, explicit alternatives, or no description at all); then give ONE short question
 in the user's language and 2-4 options.
+Also set ambiguous=true for a NEW app/website/mobile build when details that would substantially change the result are missing
+(e.g. style, main pages/features, audience) and cannot be reasonably assumed; then fill "questions" with up to 3 short questions,
+each with 2-4 concrete options (the user can also type their own answer). Never ask about things the prompt already answers.
 If "project" is present this is a FOLLOW-UP in an existing project. Requests to change, fix, improve, extend, restyle, analyse or
 "look at" something refer to that project: classify them as the project's kind (e.g. website when the template is a site) and never
 as document/slides/video unless the user explicitly asks for that deliverable. Use previousPrompts to resolve "it", "the site", URLs, etc. Estimate complexity (trivial|normal|complex) and quantities (video seconds, image count, slide count) when stated.
@@ -153,20 +160,25 @@ export async function classify(prompt: string, opts: ClassifyOptions): Promise<C
   });
   const top = intents[0]!.confidence;
   const ambiguous = out.ambiguous || (top < (opts.minConfidence ?? 0.6) && intents[0]!.kind !== "question") || conflicting(intents);
-  const needsClarification = ambiguous && estimate.highUsd > threshold(opts);
+  // An unclear app/site/mobile/API build always asks first (a wrong build costs time and money); cheap media only above the threshold.
+  const needsClarification = ambiguous && (estimate.highUsd > threshold(opts) || intents.some((i) => BUILD_TARGETS.includes(i.kind)));
   const result: ClassifyResult = { intents, needsClarification, estimate, language: out.language, complexity: out.complexity, ambiguous, engine };
   if (needsClarification) {
     const sv = out.language === "sv";
     const targets = intents.filter((i) => i.kind !== "integration" && i.kind !== "question").slice(0, 3);
     result.question = oneQuestion(out.question ?? (sv ? "Vad är det viktigaste att jag bygger först?" : "What is the most important thing for me to build first?"));
     result.options = out.options?.length ? out.options.slice(0, 4) : targets.map((i) => kindLabel(i.kind, out.language));
+    const qs = (out.questions ?? []).filter((q) => q.question.trim()).slice(0, 3);
+    result.questions = qs.length ? qs.map((q) => ({ question: oneQuestion(q.question), options: q.options.slice(0, 4) })) : [{ question: result.question, options: result.options }];
+    result.question = result.questions[0]!.question;
+    result.options = result.questions[0]!.options;
   }
 
   if (opts.events && opts.projectId) {
     const base = { projectId: opts.projectId, ...(opts.taskId ? { taskId: opts.taskId } : {}) };
     opts.events.emit({ ...base, type: "intent.classified", intents });
     opts.events.emit({ ...base, type: "cost.estimate", lowUsd: estimate.lowUsd, highUsd: estimate.highUsd, breakdown: estimate.breakdown });
-    if (result.question) opts.events.emit({ ...base, type: "clarify.question", question: result.question, ...(result.options ? { options: result.options } : {}) });
+    if (result.question) opts.events.emit({ ...base, type: "clarify.question", question: result.question, ...(result.options ? { options: result.options } : {}), ...(result.questions ? { questions: result.questions } : {}) });
   }
   return result;
 }

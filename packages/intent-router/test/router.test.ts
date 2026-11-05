@@ -133,11 +133,13 @@ describe("clarification rule: ambiguous AND expensive -> exactly one question", 
   });
 
   it("threshold is configurable (option and env)", async () => {
-    expect((await classify("Make an app", { llm, clarifyAboveUsd: 100 })).needsClarification).toBe(false);
+    // Unclear code builds always ask; the threshold governs cheap media/docs.
+    expect((await classify("Make an app", { llm, clarifyAboveUsd: 100 })).needsClarification).toBe(true);
+    expect((await classify("Make a logo", { llm, clarifyAboveUsd: 100 })).needsClarification).toBe(false);
     expect((await classify("Make a logo", { llm, clarifyAboveUsd: 0.01 })).needsClarification).toBe(true);
     process.env.INTENT_CLARIFY_ABOVE_USD = "100";
     try {
-      expect((await classify("Make an app", { llm })).needsClarification).toBe(false);
+      expect((await classify("Make a logo", { llm })).needsClarification).toBe(false);
     } finally {
       delete process.env.INTENT_CLARIFY_ABOVE_USD;
     }

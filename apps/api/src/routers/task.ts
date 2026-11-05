@@ -5,8 +5,8 @@ import { PromptSource, QUEUES, newId, type BuildJob, type Intent } from "@forge/
 import { router, authedProcedure, requireProject, audit, type AuthedContext, type ProjectRow } from "../trpc.js";
 import { getService, type IntentClassifier, type SpendChecker } from "../services.js";
 
-async function enqueueBuild(ctx: AuthedContext, project: ProjectRow, taskId: string, prompt: string, source: z.infer<typeof PromptSource>, intents: Intent[], planMode: boolean, approvedSpec?: unknown) {
-  const job: BuildJob = { taskId, projectId: project.id, workspaceId: project.workspaceId, userId: ctx.user.id, prompt, source, intents, planMode, approvedSpec };
+async function enqueueBuild(ctx: AuthedContext, project: ProjectRow, taskId: string, prompt: string, source: z.infer<typeof PromptSource>, intents: Intent[], planMode: boolean, approvedSpec?: unknown, designDirection?: unknown) {
+  const job: BuildJob = { taskId, projectId: project.id, workspaceId: project.workspaceId, userId: ctx.user.id, prompt, source, intents, planMode, approvedSpec, designDirection };
   await ctx.deps.queue.add(QUEUES.build, "task", job, { jobId: `${taskId}${approvedSpec ? "-approved" : ""}` });
 }
 
@@ -57,7 +57,7 @@ export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, inp
   await ctx.deps.events.publish({ type: "intent.classified", projectId: project.id, taskId: id, intents: result.intents });
   await ctx.deps.events.publish({ type: "cost.estimate", projectId: project.id, taskId: id, ...result.estimate });
   if (result.needsClarification && result.question) {
-    await ctx.deps.events.publish({ type: "clarify.question", projectId: project.id, taskId: id, question: result.question, options: result.options });
+    await ctx.deps.events.publish({ type: "clarify.question", projectId: project.id, taskId: id, question: result.question, options: result.options, questions: result.questions });
   } else {
     await enqueueBuild(ctx, project, id, input.prompt, input.source, result.intents, input.planMode);
   }
@@ -85,14 +85,14 @@ export const taskRouter = router({
   }),
 
   /** Plan mode: the user approves (optionally edited) spec before building. */
-  approvePlan: authedProcedure.input(z.object({ taskId: z.string(), spec: z.unknown().optional() })).mutation(async ({ ctx, input }) => {
+  approvePlan: authedProcedure.input(z.object({ taskId: z.string(), spec: z.unknown().optional(), direction: z.record(z.unknown()).optional() })).mutation(async ({ ctx, input }) => {
     const [task] = await ctx.deps.db.select().from(tasks).where(eq(tasks.id, input.taskId));
     if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
     const { project } = await requireProject(ctx, task.projectId, "project.write");
     if (task.status !== "awaiting_approval") throw new TRPCError({ code: "BAD_REQUEST", message: "Task has no plan waiting for approval" });
     const spec = input.spec ?? task.spec;
     await ctx.deps.db.update(tasks).set({ status: "queued", spec }).where(eq(tasks.id, task.id));
-    await enqueueBuild(ctx, project, task.id, task.prompt, PromptSource.parse(task.source), (task.intents as Intent[]) ?? [], false, spec);
+    await enqueueBuild(ctx, project, task.id, task.prompt, PromptSource.parse(task.source), (task.intents as Intent[]) ?? [], false, spec, input.direction);
     await audit(ctx, "task.approve_plan", { workspaceId: project.workspaceId, target: task.id });
     return { ok: true };
   }),

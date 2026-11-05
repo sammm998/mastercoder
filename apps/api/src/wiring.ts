@@ -18,7 +18,7 @@ export async function wireServices(deps: ApiDeps): Promise<{ extensions: HttpExt
   const classifier: IntentClassifier = {
     async classify(prompt, opts) {
       const r = await intent.classify(prompt, { llm: deps.llm, source: opts.source, usage: deps.usage, project: opts.project });
-      return { intents: r.intents, needsClarification: r.needsClarification, question: r.question, options: r.options, estimate: r.estimate, language: r.language };
+      return { intents: r.intents, needsClarification: r.needsClarification, question: r.question, options: r.options, questions: r.questions, estimate: r.estimate, language: r.language };
     },
   };
   s.intent = classifier;

@@ -114,7 +114,21 @@ export class BuildAgent {
       const checks = [spec.auth ? "auth on every non-public route" : null, owner ? `row-level security on ${owner} table(s)` : null, spec.entities.length ? "zod validation on every write" : null, "no secrets in client code"].filter(Boolean) as string[];
       team("vakt", "byggo", "done", "kickoff", "team.kickoff.security", { checks: checks.join(" · ") }, `Before you start, Byggo: the gates will require ${checks.join(", ")}.`);
     }
-    if (input.planMode && !input.approvedSpec) {
+    const proposeDesign = !input.approvedSpec && !input.existingProject && input.wantsDesignOptions && deps.design?.proposeDirections && kind !== "backend";
+    if ((input.planMode || proposeDesign) && !input.approvedSpec) {
+      if (proposeDesign) {
+        phase("design");
+        team("scoutr", "pixel", "asking", "design", "team.design.propose", {}, "Pixel, can you sketch three design directions to choose from?");
+        const dirs = await deps.design!.proposeDirections!({ brief: input.prompt, spec, kind, brand: input.brand }).catch((e: unknown) => {
+          ev({ type: "message", ...base, role: "system", text: `Design proposals unavailable: ${(e instanceof Error ? e.message : String(e)).slice(0, 400)}` });
+          return [] as unknown[];
+        });
+        if (dirs.length) {
+          ev({ type: "design.directions", ...base, directions: dirs, requiresChoice: true });
+          team("pixel", "user", "done", "design", "team.design.proposed", { count: dirs.length }, `Here are ${dirs.length} directions — pick the one you like and I'll build it.`);
+        }
+        phaseDone("design");
+      }
       ev({ type: "plan.ready", ...base, spec, requiresApproval: true });
       return { status: "awaiting_approval", charged: false, spec, summary: "Plan ready for approval.", costUsd: cost(), fixIterations: 0 };
     }
@@ -151,7 +165,7 @@ export class BuildAgent {
       phase("design");
       team("scoutr", "pixel", "asking", "design", "team.design.ask", {}, "Pixel, can you set the art direction?");
       // A design-engine failure never ends the build: the builder designs from the plan instead.
-      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand }).catch((e: unknown) => {
+      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand, direction: input.designDirection }).catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : String(e);
         ev({ type: "message", ...base, role: "system", text: `Design engine failed, continuing without it: ${msg.slice(0, 800)}` });
         team("pixel", "byggo", "failed", "design", "team.design.fallback", {}, "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan.");
