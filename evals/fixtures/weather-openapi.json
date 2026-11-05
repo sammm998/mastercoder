@@ -1,0 +1,168 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nordic Weather API",
+    "version": "1.2.0",
+    "description": "Current conditions and daily forecasts for cities. Fixture for Forge benchmark #17 (openapi-app); the server is a reserved example domain.",
+    "contact": { "name": "Forge evals" },
+    "license": { "name": "CC0-1.0", "identifier": "CC0-1.0" }
+  },
+  "servers": [{ "url": "https://api.nordicweather.example", "description": "Production" }],
+  "security": [{ "ApiKeyAuth": [] }],
+  "tags": [
+    { "name": "current", "description": "Observed conditions" },
+    { "name": "forecast", "description": "Daily forecasts" }
+  ],
+  "paths": {
+    "/v1/current": {
+      "get": {
+        "operationId": "getCurrentWeather",
+        "summary": "Current weather for a city",
+        "tags": ["current"],
+        "parameters": [
+          { "$ref": "#/components/parameters/City" },
+          { "$ref": "#/components/parameters/Units" },
+          { "$ref": "#/components/parameters/Lang" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Observed conditions",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CurrentWeather" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/CityNotFound" }
+        }
+      }
+    },
+    "/v1/forecast": {
+      "get": {
+        "operationId": "getForecast",
+        "summary": "Daily forecast for a city",
+        "tags": ["forecast"],
+        "parameters": [
+          { "$ref": "#/components/parameters/City" },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "description": "Number of days to return (1-10)",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 10, "default": 5 }
+          },
+          { "$ref": "#/components/parameters/Units" },
+          { "$ref": "#/components/parameters/Lang" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forecast",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Forecast" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/CityNotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": { "type": "apiKey", "in": "header", "name": "X-API-Key", "description": "Project API key" }
+    },
+    "parameters": {
+      "City": {
+        "name": "city",
+        "in": "query",
+        "required": true,
+        "description": "City name, optionally with ISO country code (e.g. 'Stockholm' or 'Stockholm,SE')",
+        "schema": { "type": "string", "minLength": 1, "maxLength": 100 }
+      },
+      "Units": {
+        "name": "units",
+        "in": "query",
+        "required": false,
+        "description": "Unit system",
+        "schema": { "$ref": "#/components/schemas/Units" }
+      },
+      "Lang": {
+        "name": "lang",
+        "in": "query",
+        "required": false,
+        "description": "Language for condition text",
+        "schema": { "type": "string", "enum": ["en", "sv", "nb", "da", "fi"], "default": "en" }
+      }
+    },
+    "responses": {
+      "BadRequest": { "description": "Invalid parameters", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "Unauthorized": { "description": "Missing or invalid API key", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+      "CityNotFound": { "description": "Unknown city", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+    },
+    "schemas": {
+      "Units": { "type": "string", "enum": ["metric", "imperial"], "default": "metric" },
+      "Condition": {
+        "type": "string",
+        "description": "Normalized weather condition",
+        "enum": ["clear", "partly_cloudy", "cloudy", "fog", "drizzle", "rain", "snow", "sleet", "thunderstorm"]
+      },
+      "Location": {
+        "type": "object",
+        "required": ["name", "country", "lat", "lon", "timezone"],
+        "properties": {
+          "name": { "type": "string", "examples": ["Stockholm"] },
+          "country": { "type": "string", "description": "ISO 3166-1 alpha-2", "examples": ["SE"] },
+          "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+          "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+          "timezone": { "type": "string", "examples": ["Europe/Stockholm"] }
+        }
+      },
+      "CurrentWeather": {
+        "type": "object",
+        "required": ["location", "observedAt", "temperature", "feelsLike", "humidity", "windSpeed", "condition", "description"],
+        "properties": {
+          "location": { "$ref": "#/components/schemas/Location" },
+          "observedAt": { "type": "string", "format": "date-time" },
+          "temperature": { "type": "number", "description": "Air temperature (°C metric, °F imperial)" },
+          "feelsLike": { "type": "number" },
+          "humidity": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Relative humidity %" },
+          "windSpeed": { "type": "number", "description": "m/s metric, mph imperial" },
+          "windDirection": { "type": ["integer", "null"], "minimum": 0, "maximum": 359, "description": "Degrees, null when calm" },
+          "pressure": { "type": "number", "description": "hPa" },
+          "condition": { "$ref": "#/components/schemas/Condition" },
+          "description": { "type": "string", "examples": ["Light rain"] },
+          "icon": { "type": "string", "format": "uri" },
+          "units": { "$ref": "#/components/schemas/Units" }
+        }
+      },
+      "ForecastDay": {
+        "type": "object",
+        "required": ["date", "min", "max", "condition", "precipitationMm", "precipitationChance"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "min": { "type": "number" },
+          "max": { "type": "number" },
+          "condition": { "$ref": "#/components/schemas/Condition" },
+          "precipitationMm": { "type": "number", "minimum": 0 },
+          "precipitationChance": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "sunrise": { "type": "string", "format": "date-time" },
+          "sunset": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Forecast": {
+        "type": "object",
+        "required": ["location", "units", "days"],
+        "properties": {
+          "location": { "$ref": "#/components/schemas/Location" },
+          "units": { "$ref": "#/components/schemas/Units" },
+          "days": { "type": "array", "items": { "$ref": "#/components/schemas/ForecastDay" }, "minItems": 1, "maxItems": 10 }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "enum": ["bad_request", "unauthorized", "city_not_found", "rate_limited"] },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
