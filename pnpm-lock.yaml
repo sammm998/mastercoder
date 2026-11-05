@@ -130,6 +130,18 @@ importers:
         specifier: ^3.0.0
         version: 3.1.0(yjs@13.6.33)
 
+  packages/abuse:
+    dependencies:
+      '@forge/db':
+        specifier: workspace:*
+        version: link:../db
+      '@forge/shared':
+        specifier: workspace:*
+        version: link:../shared
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+
   packages/agent-core:
     dependencies:
       '@forge/db':
