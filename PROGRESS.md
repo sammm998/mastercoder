@@ -16,7 +16,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] W1-C design
 - [x] W1-D media + slides — fal/Replicate/mock, moderation (62 cases), Remotion (renders mp4), MediaJobService; decks/docs, PPTX/PDF/DOCX; 93+4 / 19 tests
 - [x] W1-E speech + meetings — ElevenLabs/Deepgram/Whisper/mock STT, WER, Swedish Piper fixtures; Recall/MeetStream/Vexa/mock bots, consent, calendar, chunked upload, meeting→spec; 49 / 38+1 tests
-- [ ] W1-F integrations + billing + intent-router
+- [x] W1-F integrations + billing + intent-router — Composio/Nango/Pipedream/mock, catalog 12 apps, OpenAPI import + typed client, SSRF guard, MCP, envelope vault; plans/pricing/estimates/no-charge-on-agent-error/spend caps/Stripe; sv+en classifier 100% on 93 prompts; 100+2 / 19+1 / 39 tests
 
 ## Wave 2 — Orchestration
 - [~] W2-A agent-core — loop (plan/design/build/verify/review/finish), loop guard (8 iters, strategy change after 3 identical), model router, 20 tools, tree-sitter repo map, pgvector search, mock planner/reviewer; 14 tests. TODO: mock builder code generators (after templates merge)
