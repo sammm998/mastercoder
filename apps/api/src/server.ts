@@ -11,6 +11,7 @@ import { AuthService, SESSION_COOKIE } from "./auth/service.js";
 import { OAuthService, type OAuthProviderId } from "./auth/oauth.js";
 import { CollabServer, type CollabRelay } from "./ws/collab.js";
 import { registerGateway, type AudioStreamHandler } from "./ws/gateway.js";
+import { registerHooks } from "./http/hooks.js";
 
 export interface HttpExtension {
   register(app: FastifyInstance, deps: ApiDeps): void | Promise<void>;
@@ -97,6 +98,7 @@ export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}):
 
   const collab = new CollabServer(deps.db, deps.log, opts.collabRelay ?? null);
   registerGateway(app, deps, collab, opts.audio);
+  registerHooks(app, deps);
   for (const ext of opts.extensions ?? []) await ext.register(app, deps);
 
   app.addHook("onClose", async () => {

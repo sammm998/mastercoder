@@ -10,40 +10,46 @@ async function enqueueBuild(ctx: AuthedContext, project: ProjectRow, taskId: str
   await ctx.deps.queue.add(QUEUES.build, "task", job, { jobId: `${taskId}${approvedSpec ? "-approved" : ""}` });
 }
 
+
+/** Classify → estimate → spend-cap check → persist → enqueue (or ask one clarifying question). */
+export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, input: { prompt: string; source: z.infer<typeof PromptSource>; planMode: boolean }) {
+  const classifier = getService<IntentClassifier>(ctx.deps.services, "intent");
+  if (!classifier) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intent router not configured" });
+  const result = await classifier.classify(input.prompt, { source: input.source });
+  const spend = getService<SpendChecker>(ctx.deps.services, "spend");
+  if (spend) await spend.check({ userId: ctx.user.id, workspaceId: project.workspaceId }, result.estimate.highUsd);
+
+  const id = newId("tsk");
+  const status = result.needsClarification ? "awaiting_clarification" : "queued";
+  await ctx.deps.db.insert(tasks).values({
+    id,
+    projectId: project.id,
+    userId: ctx.user.id,
+    prompt: input.prompt,
+    source: input.source,
+    intents: result.intents,
+    status,
+    planMode: input.planMode,
+    estimateLowUsd: result.estimate.lowUsd,
+    estimateHighUsd: result.estimate.highUsd,
+  });
+  await ctx.deps.events.publish({ type: "intent.classified", projectId: project.id, taskId: id, intents: result.intents });
+  await ctx.deps.events.publish({ type: "cost.estimate", projectId: project.id, taskId: id, ...result.estimate });
+  if (result.needsClarification && result.question) {
+    await ctx.deps.events.publish({ type: "clarify.question", projectId: project.id, taskId: id, question: result.question, options: result.options });
+  } else {
+    await enqueueBuild(ctx, project, id, input.prompt, input.source, result.intents, input.planMode);
+  }
+  await audit(ctx, "task.create", { workspaceId: project.workspaceId, target: id });
+  return { id, status, intents: result.intents, estimate: result.estimate, question: result.needsClarification ? result.question : undefined };
+}
+
 export const taskRouter = router({
   create: authedProcedure
     .input(z.object({ projectId: z.string(), prompt: z.string().min(1).max(20_000), source: PromptSource.default("typed"), planMode: z.boolean().default(false) }))
     .mutation(async ({ ctx, input }) => {
       const { project } = await requireProject(ctx, input.projectId, "project.write");
-      const classifier = getService<IntentClassifier>(ctx.deps.services, "intent");
-      if (!classifier) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intent router not configured" });
-      const result = await classifier.classify(input.prompt, { source: input.source });
-      const spend = getService<SpendChecker>(ctx.deps.services, "spend");
-      if (spend) await spend.check({ userId: ctx.user.id, workspaceId: project.workspaceId }, result.estimate.highUsd);
-
-      const id = newId("tsk");
-      const status = result.needsClarification ? "awaiting_clarification" : "queued";
-      await ctx.deps.db.insert(tasks).values({
-        id,
-        projectId: project.id,
-        userId: ctx.user.id,
-        prompt: input.prompt,
-        source: input.source,
-        intents: result.intents,
-        status,
-        planMode: input.planMode,
-        estimateLowUsd: result.estimate.lowUsd,
-        estimateHighUsd: result.estimate.highUsd,
-      });
-      await ctx.deps.events.publish({ type: "intent.classified", projectId: project.id, taskId: id, intents: result.intents });
-      await ctx.deps.events.publish({ type: "cost.estimate", projectId: project.id, taskId: id, ...result.estimate });
-      if (result.needsClarification && result.question) {
-        await ctx.deps.events.publish({ type: "clarify.question", projectId: project.id, taskId: id, question: result.question, options: result.options });
-      } else {
-        await enqueueBuild(ctx, project, id, input.prompt, input.source, result.intents, input.planMode);
-      }
-      await audit(ctx, "task.create", { workspaceId: project.workspaceId, target: id });
-      return { id, status, intents: result.intents, estimate: result.estimate, question: result.needsClarification ? result.question : undefined };
+      return createTaskFor(ctx, project, input);
     }),
 
   answerClarification: authedProcedure.input(z.object({ taskId: z.string(), answer: z.string().min(1).max(2000) })).mutation(async ({ ctx, input }) => {

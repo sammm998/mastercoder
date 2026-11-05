@@ -1,5 +1,19 @@
-/**
- * Routers backed by wave-1/2 domain packages (media, slides, agents, meetings, integrations, deploy,
- * billing, admin). Registered here so the core router file stays small.
- */
-export const extensionRouters = {};
+import { mediaRouter, slidesRouter } from "./studio.js";
+import { agentsRouter } from "./agents.js";
+import { meetingsRouter } from "./meetings.js";
+import { integrationsRouter } from "./integrations.js";
+import { deployRouter } from "./deploy.js";
+import { billingRouter } from "./billing.js";
+import { adminRouter } from "./admin.js";
+
+/** Routers backed by domain packages through the ports in services.ts. */
+export const extensionRouters = {
+  media: mediaRouter,
+  slides: slidesRouter,
+  agents: agentsRouter,
+  meetings: meetingsRouter,
+  integrations: integrationsRouter,
+  deploy: deployRouter,
+  billing: billingRouter,
+  admin: adminRouter,
+};
