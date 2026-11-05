@@ -1,0 +1,63 @@
+{
+  "generatedBy": "evals/speech/generate-fixtures.sh",
+  "tts": "piper sv-se-nst-medium (KBLab, CC0)",
+  "sampleRate": 16000,
+  "fixtures": [
+    {
+      "id": "sv-01",
+      "language": "sv",
+      "text": "Hej, jag vill bygga en webbshop för min blomsteraffär i Göteborg.",
+      "file": "evals/speech/audio/sv-01.wav",
+      "sha256": "91ce57cb787235c66cea419a447a8f9ffc805272efb9b3b30188f144cd3e804f",
+      "durationSec": 4.365
+    },
+    {
+      "id": "sv-02",
+      "language": "sv",
+      "text": "Kunderna ska kunna boka tid online och få en bekräftelse via sms.",
+      "file": "evals/speech/audio/sv-02.wav",
+      "sha256": "2cb5216c9c5eb5853aada15ab02e30026a36cdbdedd20165f68489f4086ec600",
+      "durationSec": 5.259
+    },
+    {
+      "id": "sv-03",
+      "language": "sv",
+      "text": "Vi behöver en enkel hemsida med meny, öppettider och ett kontaktformulär.",
+      "file": "evals/speech/audio/sv-03.wav",
+      "sha256": "d2f83c8159ebad525915a033bd109510c89c3bb399889fa72b19016f25907952",
+      "durationSec": 5.283
+    },
+    {
+      "id": "sv-04",
+      "language": "sv",
+      "text": "Appen ska visa dagens uppgifter och skicka en påminnelse klockan åtta på morgonen.",
+      "file": "evals/speech/audio/sv-04.wav",
+      "sha256": "3cd986adfa69a734e95031aa3446c4ff3489b82fb3481a93416ea7e3da5644f8",
+      "durationSec": 5.643
+    },
+    {
+      "id": "sv-05",
+      "language": "sv",
+      "text": "Skapa en presentation om årets försäljning med tre tydliga diagram.",
+      "file": "evals/speech/audio/sv-05.wav",
+      "sha256": "51bb2a2d08c03656d0ff0f0160b5e1efb9761ff17c146d5743f15b8f3e2b9db7",
+      "durationSec": 5.074
+    },
+    {
+      "id": "sv-06",
+      "language": "sv",
+      "text": "Kan du göra en mobilapp där medlemmar kan anmäla sig till träningspass?",
+      "file": "evals/speech/audio/sv-06.wav",
+      "sha256": "c8803b97124b4d000609f93da9c231aa9121a759ea2a208e2e9c0a63b99d4416",
+      "durationSec": 5.132
+    },
+    {
+      "id": "todo-sv",
+      "language": "sv",
+      "text": "Bygg en att-göra-app där jag kan lägga till och bocka av uppgifter.",
+      "file": "evals/fixtures/voice/todo-sv.wav",
+      "sha256": "e814a3a4eb4bd58be33253bb23c2a7f02a22b8fe393201fe3ed4c23a36d00bf6",
+      "durationSec": 3.622
+    }
+  ]
+}
