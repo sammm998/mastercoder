@@ -1,0 +1,15 @@
+node_modules
+dist
+.next
+.turbo
+coverage
+.env
+.env.*
+!.env.example
+*.log
+.expo
+playwright-report
+test-results
+evals/results/*
+!evals/results/.gitkeep
+.data

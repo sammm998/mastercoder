@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "forge",
+      "credentials": [{ "accessKey": "forge", "secretKey": "forgeforge" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
