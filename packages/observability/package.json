@@ -1,0 +1,29 @@
+{
+  "name": "@forge/observability",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenTelemetry tracing, Sentry adapter, provider health checks, cost/failure alerts",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint src test",
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@forge/shared": "workspace:*",
+    "@forge/db": "workspace:*",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-base": "^2.0.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.200.0",
+    "@opentelemetry/resources": "^2.0.0",
+    "@opentelemetry/context-async-hooks": "^2.0.0",
+    "@sentry/node": "^9.0.0"
+  },
+  "devDependencies": {}
+}
