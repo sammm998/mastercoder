@@ -23,7 +23,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] W2-B agents-runtime
 
 ## Wave 3 — Apps
-- [ ] W3-A apps/api
+- [x] W3-A apps/api — auth (password, magic link, OIDC Google/MS), RBAC, projects/files/remix, tasks (classify→estimate→queue, clarify, plan approval), GDPR, events WS, Yjs collab WS (2-client test), domain routers via ports, hooks; 13 tests
 - [ ] W3-B apps/agent-worker
 - [ ] W3-C apps/web
 - [ ] W3-D apps/admin
@@ -42,3 +42,5 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [ ] DoD10 all tests pass + FINAL_REPORT.md
 
 ## Notes
+- Wave 1 (W1-A..F), W3-C web, W3-D/E admin+mobile running as worktree subagents; merge each when its report arrives.
+- Lead is building agent-core (W2-A) against its own ports so it does not block on wave 1.
