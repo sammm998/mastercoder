@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useT } from "@/i18n/client";
 import { errorInfo } from "@/lib/errors";
+import { avatarSrc, type CrewId } from "@/lib/crew";
 
 /** Explains an API error. "Not configured" services get a calm, specific message instead of a crash. */
 export function ErrorNotice({ error, service, onRetry, compact = false }: { error: unknown; service?: string; onRetry?: () => void; compact?: boolean }) {
@@ -82,10 +83,15 @@ export function LoadingBlock({ rows = 3, label }: { rows?: number; label?: strin
   );
 }
 
-export function EmptyState({ title, body, action, icon }: { title: string; body?: string; action?: ReactNode; icon?: ReactNode }) {
+/** Empty states get a glowing orb with one of the crew mascots. */
+export function EmptyState({ title, body, action, icon, crew = "scoutr" }: { title: string; body?: string; action?: ReactNode; icon?: ReactNode; crew?: CrewId }) {
   return (
     <div className="empty">
-      {icon ?? <span className="empty-mark" aria-hidden="true" />}
+      {icon ?? (
+        <span className="orb empty-orb" aria-hidden="true">
+          <img src={avatarSrc(crew)} alt="" width={72} height={72} className="orb-mascot" loading="lazy" />
+        </span>
+      )}
       <h3>{title}</h3>
       {body && <p className="muted">{body}</p>}
       {action}

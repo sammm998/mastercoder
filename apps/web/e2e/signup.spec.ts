@@ -6,7 +6,7 @@ test("signup → dashboard → create project", async ({ page }) => {
   await signup(page, { name: "Astrid Lind", email });
 
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/forge next|smida härnäst/i);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/build next|bygga härnäst/i);
   await expect(page.getByText(/no projects yet|inga projekt än/i)).toBeVisible();
 
   await page.getByTestId("new-project-name").fill("Ceramics studio");

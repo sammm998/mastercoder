@@ -2,22 +2,12 @@ import localFont from "next/font/local";
 
 /**
  * Self-hosted from @fontsource-variable packages (no network at build time). next/font/local adds
- * size-adjusted fallbacks so the swap does not shift layout.
+ * size-adjusted fallbacks so the swap does not shift layout. One friendly geometric grotesk for display
+ * and text (DM Sans, variable weight) plus a mono for code; the mono is not preloaded.
  */
-export const fraunces = localFont({
-  src: [
-    { path: "../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2", weight: "100 900", style: "normal" },
-    { path: "../../node_modules/@fontsource-variable/fraunces/files/fraunces-latin-wght-italic.woff2", weight: "100 900", style: "italic" },
-  ],
-  variable: "--font-fraunces",
-  display: "swap",
-  fallback: ["Georgia", "serif"],
-  adjustFontFallback: "Times New Roman",
-});
-
-export const interTight = localFont({
-  src: [{ path: "../../node_modules/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2", weight: "100 900", style: "normal" }],
-  variable: "--font-inter-tight",
+export const dmSans = localFont({
+  src: [{ path: "../../node_modules/@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2", weight: "100 1000", style: "normal" }],
+  variable: "--font-sans",
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
   adjustFontFallback: "Arial",

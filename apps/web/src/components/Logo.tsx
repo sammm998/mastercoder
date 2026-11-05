@@ -1,19 +1,15 @@
-/** Forge mark: a bold F cut from a dark block, with an ember spark. */
-export function LogoMark({ title }: { title?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" role={title ? "img" : undefined} aria-hidden={title ? undefined : true} aria-label={title}>
-      <rect x="2" y="2" width="28" height="28" rx="6" fill="currentColor" />
-      <path d="M10 8h13v4h-8.5v3H21v4h-6.5v5H10z" fill="var(--bg)" />
-      <path d="M24 17.5l1.4 3.1 3.1 1.4-3.1 1.4-1.4 3.1-1.4-3.1-3.1-1.4 3.1-1.4z" fill="var(--accent)" />
-    </svg>
-  );
+/* Static brand assets from /public, rendered as plain <img> (no image optimiser needed for small webp files). */
+
+/** Scoutr mark: the lead mascot as a round avatar (used where only an icon fits, e.g. the collapsed sidebar). */
+export function LogoMark({ title, size = 28 }: { title?: string; size?: number }) {
+  return <img src="/brand/avatars/scoutr.webp" width={size} height={size} alt={title ?? ""} aria-hidden={title ? undefined : true} className="logo-mark" decoding="async" />;
 }
 
-export function Wordmark({ href = "/", label = "Forge" }: { href?: string; label?: string }) {
+/** The Scoutr wordmark (brand artwork). Dark ink on light; inverted for the dark theme via a token. */
+export function Wordmark({ href = "/", label = "Scoutr" }: { href?: string; label?: string }) {
   return (
     <a href={href} className="wordmark" aria-label={label}>
-      <LogoMark />
-      <span aria-hidden="true">Forge</span>
+      <img src="/brand/scoutr-logo.webp" width={96} height={32} alt="" className="wordmark-img" decoding="async" />
     </a>
   );
 }

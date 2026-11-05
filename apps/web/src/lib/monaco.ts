@@ -17,6 +17,7 @@ import "monaco-editor/languages/definitions/sql/register.js";
 import "monaco-editor/languages/definitions/shell/register.js";
 import "monaco-editor/languages/definitions/dockerfile/register.js";
 import "monaco-editor/languages/definitions/xml/register.js";
+import { effectiveTheme } from "./theme";
 
 declare global {
   interface Window {
@@ -52,7 +53,7 @@ export function languageFor(path: string): string {
 }
 
 let themed = false;
-/** Forge editor themes, matched to the site's paper/ink palette. */
+/** Forge editor themes, matched to the site's Horizon palette (blue keywords, amber numbers). */
 export function defineThemes() {
   if (themed) return;
   themed = true;
@@ -60,47 +61,50 @@ export function defineThemes() {
     base: "vs-dark",
     inherit: true,
     rules: [
-      { token: "comment", foreground: "8f877a", fontStyle: "italic" },
-      { token: "keyword", foreground: "ff8f5c" },
-      { token: "string", foreground: "9fd6c4" },
-      { token: "number", foreground: "f1c060" },
-      { token: "type", foreground: "e8c9a8" },
+      { token: "comment", foreground: "7d8696", fontStyle: "italic" },
+      { token: "keyword", foreground: "8fb3ff" },
+      { token: "string", foreground: "8fe0bd" },
+      { token: "number", foreground: "ffb35c" },
+      { token: "type", foreground: "c7d6ff" },
     ],
     colors: {
-      "editor.background": "#141210",
-      "editor.foreground": "#f2ece2",
-      "editorLineNumber.foreground": "#5a5248",
-      "editorLineNumber.activeForeground": "#c3baab",
-      "editor.selectionBackground": "#ff6a2b44",
-      "editor.lineHighlightBackground": "#1e1b17",
-      "editorCursor.foreground": "#ff6a2b",
-      "editorGutter.background": "#141210",
+      "editor.background": "#080b11",
+      "editor.foreground": "#e8ecf4",
+      "editorLineNumber.foreground": "#4a5263",
+      "editorLineNumber.activeForeground": "#aab2c0",
+      "editor.selectionBackground": "#3d78ff40",
+      "editor.lineHighlightBackground": "#0f141e",
+      "editorCursor.foreground": "#7aa8ff",
+      "editorGutter.background": "#080b11",
     },
   });
   monaco.editor.defineTheme("forge-light", {
     base: "vs",
     inherit: true,
     rules: [
-      { token: "comment", foreground: "7a7266", fontStyle: "italic" },
-      { token: "keyword", foreground: "a8360a" },
-      { token: "string", foreground: "2b6b5e" },
-      { token: "number", foreground: "8a5a00" },
+      { token: "comment", foreground: "6b7385", fontStyle: "italic" },
+      { token: "keyword", foreground: "234fc4" },
+      { token: "string", foreground: "0b7350" },
+      { token: "number", foreground: "a65200" },
     ],
     colors: {
-      "editor.background": "#fbf8f2",
-      "editor.foreground": "#17140f",
-      "editorLineNumber.foreground": "#b9ad98",
-      "editor.selectionBackground": "#e8480c33",
-      "editor.lineHighlightBackground": "#f3eee5",
-      "editorCursor.foreground": "#e8480c",
+      "editor.background": "#ffffff",
+      "editor.foreground": "#0b0f19",
+      "editorLineNumber.foreground": "#a3abba",
+      "editor.selectionBackground": "#2f5fe030",
+      "editor.lineHighlightBackground": "#f3f5fa",
+      "editorCursor.foreground": "#2f5fe0",
     },
   });
+  // Follow the site theme toggle and OS changes live.
+  const sync = () => monaco.editor.setTheme(currentMonacoTheme());
+  window.addEventListener("forge:theme", sync);
+  window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", sync);
 }
 
 export function currentMonacoTheme(): "forge-dark" | "forge-light" {
-  const attr = document.documentElement.getAttribute("data-theme");
-  const dark = attr ? attr === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return dark ? "forge-dark" : "forge-light";
+  return effectiveTheme() === "dark" ? "forge-dark" : "forge-light";
 }
 
 export { monaco };
+

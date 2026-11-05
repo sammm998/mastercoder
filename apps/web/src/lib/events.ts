@@ -31,7 +31,8 @@ export interface ChatItem {
   at: string;
 }
 
-const HIDDEN = new Set(["presence", "terminal.output", "file.changed", "job.progress", "usage"]);
+// phase.started is shown by the stepper; only completions stay in the timeline.
+const HIDDEN = new Set<string>(["presence", "terminal.output", "file.changed", "job.progress", "usage", "team.message", "phase.started"]);
 
 export function toChatItems(events: ForgeEvent[]): ChatItem[] {
   const items: ChatItem[] = [];

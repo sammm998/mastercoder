@@ -3,26 +3,23 @@ import { getT } from "@/i18n/server";
 import { Wordmark } from "./Logo";
 import { LocaleSwitcher, ThemeToggle } from "./Preferences";
 
+/** Marketing/auth top bar: brand left, a pill-shaped glass nav in the middle, preferences + CTA right. */
 export async function TopBar({ minimal = false }: { minimal?: boolean }) {
   const { t } = await getT();
   return (
-    <header className="topbar">
+    <header className={`topbar${minimal ? " topbar-minimal" : ""}`}>
       <div className="container topbar-inner">
         <Wordmark label={t("common.home")} />
-        <nav className="topnav" aria-label={t("nav.primary")}>
-          {!minimal && (
-            <>
-              <a className="hide-sm" href="/#why">
-                {t("nav.why")}
-              </a>
-              <a className="hide-sm" href="/#how">
-                {t("nav.how")}
-              </a>
-              <a className="hide-sm" href="/#pricing">
-                {t("nav.pricing")}
-              </a>
-            </>
-          )}
+        {!minimal && (
+          <nav className="topnav-pill" aria-label={t("nav.primary")}>
+            <a href="/#make">{t("nav.make")}</a>
+            <a href="/#why">{t("nav.why")}</a>
+            <a href="/#crew">{t("nav.crew")}</a>
+            <a href="/#how">{t("nav.how")}</a>
+            <a href="/#pricing">{t("nav.pricing")}</a>
+          </nav>
+        )}
+        <div className="topnav">
           <LocaleSwitcher />
           <ThemeToggle />
           {!minimal && (
@@ -30,12 +27,12 @@ export async function TopBar({ minimal = false }: { minimal?: boolean }) {
               <Link href="/login" className="hide-sm">
                 {t("nav.login")}
               </Link>
-              <Link href="/signup" className="btn btn-ink btn-sm">
+              <Link href="/signup" className="btn btn-primary btn-sm">
                 {t("nav.start")}
               </Link>
             </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
@@ -54,6 +51,9 @@ export async function Footer() {
         <div>
           <h2>{t("footer.product")}</h2>
           <ul>
+            <li>
+              <a href="/#make">{t("nav.make")}</a>
+            </li>
             <li>
               <a href="/#why">{t("nav.why")}</a>
             </li>
@@ -91,10 +91,11 @@ export async function Footer() {
           </ul>
         </div>
       </div>
-      <div className="container" style={{ marginTop: "var(--space-7)" }}>
-        <p className="subtle" style={{ fontSize: "0.8rem" }}>
-          {t("footer.copyright", { year: new Date().getFullYear() })}
-        </p>
+      <div className="container">
+        <div className="footer-bottom">
+          <p>{t("footer.copyright", { year: String(new Date().getFullYear()) })}</p>
+          <p>{t("footer.madeIn")}</p>
+        </div>
       </div>
     </footer>
   );

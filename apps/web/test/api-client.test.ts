@@ -113,4 +113,13 @@ describe("content security policy", () => {
     expect(dev).toContain("'unsafe-eval'");
     expect(dev).not.toContain("upgrade-insecure-requests");
   });
+
+  it("frames the signed preview origin and the API preview proxy; plain http only for a local API", () => {
+    const prod = buildCsp("n", { dev: false, apiUrl: "https://api.forge.eu", previewOrigin: "https://preview-production-bb63.up.railway.app/p/x?sig=1" });
+    expect(prod).toContain("frame-src 'self' https://api.forge.eu https://preview-production-bb63.up.railway.app https:");
+    expect(prod).not.toMatch(/frame-src[^;]*http:(?!\/\/)/);
+    const local = buildCsp("n", { dev: true, apiUrl: "http://localhost:4000" });
+    expect(local).toContain("frame-src 'self' http://localhost:4000 https: http:");
+    expect(buildCsp("n", { dev: false, apiUrl: "https://api.forge.eu", previewOrigin: "not a url" })).toContain("frame-src 'self' https://api.forge.eu https:;");
+  });
 });

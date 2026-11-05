@@ -47,6 +47,15 @@ const PATHS = {
   grip: "M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01",
   arrowUp: "M12 19V5M5 12l7-7 7 7",
   arrowDown: "M12 5v14M19 12l-7 7-7-7",
+  arrowRight: "M5 12h14M12 5l7 7-7 7",
+  arrowLeft: "M19 12H5M12 19l-7-7 7-7",
+  chevron: "M9 6l6 6-6 6",
+  alert: "M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z",
+  skip: "M5 4l10 8-10 8zM19 5v14",
+  chat: "M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.2A8.4 8.4 0 1 1 21 11.5z",
+  list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
+  hammer: "M15 12l-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9M17.6 15 22 10.6 13.4 2 9 6.4z",
+  figma: "M8 2h4v6H8a3 3 0 0 1 0-6zM12 2h4a3 3 0 0 1 0 6h-4zM8 8h4v6H8a3 3 0 0 1 0-6zM16 14a3 3 0 1 1 0-6 3 3 0 0 1 0 6zM8 14h4v3a3 3 0 1 1-4-3z",
 } as const;
 
 export type IconName = keyof typeof PATHS;
