@@ -52,6 +52,25 @@ describe("docker create args (no docker needed)", () => {
   });
 });
 
+describe("egress bundle (code shipped into the proxy container)", () => {
+  it("type-strips to runnable plain ESM", async () => {
+    const { egressBundle } = await import("../src/adapters/docker/egress.js");
+    const { mkdtempSync, writeFileSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { pathToFileURL } = await import("node:url");
+    const { files, version } = await egressBundle();
+    expect(Object.keys(files).sort()).toEqual(["egress-policy.js", "egress-proxy.js", "package.json"]);
+    expect(version).toMatch(/^[0-9a-f]{16}$/);
+    const dir = mkdtempSync(join(tmpdir(), "egress-bundle-"));
+    for (const [n, c] of Object.entries(files)) writeFileSync(join(dir, n), c);
+    const policy = (await import(pathToFileURL(join(dir, "egress-policy.js")).href)) as { checkIp: (ip: string) => { blocked: boolean } };
+    expect(policy.checkIp("169.254.169.254").blocked).toBe(true);
+    const proxy = (await import(pathToFileURL(join(dir, "egress-proxy.js")).href)) as { parseAuthority: (a: string) => unknown };
+    expect(proxy.parseAuthority("a.b:443")).toEqual({ host: "a.b", port: 443 });
+  });
+});
+
 describe("helpers", () => {
   it("quotes for sh and resolves paths", () => {
     expect(shq("it's")).toBe(`'it'\\''s'`);

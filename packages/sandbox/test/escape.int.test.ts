@@ -96,9 +96,11 @@ describe("sandbox escape tests", () => {
     }
   });
 
-  it("A has no direct internet route (bypassing the proxy fails)", async () => {
+  it("A has no direct internet route and no external DNS (no bypass, no DNS tunnelling)", async () => {
     expect((await probe(a, "tcp", "1.1.1.1", "443")).ok).toBe(false);
     expect((await probe(a, "tcp", "104.16.0.34", "443")).ok).toBe(false);
+    expect((await probe(a, "tcp", "8.8.8.8", "53")).ok).toBe(false);
+    expect((await probe(a, "dns", "registry.npmjs.org")).ok).toBe(false);
   });
 
   it("A cannot reach a non-allowlisted internet host via the proxy (even one B may reach)", async () => {

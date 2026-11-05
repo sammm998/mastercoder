@@ -82,6 +82,9 @@ if (mode === "tcp") {
     t.on("data", (d) => { resp += d.toString("latin1"); if (resp.includes("\r\n")) out({ ok: true, status, httpStatus: Number(resp.split(" ")[1]) }); });
   };
   s.on("data", onData);
+} else if (mode === "dns") {
+  const dns = await import("node:dns");
+  dns.promises.lookup(a).then((r) => out({ ok: true, address: r.address })).catch((e) => out({ ok: false, error: e.code || e.message }));
 } else if (mode === "http") {
   const s = net.connect({ host: proxy.hostname, port: Number(proxy.port) });
   s.on("error", (e) => out({ ok: false, error: e.code || e.message }));

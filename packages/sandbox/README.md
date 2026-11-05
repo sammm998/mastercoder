@@ -118,6 +118,10 @@ Docker self-hosted ≈ $0.0059/vCPU-hour (Hetzner CPX41 list price; override via
 - Metering of sandboxes re-attached via `get()` starts at the container's `StartedAt` (pause history before the
   current process is unknown).
 - Base images must provide `sh`, `timeout`, `tar`, `find`, `cat` (Debian/Alpine images do).
+- `create()` reuses a project's running container as-is; to change its image/limits/allowlist, `destroy()` it
+  first. Internal networks also get no external DNS (verified in the escape tests), so DNS tunnelling is closed.
+- The proxy code is type-stripped with `module.stripTypeScriptTypes` (Node ≥ 22.13, prints an
+  ExperimentalWarning once) or, on older Nodes, the TypeScript compiler.
 - E2B: CPU/RAM are fixed by the template; egress allowlist is by hostname (ports are dropped). Daytona: pause =
   `stop()` (filesystem kept, processes stopped).
 - `local`/`mock` gives no isolation and must never run untrusted code.

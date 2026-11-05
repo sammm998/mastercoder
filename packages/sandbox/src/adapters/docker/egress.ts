@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
+import * as nodeModule from "node:module";
 import { createLogger, ForgeError } from "@forge/shared";
 import { buildTar } from "../../tar.js";
 import { docker, dockerRaw, inspectOrNull, type ContainerInspect, type NetworkInspect } from "./cli.js";
@@ -43,13 +43,25 @@ export function parseUpstream(url: string | null): ParsedUpstream | null {
 
 let bundleCache: { files: Record<string, string>; version: string } | null = null;
 
+type Strip = (code: string, opts: { mode: "strip" }) => string;
+
+/** Node >= 22.13 has module.stripTypeScriptTypes; older Nodes fall back to the TypeScript compiler. */
+async function stripTypes(src: string): Promise<string> {
+  const strip = (nodeModule as unknown as { stripTypeScriptTypes?: Strip }).stripTypeScriptTypes;
+  if (typeof strip === "function") return strip(src, { mode: "strip" });
+  const ts = (await import("typescript")) as unknown as {
+    transpileModule: (s: string, o: { compilerOptions: Record<string, unknown> }) => { outputText: string };
+  };
+  return ts.transpileModule(src, { compilerOptions: { module: 99, target: 9, verbatimModuleSyntax: false } }).outputText;
+}
+
 /** Type-strip egress-proxy.ts + egress-policy.ts into plain ESM for the proxy container. */
 export async function egressBundle(): Promise<{ files: Record<string, string>; version: string }> {
   if (bundleCache) return bundleCache;
   const files: Record<string, string> = { "package.json": JSON.stringify({ type: "module" }) };
   for (const name of ["egress-proxy", "egress-policy"]) {
     const src = await readFile(new URL(`../../${name}.ts`, import.meta.url), "utf8");
-    files[`${name}.js`] = stripTypeScriptTypes(src, { mode: "strip" });
+    files[`${name}.js`] = await stripTypes(src);
   }
   const version = createHash("sha256").update(JSON.stringify(files)).digest("hex").slice(0, 16);
   bundleCache = { files, version };
