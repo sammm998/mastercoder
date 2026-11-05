@@ -129,3 +129,13 @@ describe("BuildAgent", () => {
     expect(again.spec?.title).toBe(out.spec?.title);
   });
 });
+
+describe("mock reviewer", () => {
+  it("does not mistake a Todo entity for unfinished code, but flags TODO comments", async () => {
+    const llm = new MockLLMProvider();
+    const ask = async (body: string) =>
+      JSON.parse((await llm.complete({ purpose: "agent.review", model: "m", messages: [{ role: "user", content: `### src/todos.ts\n\`\`\`\n${body}\n\`\`\`` }] })).content.map((b) => (b.type === "text" ? b.text : "")).join(""));
+    expect((await ask("export type Todo = { title: string }; export const TODO_LIMIT = 50;")).approved).toBe(true);
+    expect((await ask("export function save() { // TODO persist\n}")).approved).toBe(false);
+  });
+});

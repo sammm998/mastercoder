@@ -200,7 +200,7 @@ registerMockHandler("agent.review", (req) => {
   for (const m of text.matchAll(/### (\S+)\n```\n([\s\S]*?)\n```/g)) {
     const [, file, body] = m;
     if (!file || !body) continue;
-    if (/^(?!.*(test|spec)).*\.(tsx?|jsx?)$/.test(file) && /TODO|FIXME|not implemented/i.test(body)) issues.push({ file, problem: "Unfinished code (TODO/not implemented)", fix: "Implement the missing behaviour" });
+    if (/^(?!.*(test|spec)).*\.(tsx?|jsx?)$/.test(file) && /(\/\/|\/\*|#)\s*(TODO|FIXME)\b|\bnot implemented\b/.test(body)) issues.push({ file, problem: "Unfinished code (TODO/not implemented)", fix: "Implement the missing behaviour" });
     if (/\.(tsx|jsx)$/.test(file) && /"use client"/.test(body) && /process\.env\.(?!NEXT_PUBLIC_)[A-Z_]*(SECRET|KEY|TOKEN)/.test(body)) issues.push({ file, problem: "Server secret referenced in a client component", fix: "Move the call to a server route" });
   }
   return JSON.stringify({ approved: issues.length === 0, issues });

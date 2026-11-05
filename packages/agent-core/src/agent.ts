@@ -344,8 +344,9 @@ export class BuildAgent {
     // FORGE_DEV_HOST (e.g. "::") lets the dev server listen on IPv6 private networks (Railway) for the preview proxy.
     const dev = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
     await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
-    for (let i = 0; i < 60; i++) {
-      const r = await sandbox.exec(`curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${manifest.port}/ || true`, { timeoutMs: 10_000 });
+    for (let i = 0; i < 120; i++) {
+      // Dev servers may bind IPv4 or IPv6 only (FORGE_DEV_HOST="::"): probe both loopbacks.
+      const r = await sandbox.exec(`curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${manifest.port}/ || curl -s -g -o /dev/null -w "%{http_code}" "http://[::1]:${manifest.port}/" || true`, { timeoutMs: 10_000 });
       if (/^[23]\d\d$/.test(r.stdout.trim())) {
         const { url } = await sandbox.exposePort(manifest.port);
         events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port: manifest.port });
