@@ -20,6 +20,12 @@
     "@forge/shared": "workspace:*",
     "bullmq": "^5.34.0",
     "ioredis": "^5.4.2",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "@forge/media": "workspace:*",
+    "@forge/slides": "workspace:*",
+    "@forge/meetings": "workspace:*",
+    "@forge/speech": "workspace:*",
+    "@forge/agents-runtime": "workspace:*",
+    "@forge/abuse": "workspace:*"
   }
 }
