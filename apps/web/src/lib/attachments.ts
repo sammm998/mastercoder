@@ -12,8 +12,9 @@ export function attachmentPath(name: string, now: number, binary: boolean): stri
   const safe = name
     .normalize("NFKD")
     .replace(/[^\w.-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
     .replace(/\.{2,}/g, ".")
+    .replace(/-+\./g, ".")
+    .replace(/^[-.]+|-+$/g, "")
     .slice(0, 80) || "file";
   return `attachments/${now.toString(36)}-${safe}${binary ? ".dataurl" : ""}`;
 }
