@@ -19,7 +19,7 @@ true, with **no manual fixes**. Target: >= 16/20.
 | 11 | gen-video | Generate a 10-second cinematic video of fog rolling over a Swedish lake at dawn. | video | 10s video artifact; cost estimate shown first |
 | 12 | remotion-video | Make a 20-second product video for my booking app using its screenshots and our brand colors. | video | Remotion render produces mp4 with brand tokens |
 | 13 | deck-10 | Create a 10-slide pitch deck for a startup that sells AI bookkeeping to small businesses. | slides | 10 slides; PPTX + PDF export; speaker notes |
-| 14 | report-doc | Write a market analysis report on the Nordic e-bike market as a document I can download. | document | DOCX + PDF export with headings, a table and a chart |
+| 14 | report-doc | Write a market analysis report on the Nordic e-bike market as a document I can download. | document | DOCX + PDF export with headings and tables (charts only from supplied data — Forge never invents figures) |
 | 15 | agent-weekly-email | Every Monday at 8, summarize new HubSpot leads from the past week and email the sales team. | agent, integration | cron trigger; approval before send; run log + cost |
 | 16 | agent-slack | Create a Slack agent that answers questions about our company handbook in #help. | agent | Slack channel deploy; answers from handbook fixture |
 | 17 | openapi-app | Build an app that shows current weather for a city using this API: evals/fixtures/weather-openapi.json | app, integration | OpenAPI import → typed client; app calls it |

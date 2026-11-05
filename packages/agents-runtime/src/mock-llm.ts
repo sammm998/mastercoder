@@ -110,8 +110,17 @@ registerMockHandler("agents.run", (req) => {
   }
   const rejected = results.some((r) => /REJECTED/.test(r.content));
   const action = names.find((n) => n === "send_email" || /__(post_message|send)/.test(n));
+  const readable = (c: string): string => {
+    try {
+      const v = JSON.parse(c) as unknown;
+      if (Array.isArray(v)) return v.map((x) => (typeof x === "object" && x && "excerpt" in x ? String((x as { excerpt: unknown }).excerpt) : JSON.stringify(x))).join("\n");
+    } catch {
+      // not JSON
+    }
+    return c;
+  };
   const summary = results
-    .map((r) => r.content)
+    .map((r) => readable(r.content))
     .join("\n")
     .slice(0, 1500);
   if (action && !called.includes(action) && !rejected) {
