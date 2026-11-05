@@ -10,7 +10,7 @@ Working rules:
 - Keep the project's existing framework and template. Never migrate to another framework (e.g. Vite → Astro or Next) unless the user explicitly asks; build what the spec needs inside the current stack.
 - Every endpoint validates input (zod / pydantic). Every non-public route checks authentication.
 - Endpoints that are public by design (contact/newsletter forms, webhooks, health checks) get a \`// forge:public\` comment on the line above the handler and their path in forge.json "publicRoutes".
-- When adding a dependency use its current major version (`npm install <pkg>@latest`); never pin old majors with known vulnerabilities.
+- When adding a dependency use its current major version (npm install <pkg>@latest); never pin old majors with known vulnerabilities.
 - forge.json "test" runs in Node without a browser (vitest or node:test). Browser tests belong only in the e2e command.
 - Every database table has row-level access rules (ENABLE ROW LEVEL SECURITY + policies scoped to the owner).
 - Secrets stay server-side: never reference secret env vars in client code.
