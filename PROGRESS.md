@@ -11,7 +11,7 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 - [x] F6 CLAUDE.md, BUILD_PLAN.md, PROGRESS.md, .claude/, ADRs 0001-0003
 
 ## Wave 1 — Packages
-- [ ] W1-A sandbox + quality-gates
+- [x] W1-A sandbox + quality-gates — docker (hardened, internal net + egress proxy), e2b, daytona, local; 14 gates incl. built-in semgrep/gitleaks/osv fallbacks, RLS/auth/validation/client-secrets; insecure fixture blocked; 66+18 / 50+2 tests
 - [ ] W1-B templates + app-kit
 - [ ] W1-C design
 - [x] W1-D media + slides — fal/Replicate/mock, moderation (62 cases), Remotion (renders mp4), MediaJobService; decks/docs, PPTX/PDF/DOCX; 93+4 / 19 tests
@@ -34,12 +34,12 @@ Legend: [x] done · [ ] todo · [~] partial (see note). Resume from the first un
 ## Wave 4 — Verification (Definition of done §19)
 - [ ] DoD1 docker compose up + one command starts platform
 - [ ] DoD2 benchmark 20 prompts, >=16 succeed
-- [ ] DoD3 insecure app blocked by gates
+- [x] DoD3 insecure app blocked by gates (packages/quality-gates fixtures, all 7 static gates block)
 - [ ] DoD4 checkpoint restore restores code + DB data
 - [ ] DoD5 3 benchmark sites with 3D/scroll motion, visual QA >= 8, Lighthouse thresholds
 - [ ] DoD6 cron user agent asks approval before sending, logs run + cost
 - [ ] DoD7 two browsers edit same project live
-- [ ] DoD8 sandbox escape tests
+- [x] DoD8 sandbox escape tests (packages/sandbox/test/escape.int.test.ts, real docker)
 - [ ] DoD9 load test 50 concurrent builds
 - [ ] DoD10 all tests pass + FINAL_REPORT.md
 
