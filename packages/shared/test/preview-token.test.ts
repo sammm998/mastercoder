@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { signPreviewToken, verifyPreviewToken } from "../src/index.js";
+import { signPreviewToken, verifyPreviewToken, previewHostHeader } from "../src/index.js";
 
 describe("preview tokens", () => {
   it("round-trips, rejects tampering, wrong secrets, expiry and non-http targets", () => {
@@ -13,5 +13,12 @@ describe("preview tokens", () => {
     expect(verifyPreviewToken(`${forged}.${sig}`, "s", now)).toBeNull();
     expect(verifyPreviewToken(`${body}x.${sig}`, "s", now)).toBeNull();
     expect(verifyPreviewToken(signPreviewToken({ projectId: "p", target: "file:///etc/passwd", exp: now + 60 }, "s"), "s", now)).toBeNull();
+  });
+});
+
+describe("previewHostHeader", () => {
+  it("presents the proxy as localhost on the dev server's port (dev servers reject foreign Host headers)", () => {
+    expect(previewHostHeader(new URL("http://forgeagent-worker.railway.internal:5173"))).toBe("localhost:5173");
+    expect(previewHostHeader(new URL("http://[fd12::1]:4321/"))).toBe("localhost:4321");
   });
 });

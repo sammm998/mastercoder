@@ -32,3 +32,12 @@ export function verifyPreviewToken(token: string, secret: string, nowSec = Math.
     return null;
   }
 }
+
+/**
+ * Host header the preview proxy sends upstream. Dev servers only answer their own host names (Vite:
+ * "Blocked request. This host is not allowed"), so the proxy presents itself as localhost on the dev
+ * server's port while connecting over the private network.
+ */
+export function previewHostHeader(target: URL): string {
+  return `localhost:${target.port || (target.protocol === "https:" ? 443 : 80)}`;
+}

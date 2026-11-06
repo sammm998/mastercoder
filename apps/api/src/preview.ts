@@ -1,6 +1,6 @@
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import { connect as netConnect } from "node:net";
-import { verifyPreviewToken, createLogger } from "@forge/shared";
+import { verifyPreviewToken, previewHostHeader, createLogger } from "@forge/shared";
 
 /**
  * Preview proxy: a separate origin (its own domain) that serves the live dev server of a project's
@@ -40,7 +40,7 @@ const server = createServer((req, res) => {
   // Never forward this origin's cookies (the preview token) to the generated app.
   const { cookie: _cookie, ...fwd } = req.headers;
   const upstream = httpRequest(
-    { host: target.hostname, port: target.port || 80, method: req.method, path: url.pathname + url.search, headers: { ...fwd, host: target.host } },
+    { host: target.hostname, port: target.port || 80, method: req.method, path: url.pathname + url.search, headers: { ...fwd, host: previewHostHeader(target) } },
     (up) => {
       const headers = { ...up.headers };
       delete headers["content-security-policy"];
@@ -58,7 +58,7 @@ server.on("upgrade", (req, socket, head) => {
   if (!claims) return socket.destroy();
   const target = new URL(claims.target);
   const up = netConnect(Number(target.port || 80), target.hostname, () => {
-    const lines = [`${req.method} ${req.url} HTTP/1.1`, ...Object.entries({ ...req.headers, host: target.host }).filter(([k]) => k !== "cookie").map(([k, v]) => `${k}: ${String(v)}`), "", ""];
+    const lines = [`${req.method} ${req.url} HTTP/1.1`, ...Object.entries({ ...req.headers, host: previewHostHeader(target) }).filter(([k]) => k !== "cookie").map(([k, v]) => `${k}: ${String(v)}`), "", ""];
     up.write(lines.join("\r\n"));
     if (head.length) up.write(head);
     socket.pipe(up).pipe(socket);
