@@ -20,9 +20,9 @@ function load(agentId: string): Turn[] {
   }
 }
 
-/** Plain text with clickable https links (no HTML is ever injected). */
+/** Light markdown: **bold**, `code` and clickable https links. Text only — no HTML is ever injected. */
 function Linkified({ text }: { text: string }) {
-  const parts = text.split(/(https?:\/\/[^\s)\]]+)/g);
+  const parts = text.split(/(https?:\/\/[^\s)\]]+|\*\*[^*\n]+\*\*|`[^`\n]+`)/g);
   return (
     <>
       {parts.map((p, i) =>
@@ -30,6 +30,10 @@ function Linkified({ text }: { text: string }) {
           <a key={i} href={p} target="_blank" rel="noreferrer noopener">
             {p}
           </a>
+        ) : /^\*\*[^*]+\*\*$/.test(p) ? (
+          <strong key={i}>{p.slice(2, -2)}</strong>
+        ) : /^`[^`]+`$/.test(p) ? (
+          <code key={i}>{p.slice(1, -1)}</code>
         ) : (
           <span key={i}>{p}</span>
         ),
