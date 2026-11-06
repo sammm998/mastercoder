@@ -11,6 +11,7 @@ import { CopyField } from "@/components/CopyField";
 import { Icon } from "@/components/Icon";
 import { DefinitionForm, type Definition } from "@/features/agents/DefinitionForm";
 import { describeLogEntry } from "@/features/agents/run-log";
+import { AgentChat } from "@/features/agents/AgentChat";
 
 export default function AgentDetail({ params }: { params: Promise<{ agentId: string }> }) {
   const { agentId } = use(params);
@@ -83,6 +84,8 @@ export default function AgentDetail({ params }: { params: Promise<{ agentId: str
         </p>
       )}
       <ErrorNotice error={setStatus.error ?? runNow.error ?? evals.error} />
+
+      <AgentChat agentId={agentId} agentName={a.name} disabled={paused} />
 
       <div className="split">
         <section className="stack-lg">

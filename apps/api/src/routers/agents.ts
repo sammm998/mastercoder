@@ -94,6 +94,23 @@ export const agentsRouter = router({
     return { jobId: job.id };
   }),
 
+  /** Chat with an agent like ChatGPT: the client sends the conversation so far, the reply arrives as a run. */
+  chat: authedProcedure
+    .input(
+      z.object({
+        agentId: z.string(),
+        chatId: z.string().max(64),
+        message: z.string().min(1).max(8000),
+        history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(8000) })).max(40).default([]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const a = await loadAgent(ctx, input.agentId, "agents.manage");
+      if (a.status === "paused") throw new TRPCError({ code: "BAD_REQUEST", message: "Agent is paused" });
+      const job = await ctx.deps.queue.add(QUEUES.agentRun, "run", { agentId: a.id, workspaceId: a.workspaceId, trigger: "chat", input: { chatId: input.chatId, message: input.message, history: input.history } });
+      return { jobId: job.id };
+    }),
+
   runEvals: authedProcedure.input(z.object({ agentId: z.string() })).mutation(async ({ ctx, input }) => {
     const a = await loadAgent(ctx, input.agentId, "agents.manage");
     const job = await ctx.deps.queue.add(QUEUES.agentRun, "evals", { agentId: a.id, workspaceId: a.workspaceId, trigger: "test" });

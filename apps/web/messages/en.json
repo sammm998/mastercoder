@@ -1065,7 +1065,18 @@
     "rejected": "Rejected",
     "pending": "Pending",
     "showDecided": "Show",
-    "back": "All agents"
+    "back": "All agents",
+    "chat": {
+      "title": "Chat with {name}",
+      "new": "New chat",
+      "empty": "Ask anything — the agent answers using its instructions and tools, and remembers this conversation.",
+      "thinking": "Thinking…",
+      "placeholder": "Message the agent…",
+      "paused": "The agent is paused — resume it to chat.",
+      "send": "Send",
+      "failed": "The agent could not answer this time. Try again.",
+      "approval": "The agent wants to do something that needs your approval. Review it under Approvals."
+    }
   },
   "meetings": {
     "title": "Meetings",

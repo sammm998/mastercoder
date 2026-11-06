@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { getModels, textOf, toolUses, type ChatMessage, type ContentBlock, type LLMProvider, type ToolDef } from "@forge/llm";
 import { needsApproval, toolName, type AgentDefinition, type ToolRef } from "./definition.js";
 import type { EmailPort, LogEntry, MemoryStore, PendingCall, ToolExecutor } from "./ports.js";
@@ -57,14 +58,41 @@ const BUILTINS: Record<string, ToolDef> = {
   knowledge_search: { name: "knowledge_search", description: "Search the agent's knowledge base (handbook, docs).", inputSchema: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
 };
 
+/** Chat trigger input: the user's message plus the earlier turns of the conversation (client-held, like ChatGPT). */
+export const ChatInputSchema = z.object({
+  message: z.string().min(1).max(8000),
+  history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(8000) })).max(40).default([]),
+});
+export type ChatInput = z.infer<typeof ChatInputSchema>;
+
+export function chatMessages(input: ChatInput, nowIso: string): ChatMessage[] {
+  const out: ChatMessage[] = [];
+  for (const h of input.history) {
+    if (!h.text.trim()) continue;
+    const prev = out[out.length - 1];
+    // The API requires alternating roles: merge consecutive turns from the same side.
+    if (prev && prev.role === h.role && typeof prev.content === "string") prev.content += `\n\n${h.text}`;
+    else out.push({ role: h.role, content: h.text });
+  }
+  while (out[0]?.role === "assistant") out.shift();
+  const msg = `${input.message}\n\n(Time: ${nowIso})`;
+  const last = out[out.length - 1];
+  if (last?.role === "user" && typeof last.content === "string") last.content += `\n\n${msg}`;
+  else out.push({ role: "user", content: msg });
+  return out;
+}
+
 export function systemPrompt(ctx: RunContext): string {
   const d = ctx.def;
+  const chat = ctx.trigger === "chat";
   return [
     `You are "${d.name}", an autonomous agent built with Forge.`,
     d.instructions,
     d.recipients.length ? `Default recipients: ${d.recipients.join(", ")}` : "",
     `Irreversible actions (sending, posting, paying, deleting) may pause for human approval; if an action is rejected, do not retry it — explain what you would have done.`,
-    `Finish with a short plain-text report of what you did.`,
+    chat
+      ? `You are chatting with the user. Reply conversationally in the user's language, using markdown where it helps. Use your tools when the question needs them.`
+      : `Finish with a short plain-text report of what you did.`,
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -147,8 +175,11 @@ export class InHouseAgentRunner implements AgentRunner {
   }
 
   async run(ctx: RunContext): Promise<RunResult> {
+    const chat = ctx.trigger === "chat" ? ChatInputSchema.safeParse(ctx.input) : null;
     const state: RunState = {
-      messages: [{ role: "user", content: `Trigger: ${ctx.trigger}\nTime: ${(ctx.now?.() ?? new Date()).toISOString()}\nInput:\n${JSON.stringify(ctx.input ?? null, null, 2)}` }],
+      messages: chat?.success
+        ? chatMessages(chat.data, (ctx.now?.() ?? new Date()).toISOString())
+        : [{ role: "user", content: `Trigger: ${ctx.trigger}\nTime: ${(ctx.now?.() ?? new Date()).toISOString()}\nInput:\n${JSON.stringify(ctx.input ?? null, null, 2)}` }],
       pending: null,
       pendingSiblings: [],
       costUsd: 0,

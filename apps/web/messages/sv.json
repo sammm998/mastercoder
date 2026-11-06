@@ -1065,7 +1065,18 @@
     "rejected": "Avslagen",
     "pending": "Väntande",
     "showDecided": "Visa",
-    "back": "Alla agenter"
+    "back": "Alla agenter",
+    "chat": {
+      "title": "Chatta med {name}",
+      "new": "Ny chatt",
+      "empty": "Fråga vad som helst — agenten svarar utifrån sina instruktioner och verktyg och minns den här konversationen.",
+      "thinking": "Tänker…",
+      "placeholder": "Skriv till agenten…",
+      "paused": "Agenten är pausad — återuppta den för att chatta.",
+      "send": "Skicka",
+      "failed": "Agenten kunde inte svara den här gången. Försök igen.",
+      "approval": "Agenten vill göra något som kräver ditt godkännande. Granska det under Godkännanden."
+    }
   },
   "meetings": {
     "title": "Möten",
