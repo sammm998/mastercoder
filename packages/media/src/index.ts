@@ -8,6 +8,7 @@ export * from "./brand.js";
 export * from "./logo.js";
 export * from "./jobs.js";
 export * from "./moderation/index.js";
+export { OpenAIMediaProvider, imageSize, videoSize, videoSeconds, type OpenAIMediaOptions } from "./adapters/openai.js";
 export { FalMediaProvider, DEFAULT_FAL_MODELS, videoDuration, type FalModels, type FalOptions } from "./adapters/fal.js";
 export { ReplicateMediaProvider, DEFAULT_REPLICATE_MODELS, closestAspect, type ReplicateModels, type ReplicateOptions } from "./adapters/replicate.js";
 export { MockMediaProvider, renderMockImage, mockCompositionSvg, luminanceKey, hasFfmpeg, loadImage, type MockMediaOptions } from "./adapters/mock.js";

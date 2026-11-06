@@ -997,3 +997,36 @@ button.tile:hover {
   min-width: 0;
   resize: vertical;
 }
+
+/* Dashboard: sources next to the first prompt (images, reference URL, GitHub) */
+.dash-sources {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+  background: var(--glass, var(--surface));
+}
+.dash-sources .chat-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dash-sources .chip-x {
+  display: inline-flex;
+  margin-left: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.dash-github {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+.dash-github .field {
+  width: 100%;
+}

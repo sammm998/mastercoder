@@ -24,9 +24,14 @@ async function createChatTask(ctx: AuthedContext, project: ProjectRow, prompt: s
   return { id, status: "queued", intents, estimate, question: undefined as string | undefined };
 }
 
+/** "skapa en bild av …", "generate a video", "make me a logo" … */
+export const MEDIA_ASK =
+  /\b(skapa|generera|gör|göra|rita|ta fram|make|create|generate|draw|render|design)\b[^.?!\n]{0,60}\b(bild|bilder|foto|illustration|logga|logotyp|ikon|video|film|klipp|animation|image|images|picture|photo|illustration|logo|icon|video|clip|animation)\b/i;
+
 export async function createTaskFor(ctx: AuthedContext, project: ProjectRow, input: { prompt: string; source: z.infer<typeof PromptSource>; planMode: boolean; mode?: z.infer<typeof TaskMode> }) {
-  // Chat mode: just talk to Forge — no classification, no build, nothing to approve.
-  if (input.mode === "chat") return createChatTask(ctx, project, input.prompt, input.source);
+  // Chat mode: just talk to Forge — unless the message asks for media ("make an image/video of …"),
+  // which is created right away like in ChatGPT.
+  if (input.mode === "chat" && !MEDIA_ASK.test(input.prompt)) return createChatTask(ctx, project, input.prompt, input.source);
   const classifier = getService<IntentClassifier>(ctx.deps.services, "intent");
   if (!classifier) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Intent router not configured" });
   // Follow-ups are classified with the project's history, so "analyse it" / "make it nicer" stay in context.

@@ -478,7 +478,15 @@
     "exploreEmptyBody": "When people share projects publicly, they appear here.",
     "remixed": "Remix",
     "original": "Original",
-    "remix": "Remix"
+    "remix": "Remix",
+    "addImages": "Add images or files",
+    "importUrl": "Import from a URL",
+    "importGithub": "Import from GitHub",
+    "importUrlLabel": "Website to start from",
+    "importUrlHint": "Scoutr reads this site and builds a new, better version from its content.",
+    "importGithubLabel": "GitHub repository",
+    "importGithubHint": "Public repos work right away; private repos need GITHUB_TOKEN on the worker.",
+    "importGithubGo": "Import repository"
   },
   "project": {
     "code": {

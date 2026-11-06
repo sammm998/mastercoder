@@ -4,7 +4,7 @@ export type PriceUnit = "megapixel" | "image" | "second";
 export type MediaTask = "text-to-image" | "edit-image" | "remove-background" | "upscale" | "text-to-video" | "image-to-video";
 
 export interface ModelPrice {
-  provider: "fal" | "replicate" | "mock";
+  provider: "fal" | "replicate" | "mock" | "openai";
   model: string;
   task: MediaTask;
   unit: PriceUnit;
@@ -41,6 +41,11 @@ export const PRICE_TABLE: ModelPrice[] = [
   { provider: "fal", model: "fal-ai/veo3.1/fast/image-to-video", task: "image-to-video", unit: "second", usd: 0.1, source: "fal.ai/models/fal-ai/veo3.1/fast/image-to-video — $0.10/s audio off" },
   { provider: "fal", model: "fal-ai/kling-video/v2.5-turbo/pro/text-to-video", task: "text-to-video", unit: "second", usd: 0.07, baseUsd: 0.35, baseUnits: 5, source: "fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/text-to-video — $0.35 per 5 s + $0.07/extra s" },
   { provider: "fal", model: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video", task: "image-to-video", unit: "second", usd: 0.07, baseUsd: 0.35, baseUnits: 5, source: "fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video — $0.35 per 5 s + $0.07/extra s" },
+  // ---- OpenAI ----
+  { provider: "openai", model: "gpt-image-1", task: "text-to-image", unit: "image", usd: 0.063, source: "openai.com/api/pricing — gpt-image-1 medium quality 1536x1024 ≈ $0.063/image (1024x1024 ≈ $0.042)" },
+  { provider: "openai", model: "gpt-image-1#edit", task: "edit-image", unit: "image", usd: 0.063, source: "openai.com/api/pricing — gpt-image-1 edits, medium quality" },
+  { provider: "openai", model: "sora-2", task: "text-to-video", unit: "second", usd: 0.1, source: "openai.com/api/pricing — sora-2 $0.10/s (720p)" },
+  { provider: "openai", model: "sora-2#i2v", task: "image-to-video", unit: "second", usd: 0.1, source: "openai.com/api/pricing — sora-2 with an input reference image, $0.10/s" },
   // ---- Replicate ----
   { provider: "replicate", model: "black-forest-labs/flux-schnell", task: "text-to-image", unit: "image", usd: 0.003, source: "replicate.com/black-forest-labs/flux-schnell — $0.003/image" },
   { provider: "replicate", model: "black-forest-labs/flux-dev", task: "text-to-image", unit: "image", usd: 0.025, source: "replicate.com/black-forest-labs/flux-dev — $0.025/image" },

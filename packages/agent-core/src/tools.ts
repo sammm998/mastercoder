@@ -204,6 +204,12 @@ export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
       },
     }),
     defineTool({
+      name: "fetch_url",
+      description: "Read a public web page (e.g. the user's current site to rebuild): returns its title, text, headings, links and image URLs.",
+      input: z.object({ url: z.string().url().max(2000) }),
+      run: async ({ url }) => readPage(url),
+    }),
+    defineTool({
       name: "generate_image",
       description: "Generate images in the project's brand style; returns artifact URLs usable in the app.",
       input: z.object({ prompt: z.string().min(3).max(2000), n: z.number().int().min(1).max(8).default(1) }),
@@ -252,4 +258,39 @@ export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
     }),
   ];
   return tools;
+}
+
+const PRIVATE_HOST = /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1\]?|\[?f[cd][0-9a-f]{2}:|metadata\.google\.internal|.*\.internal$|.*\.local$)/i;
+
+/** Public page → compact text for the builder. Refuses private/internal hosts (SSRF). */
+export async function readPage(raw: string, f: typeof fetch = fetch): Promise<string> {
+  const u = new URL(raw);
+  if (!/^https?:$/.test(u.protocol) || PRIVATE_HOST.test(u.hostname)) throw new Error("Only public http(s) pages can be read");
+  const r = await f(u, { redirect: "follow", signal: AbortSignal.timeout(20_000), headers: { "user-agent": "ScoutrBuilder/1.0 (+site import)" } });
+  if (!r.ok) throw new Error(`HTTP ${r.status} for ${u.href}`);
+  const html = (await r.text()).slice(0, 2_000_000);
+  const pick = (re: RegExp) => [...html.matchAll(re)].map((m) => m[1]!.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const abs = (v: string) => {
+    try {
+      return new URL(v, u).href;
+    } catch {
+      return null;
+    }
+  };
+  const title = pick(/<title[^>]*>([\s\S]*?)<\/title>/gi)[0] ?? "";
+  const description = pick(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)/gi)[0] ?? "";
+  const headings = pick(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi).map((h) => h.replace(/<[^>]+>/g, "")).slice(0, 40);
+  const images = [...new Set(pick(/<img[^>]+src=["']([^"']+)/gi).map(abs).filter((x): x is string => !!x && !x.startsWith("data:")))].slice(0, 30);
+  const links = [...new Set(pick(/<a[^>]+href=["']([^"'#]+)/gi).map(abs).filter((x): x is string => !!x && x.startsWith(u.origin)))].slice(0, 40);
+  const text = html
+    .replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 12_000);
+  return [`URL: ${u.href}`, `Title: ${title}`, description && `Description: ${description}`, headings.length ? `Headings:\n- ${headings.join("\n- ")}` : "", `Text:\n${text}`, images.length ? `Images:\n${images.join("\n")}` : "", links.length ? `Pages on the site:\n${links.join("\n")}` : ""]
+    .filter(Boolean)
+    .join("\n\n");
 }

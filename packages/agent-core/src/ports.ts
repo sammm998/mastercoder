@@ -83,6 +83,8 @@ export interface DesignResult {
   tokens: Record<string, unknown>;
   /** For websites the design engine may compose the full site (files to write). */
   files?: Record<string, string>;
+  /** Generated media (e.g. hero photography) to place in the project, with a short description each. */
+  assets?: Array<{ path: string; bytes: Uint8Array; description: string }>;
 }
 
 export interface VisualQaResult {

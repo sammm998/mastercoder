@@ -478,7 +478,15 @@
     "exploreEmptyBody": "När någon delar ett projekt publikt dyker det upp här.",
     "remixed": "Remix",
     "original": "Original",
-    "remix": "Remixa"
+    "remix": "Remixa",
+    "addImages": "Lägg till bilder eller filer",
+    "importUrl": "Importera från en URL",
+    "importGithub": "Importera från GitHub",
+    "importUrlLabel": "Webbplats att utgå från",
+    "importUrlHint": "Scoutr läser sajten och bygger en ny, bättre version av innehållet.",
+    "importGithubLabel": "GitHub-repo",
+    "importGithubHint": "Publika repon fungerar direkt; privata kräver GITHUB_TOKEN på workern.",
+    "importGithubGo": "Importera repo"
   },
   "project": {
     "code": {

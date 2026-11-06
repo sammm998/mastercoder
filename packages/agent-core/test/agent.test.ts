@@ -222,3 +222,21 @@ describe("preview probe", () => {
     expect(await agent.previewAlive(port)).toBe(false);
   });
 });
+
+describe("fetch_url", () => {
+  it("reads a public page into title, headings, text, same-site links and images", async () => {
+    const { readPage } = await import("../src/tools.js");
+    const html = `<html><head><title>Remanis</title><meta name="description" content="Automation"><style>x{}</style></head><body><h1>We automate</h1><img src="/a.png"><a href="/about">About</a><a href="https://other.com">x</a><script>bad()</script><p>Nordic   factories</p></body></html>`;
+    const out = await readPage("https://remanis.se/", (async () => new Response(html)) as unknown as typeof fetch);
+    expect(out).toMatch(/Title: Remanis/);
+    expect(out).toMatch(/- We automate/);
+    expect(out).toMatch(/Nordic factories/);
+    expect(out).toMatch(/https:\/\/remanis\.se\/a\.png/);
+    expect(out).toMatch(/https:\/\/remanis\.se\/about/);
+    expect(out).not.toMatch(/other\.com|bad\(\)/);
+  });
+  it("refuses private hosts", async () => {
+    const { readPage } = await import("../src/tools.js");
+    for (const u of ["http://localhost:3000", "http://10.0.0.5/", "http://forgeagent-worker.railway.internal:5173"]) await expect(readPage(u)).rejects.toThrow(/public/);
+  });
+});

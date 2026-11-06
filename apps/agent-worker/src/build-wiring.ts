@@ -101,7 +101,27 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
 
   const briefFor = (brief: string, spec: { title: string }, kind: string) =>
     ({ name: spec.title.replace(/ (Landing Page|Portfolio)$/, ""), description: brief.slice(0, 1000), kind: kind === "website" ? (/portfolio/i.test(spec.title) ? "portfolio" : "landing") : "app", features: /3d/i.test(brief) ? ["3d"] : /scroll/i.test(brief) ? ["scroll storytelling"] : [] }) as const;
-  const design = (llm: MeteredLLM): DesignPort => ({
+  /**
+   * Real photography/illustration for a website (MEDIA_PROVIDER=openai|fal|replicate): a hero image and a
+   * supporting image in the art direction's mood and palette, written to public/images/.
+   */
+  const siteImages = async (brief: string, dir: { name: string; mood: string; palette: { bg: string; accent: string; accent2: string } }, j: BuildJob) => {
+    const style = `${dir.mood}; art direction "${dir.name}"; colour palette ${dir.palette.bg}, ${dir.palette.accent}, ${dir.palette.accent2}; no text, no logos, no watermarks`;
+    const shots = [
+      { path: "public/images/hero.png", w: 1536, h: 1024, what: "hero image", prompt: `Wide hero image for this website: ${brief.slice(0, 600)}` },
+      { path: "public/images/feature.png", w: 1024, h: 1024, what: "supporting image for a feature/about section", prompt: `Supporting detail image for this website: ${brief.slice(0, 600)}` },
+    ];
+    const out: Array<{ path: string; bytes: Uint8Array; description: string }> = [];
+    for (const s of shots) {
+      const r = await media.textToImage({ prompt: s.prompt, width: s.w, height: s.h, n: 1, style });
+      await d.usage.record({ kind: "image_count", quantity: 1, costUsd: r.costUsd, provider: media.name, projectId: j.projectId, taskId: j.taskId, workspaceId: j.workspaceId });
+      const bytes = r.items[0]?.bytes;
+      if (bytes) out.push({ path: s.path, bytes, description: `${s.what} (${s.w}×${s.h}), served at /${s.path.replace(/^public\//, "")}` });
+    }
+    return out;
+  };
+
+  const design = (llm: MeteredLLM, j: BuildJob): DesignPort => ({
     async proposeDirections({ brief, spec, kind, brand }) {
       return generateDirections(llm, briefFor(brief, spec, kind), brand as never);
     },
@@ -116,7 +136,8 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
         const content = await generateContent(llm, briefIn);
         files = briefIn.kind === "portfolio" ? composePortfolio({ brief: briefIn, direction: dir, content }) : composeLanding({ brief: briefIn, direction: dir, content });
       }
-      return { directionName: dir.name, tokensCss, tokens: tokensFromDirection(dir) as unknown as Record<string, unknown>, files };
+      const assets = kind === "website" && !media.isMock ? await siteImages(brief, dir, j).catch(() => []) : [];
+      return { directionName: dir.name, tokensCss, tokens: tokensFromDirection(dir) as unknown as Record<string, unknown>, files, assets };
     },
     async visualQa(url) {
       const r = await analyzePage(url);
@@ -182,10 +203,47 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     return renderRemotionVideo(o);
   };
 
+  /**
+   * Import a GitHub repository into a project: shallow clone into the sandbox (GITHUB_TOKEN for private
+   * repos), save the files, detect the template from forge.json / package.json and start the preview path.
+   */
+  const importGithub = async (p: { projectId: string; repo: string; branch?: string }) => {
+    if (!/^[\w.-]+\/[\w.-]+$/.test(p.repo)) throw new Error("Invalid repository");
+    const branch = /^[\w./-]{1,100}$/.test(p.branch ?? "main") ? (p.branch ?? "main") : "main";
+    const sb = await sandboxFor(p.projectId);
+    const base = { projectId: p.projectId };
+    d.events.emit({ type: "message", ...base, role: "system", text: `Importing github.com/${p.repo} (${branch})…` });
+    const token = process.env.GITHUB_TOKEN;
+    const url = token ? `https://x-access-token:${token}@github.com/${p.repo}.git` : `https://github.com/${p.repo}.git`;
+    const clone = await sb.exec(`rm -rf .forge-import && git clone --depth 1 --branch ${JSON.stringify(branch)} ${JSON.stringify(url)} .forge-import 2>&1 || git clone --depth 1 ${JSON.stringify(url)} .forge-import 2>&1`, { timeoutMs: 300_000 });
+    if (clone.exitCode !== 0) {
+      const msg = (clone.stdout + clone.stderr).replace(token ?? "\u0000", "***").slice(-600);
+      d.events.emit({ type: "message", ...base, role: "system", text: `GitHub import failed: ${msg}` });
+      throw new Error(`git clone failed for ${p.repo}`);
+    }
+    await sb.exec("rm -rf .forge-import/.git && cp -a .forge-import/. . && rm -rf .forge-import", { timeoutMs: 120_000 });
+    const files = (await sb.listFiles(".", { recursive: true })).filter((f) => !/(^|\/)(node_modules|\.git|dist|\.next|build)(\/|$)/.test(f));
+    let saved = 0;
+    for (const f of files.slice(0, 2000)) {
+      const content = await sb.readFile(f).catch(() => null);
+      if (content === null || content.length > 500_000 || content.includes("\u0000")) continue;
+      await d.db.insert(projectFiles).values({ projectId: p.projectId, path: f, content }).onConflictDoUpdate({ target: [projectFiles.projectId, projectFiles.path], set: { content, updatedAt: new Date() } });
+      d.events.emit({ type: "file.changed", ...base, path: f, change: "created" });
+      saved++;
+    }
+    const pkg = await sb.readFile("package.json").then((s) => JSON.parse(s) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }).catch(() => null);
+    const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
+    const template = deps.next ? "nextjs" : deps.astro ? "astro-site" : deps.expo ? "expo" : deps.hono ? "hono-api" : deps.vite ? "vite-react-ts" : null;
+    await d.db.update(projects).set({ githubRepo: p.repo, ...(template ? { template } : {}) }).where(eq(projects.id, p.projectId));
+    d.events.emit({ type: "message", ...base, role: "system", text: `Imported ${saved} files from github.com/${p.repo}${template ? ` (${template})` : ""}. Ask for a change to start building on it.` });
+    return { files: saved, template };
+  };
+
   d.consume(
     QUEUES.build,
     async (job: Job) => {
       if (job.name === "restore-checkpoint") return restoreCheckpoint(job.data as { projectId: string; checkpointId: string });
+      if (job.name === "import-github") return importGithub(job.data as { projectId: string; repo: string; branch?: string });
       const payload = BuildJobSchema.parse(job.data);
       const llm = new MeteredLLM(d.llm, d.usage, { workspaceId: payload.workspaceId, projectId: payload.projectId, taskId: payload.taskId });
       return runBuildJob(payload, {
@@ -199,7 +257,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
           ({
             templates,
             gates,
-            design: design(llm),
+            design: design(llm, j),
             checkpoints: checkpointsPort(j),
             browser,
             setup,

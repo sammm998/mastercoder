@@ -218,6 +218,12 @@ export class BuildAgent {
           const r = await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
           ev({ type: "terminal.output", ...base, stream: r.exitCode === 0 ? "stdout" : "stderr", text: `$ ${manifest.install}\n${(r.stdout + r.stderr).slice(-3000)}` });
         }
+        for (const a of d.assets ?? []) {
+          await deps.sandbox.writeFile(a.path, a.bytes);
+          touched.add(a.path);
+          ev({ type: "file.changed", ...base, path: a.path, change: "created" });
+        }
+        if (d.assets?.length) designDirection += `\nGenerated images in the project (use them where they fit, with descriptive alt text): ${d.assets.map((a) => `${a.path} — ${a.description}`).join("; ")}`;
         ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
         team("pixel", "scoutr", "done", "design", "team.design.done", { direction: d.directionName, files: Object.keys(d.files ?? {}).length }, `Done ✓ art direction "${d.directionName}"${d.files ? `, composed ${Object.keys(d.files).length} files` : ""} — back to you, Scoutr`);
       }

@@ -545,15 +545,23 @@ export function EventCard({ e, tasks, summaries, onRestore, onShowScreenshot }: 
           </button>
         </Row>
       );
-    case "artifact.ready":
+    case "artifact.ready": {
+      const isVideo = /video|remotion/.test(e.kind) || /\.(mp4|webm)(\?|$)/i.test(e.url);
+      const isImage = !isVideo && (/image|logo|photo/.test(e.kind) || /\.(png|jpe?g|webp|gif|svg)(\?|$)/i.test(e.url));
       return (
-        <Row icon={<Icon name="sparkle" size={14} />}>
-          <span className="badge badge-ok">{t("project.chat.artifact")}</span>
-          <a href={e.url} target="_blank" rel="noreferrer noopener">
-            {t("common.open")}
-          </a>
-        </Row>
+        <div className="ev-card ev-media">
+          <div className="ev-head">
+            <CrewAvatar id="pixel" size={26} />
+            <p className="ev-title">{t("project.chat.artifact")}</p>
+            <a className="btn btn-sm btn-ghost" href={e.url} target="_blank" rel="noreferrer noopener">
+              {t("common.open")}
+            </a>
+          </div>
+          {isImage && <img className="ev-media-img" src={e.url} alt={t("project.chat.artifact")} loading="lazy" />}
+          {isVideo && <video className="ev-media-img" src={e.url} controls playsInline preload="metadata" />}
+        </div>
       );
+    }
     case "approval.required":
       return (
         <div className="ev-card ev-accent">
