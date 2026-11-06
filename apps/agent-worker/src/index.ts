@@ -1,6 +1,6 @@
 import { Queue, Worker, type Job } from "bullmq";
 import { Redis } from "ioredis";
-import { connect, runMigrations, userAgents } from "@forge/db";
+import { connect, runMigrations, userAgents, DbObjectStore } from "@forge/db";
 import { createLLM, MeteredLLM } from "@forge/llm";
 import { QUEUES, createLogger, createObjectStore, MediaJobSchema, SlidesJobSchema, TranscriptionJobSchema, MeetingBotJobSchema, AgentRunJobSchema, ScanJobSchema } from "@forge/shared";
 import { initTracing, createErrorReporter, monitorTick, createAlertSink, httpCheck, withSpan } from "@forge/observability";
@@ -25,9 +25,19 @@ const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = new Redis(redisUrl, { maxRetriesPerRequest: null });
 const pub = new Redis(redisUrl, { maxRetriesPerRequest: null });
 
+
+/** STORAGE_PROVIDER=db keeps objects in Postgres (shared by api + worker); otherwise local / s3. */
+async function objectStore(db: Parameters<typeof dbStore>[0]) {
+  if ((process.env.STORAGE_PROVIDER || "").toLowerCase() === "db") return dbStore(db);
+  return createObjectStore();
+}
+function dbStore(db: ConstructorParameters<typeof DbObjectStore>[0]) {
+  return new DbObjectStore(db, { publicBaseUrl: process.env.API_URL || "http://localhost:4000", secret: process.env.AUTH_SECRET || "dev-secret" });
+}
+
 await runMigrations();
 const { db } = connect(undefined, Number(process.env.WORKER_DB_POOL || 20));
-const store = await createObjectStore();
+const store = await objectStore(db);
 const events = new WorkerEventSink(db, pub);
 const usage = new DbUsageSink(db);
 const llm = createLLM();

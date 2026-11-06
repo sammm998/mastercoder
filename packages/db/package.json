@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.38.3",
-    "postgres": "^3.4.5"
+    "postgres": "^3.4.5",
+    "@forge/shared": "workspace:*"
   },
   "devDependencies": {
     "drizzle-kit": "^0.30.1"

@@ -1,5 +1,5 @@
 import { Redis } from "ioredis";
-import { connect, runMigrations } from "@forge/db";
+import { connect, runMigrations, DbObjectStore } from "@forge/db";
 import { createLLM } from "@forge/llm";
 import { createLogger, createObjectStore, MemoryUsageSink } from "@forge/shared";
 import { buildServer } from "./server.js";
@@ -17,6 +17,16 @@ import type { ApiDeps } from "./deps.js";
 const log = createLogger({ service: "api" });
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 
+
+/** STORAGE_PROVIDER=db keeps objects in Postgres (shared by api + worker); otherwise local / s3. */
+async function objectStore(db: Parameters<typeof dbStore>[0]) {
+  if ((process.env.STORAGE_PROVIDER || "").toLowerCase() === "db") return dbStore(db);
+  return createObjectStore();
+}
+function dbStore(db: ConstructorParameters<typeof DbObjectStore>[0]) {
+  return new DbObjectStore(db, { publicBaseUrl: process.env.API_URL || "http://localhost:4000", secret: process.env.AUTH_SECRET || "dev-secret" });
+}
+
 await runMigrations();
 const { db } = connect();
 const redis = new Redis(redisUrl, { maxRetriesPerRequest: null });
@@ -28,7 +38,7 @@ const deps: ApiDeps = {
   email: createEmailProvider(),
   rateLimiter: new RedisRateLimiter(redis),
   botProtection: createBotProtection(),
-  store: await createObjectStore(),
+  store: await objectStore(db),
   queue: new BullJobQueue(redis),
   events: new RedisEventPublisher(db, redis, sub),
   kv: new RedisKv(redis),

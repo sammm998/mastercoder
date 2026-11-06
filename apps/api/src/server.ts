@@ -1,3 +1,4 @@
+import { verifyFileSignature } from "@forge/db";
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -70,6 +71,24 @@ export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}):
   });
 
   app.get("/health", async () => ({ ok: true, region: process.env.DATA_REGION || "eu-central-1" }));
+
+  // Signed object downloads for STORAGE_PROVIDER=db (generated images, videos, decks).
+  app.get("/files/*", async (req, reply) => {
+    const store = deps.store as { name: string; head?(k: string): Promise<{ contentType: string; size: number } | null>; get(k: string): Promise<Uint8Array> };
+    if (store.name !== "db" || !store.head) return reply.code(404).send({ error: "not found" });
+    const key = decodeURIComponent((req.params as { "*": string })["*"] ?? "");
+    const q = req.query as { exp?: string; sig?: string };
+    if (!verifyFileSignature(key, Number(q.exp), String(q.sig ?? ""), process.env.AUTH_SECRET || "dev-secret")) return reply.code(403).send({ error: "invalid or expired link" });
+    const meta = await store.head(key);
+    if (!meta) return reply.code(404).send({ error: "not found" });
+    const body = Buffer.from(await store.get(key));
+    return reply
+      .header("content-type", meta.contentType)
+      .header("cache-control", "private, max-age=3600")
+      .header("cross-origin-resource-policy", "cross-origin")
+      .header("x-content-type-options", "nosniff")
+      .send(body);
+  });
 
   // OAuth sign-in (Google / Microsoft) — browser redirects, so plain HTTP routes rather than tRPC.
   const oauth = new OAuthService(deps.config, deps.kv);

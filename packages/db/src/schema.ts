@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, boolean, integer, doublePrecision, primaryKey, index, uniqueIndex, vector } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, jsonb, boolean, integer, doublePrecision, primaryKey, index, uniqueIndex, vector, customType } from "drizzle-orm/pg-core";
 
 const ts = (n: string) => timestamp(n, { withTimezone: true, mode: "date" });
 const createdAt = () => ts("created_at").notNull().defaultNow();
@@ -358,3 +358,18 @@ export const agentMemory = pgTable("agent_memory", {
   value: jsonb("value").notNull(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 }, (t) => [primaryKey({ columns: [t.agentId, t.key] })]);
+
+const bytea = customType<{ data: Uint8Array; driverData: Buffer }>({
+  dataType: () => "bytea",
+  toDriver: (v) => Buffer.from(v),
+  fromDriver: (v) => new Uint8Array(v),
+});
+
+/** Object storage in Postgres (STORAGE_PROVIDER=db): media/artifacts shared by api and worker without S3. */
+export const storedObjects = pgTable("stored_objects", {
+  key: text("key").primaryKey(),
+  contentType: text("content_type").notNull().default("application/octet-stream"),
+  size: integer("size").notNull(),
+  body: bytea("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
