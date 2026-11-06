@@ -8,6 +8,7 @@ import { Icon, type IconName } from "@/components/Icon";
 import { CrewAvatar } from "@/components/CrewAvatar";
 import { Aurora } from "@/components/landing/Aurora";
 import { ProductMock } from "@/components/landing/ProductMock";
+import { ScrollFx } from "@/components/landing/ScrollFx";
 import { CREW, CREW_COLOR, CREW_NAME, type CrewId } from "@/lib/crew";
 
 const STACK = ["Next.js", "Expo", "FastAPI", "Remotion", "PPTX", "DOCX"] as const;
@@ -41,6 +42,7 @@ export default async function Landing() {
     <>
       <TopBar />
       <main id="main" className="landing">
+        <ScrollFx />
         {/* ---------- Hero ---------- */}
         <section className="hero" aria-labelledby="hero-title">
           <div className="hero-top">

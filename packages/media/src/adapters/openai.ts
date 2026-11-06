@@ -20,6 +20,9 @@ export interface OpenAIMediaOptions {
 const ImagesResponse = z.object({ data: z.array(z.object({ b64_json: z.string().optional(), url: z.string().optional() })) });
 const VideoJob = z.object({ id: z.string(), status: z.string(), progress: z.number().optional(), error: z.object({ message: z.string().optional() }).nullish() }).passthrough();
 
+/** Tried in order when the configured image model is not available to the API key. */
+export const IMAGE_FALLBACKS = ["gpt-image-2", "gpt-image-1.5", "gpt-image-1", "gpt-image-1-mini", "dall-e-3"];
+
 /** gpt-image-1 sizes: pick the one closest to the requested aspect ratio. */
 export function imageSize(width: number, height: number): "1024x1024" | "1536x1024" | "1024x1536" {
   const r = width / height;
@@ -46,6 +49,8 @@ export class OpenAIMediaProvider implements MediaProvider {
   private readonly f: FetchFn;
   private readonly imageModel: string;
   private readonly videoModel: string;
+  /** The first image model that worked for this key (remembered for the process). */
+  private workingImageModel?: string;
 
   constructor(private readonly o: OpenAIMediaOptions = {}) {
     this.key = requireKey(o.apiKey ?? process.env.OPENAI_API_KEY, "OPENAI_API_KEY");
@@ -89,15 +94,29 @@ export class OpenAIMediaProvider implements MediaProvider {
     const [w, h] = size.split("x").map(Number) as [number, number];
     const prompt = input.style ? `${input.prompt}. Style: ${input.style}` : input.prompt;
     opts?.onProgress?.(0.1, "generating");
-    const r = await this.f(`${this.base}/images/generations`, {
-      method: "POST",
-      headers: this.headers(),
-      body: JSON.stringify({ model: input.model ?? this.imageModel, prompt, n: input.n, size, quality: "medium" }),
-      signal: opts?.signal,
-    });
-    const out = await this.images(r, "gpt-image-1", input.n, w, h);
-    opts?.onProgress?.(1, "done");
-    return out;
+    // Accounts differ in which image models they can use: try the configured one, then known fallbacks.
+    const candidates = [...new Set([input.model ?? this.workingImageModel ?? this.imageModel, ...IMAGE_FALLBACKS])];
+    let lastErr: unknown;
+    for (const model of candidates) {
+      const dalle = model.startsWith("dall-e");
+      const body = dalle
+        ? { model, prompt, n: 1, size: size === "1024x1024" ? "1024x1024" : size === "1536x1024" ? "1792x1024" : "1024x1792", response_format: "b64_json" }
+        : { model, prompt, n: input.n, size, quality: "medium" };
+      const r = await this.f(`${this.base}/images/generations`, { method: "POST", headers: this.headers(), body: JSON.stringify(body), signal: opts?.signal });
+      if (r.status === 400 || r.status === 403 || r.status === 404) {
+        const text = await r.clone().text();
+        if (/model|does not exist|not (found|available)|verif|access/i.test(text)) {
+          lastErr = new ForgeError("PROVIDER_ERROR", `openai ${model}: ${text.slice(0, 300)}`);
+          continue;
+        }
+      }
+      this.workingImageModel = model;
+      const out = await this.images(r, "gpt-image-1", dalle ? 1 : input.n, w, h);
+      out.model = model;
+      opts?.onProgress?.(1, "done");
+      return out;
+    }
+    throw lastErr ?? new ForgeError("PROVIDER_ERROR", "No OpenAI image model is available for this API key");
   }
 
   private async toBlob(img: ImageInput): Promise<Blob> {

@@ -49,6 +49,9 @@ const setup: ProjectSetupPort = {
 /** Kit features added to each template on scaffold (auth apps get Better Auth + Drizzle + RLS helper). */
 const KIT: Record<string, KitFeature[]> = { nextjs: ["auth", "db", "seo"], "vite-react-ts": [], "astro-site": ["seo"], expo: [], fastapi: [], "hono-api": [] };
 
+const BINARY_MEDIA = /\.(png|jpe?g|webp|gif|avif|mp4|webm)$/i;
+const MIME: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", avif: "image/avif", mp4: "video/mp4", webm: "video/webm" };
+
 export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   const sandboxes: SandboxProvider = createSandboxProvider({ usage: d.usage });
   const live = new Map<string, Sandbox>();
@@ -67,7 +70,10 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
       // A fresh sandbox (e.g. after a worker restart) starts from the project's saved files, so follow-up
       // prompts edit the existing project instead of an empty directory.
       const saved = await d.db.select({ path: projectFiles.path, content: projectFiles.content }).from(projectFiles).where(eq(projectFiles.projectId, projectId));
-      for (const f of saved) await sb.writeFile(f.path, f.content);
+      for (const f of saved) {
+        const m = BINARY_MEDIA.test(f.path) ? /^data:[^;]+;base64,(.*)$/s.exec(f.content) : null;
+        await sb.writeFile(f.path, m ? Uint8Array.from(Buffer.from(m[1]!, "base64")) : f.content);
+      }
       if (saved.length) d.log.info("sandbox restored from saved files", { projectId, files: saved.length });
     }
     live.set(projectId, sb);
@@ -173,8 +179,12 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     const path = e.path;
     void (async () => {
       if (e.change === "deleted") return d.db.delete(projectFiles).where(and(eq(projectFiles.projectId, e.projectId), eq(projectFiles.path, path)));
-      const content = await sb.readFile(path).catch(() => null);
-      if (content === null || content.length > 500_000 || content.includes("\u0000")) return;
+      // Binary media (generated images) are kept as data: URIs so a fresh sandbox can restore them.
+      const media = BINARY_MEDIA.exec(path);
+      const content = media
+        ? await sb.exec(`base64 -w0 -- ${JSON.stringify(path)}`, { timeoutMs: 30_000 }).then((r) => (r.exitCode === 0 && r.stdout.length < 12_000_000 ? `data:${MIME[media[1]!.toLowerCase()]};base64,${r.stdout.trim()}` : null))
+        : await sb.readFile(path).catch(() => null);
+      if (content === null || (!media && (content.length > 500_000 || content.includes("\u0000")))) return;
       await d.db.insert(projectFiles).values({ projectId: e.projectId, path, content }).onConflictDoUpdate({ target: [projectFiles.projectId, projectFiles.path], set: { content, updatedAt: new Date() } });
     })().catch(() => undefined);
   });

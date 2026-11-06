@@ -43,3 +43,22 @@ describe("OpenAIMediaProvider (stubbed fetch)", () => {
     expect([videoSeconds(3), videoSeconds(5), videoSeconds(30)]).toEqual([4, 8, 12]);
   });
 });
+
+describe("OpenAI image model fallback", () => {
+  it("falls back to the next model when the key has no access to the configured one", async () => {
+    const tried: string[] = [];
+    const fetch = vi.fn(async (_u: string | URL | Request, init?: RequestInit) => {
+      const model = JSON.parse(String(init?.body)).model as string;
+      tried.push(model);
+      if (model !== "dall-e-3") return new Response(JSON.stringify({ error: { message: `The model '${model}' does not exist.` } }), { status: 400 });
+      return json({ data: [{ b64_json: Buffer.from(png).toString("base64") }] });
+    });
+    const p = new OpenAIMediaProvider({ apiKey: "sk-test", fetch: fetch as unknown as typeof globalThis.fetch });
+    const r = await p.textToImage({ prompt: "x", width: 1536, height: 1024, n: 1 });
+    expect(tried).toEqual(["gpt-image-1", "gpt-image-2", "gpt-image-1.5", "gpt-image-1-mini", "dall-e-3"]);
+    expect(r.model).toBe("dall-e-3");
+    await p.textToImage({ prompt: "y", width: 1024, height: 1024, n: 1 });
+    expect(tried.at(-1)).toBe("dall-e-3");
+    expect(tried).toHaveLength(6);
+  });
+});

@@ -43,7 +43,11 @@ const server = createServer((req, res) => {
     { host: target.hostname, port: target.port || 80, method: req.method, path: url.pathname + url.search, headers: { ...fwd, host: previewHostHeader(target) } },
     (up) => {
       const headers = { ...up.headers };
+      // The preview is shown inside the workspace iframe: drop the app's framing restrictions
+      // (Next.js/helmet send X-Frame-Options: DENY and CSP frame-ancestors).
       delete headers["content-security-policy"];
+      delete headers["content-security-policy-report-only"];
+      delete headers["x-frame-options"];
       res.writeHead(up.statusCode ?? 502, headers);
       up.pipe(res);
     },

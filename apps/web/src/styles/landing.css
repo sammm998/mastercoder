@@ -1522,3 +1522,35 @@
     filter: blur(6px);
   }
 }
+
+/* ---------- JS scroll effects (ScrollFx; every browser, off under reduced motion) ---------- */
+.fx-js .landing .fx-item {
+  /* JS takes over from the CSS view-timeline so effects are identical across browsers. */
+  animation: none;
+  opacity: 0;
+  transform: translateY(34px) scale(0.985);
+  filter: blur(6px);
+  transition:
+    opacity 0.8s var(--ease-out) var(--fx-delay, 0ms),
+    transform 0.9s var(--ease-out) var(--fx-delay, 0ms),
+    filter 0.8s var(--ease-out) var(--fx-delay, 0ms);
+}
+.fx-js .landing .fx-item.fx-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.fx-js .landing .floater,
+.fx-js .landing .hero-mascot {
+  transition: translate 0.25s linear;
+  will-change: translate;
+}
+.fx-js .landing .mock-window {
+  transform-origin: 50% 0;
+  transition: transform 0.25s linear;
+  will-change: transform;
+}
+.fx-js .landing .bento-card.fx-in:hover {
+  transform: translateY(-4px);
+  transition-delay: 0ms;
+}
