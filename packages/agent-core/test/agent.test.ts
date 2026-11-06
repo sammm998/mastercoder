@@ -256,3 +256,16 @@ describe("per-project preview ports", () => {
     expect(devCommand("npm run dev", 3000, 22000)).toBe("PORT=22000 npm run dev");
   });
 });
+
+describe("dependency changes from the shell", () => {
+  it("reports package manifests as changed after npm install via run_command", async () => {
+    const sb = new TempDirSandbox();
+    const exec = sb.exec.bind(sb);
+    sb.exec = (cmd, o) => (cmd.startsWith("npm install") ? Promise.resolve({ exitCode: 0, stdout: "added 1 package", stderr: "", durationMs: 1, timedOut: false }) : exec(cmd, o));
+    const llm = new MockLLMProvider().on("t", (req) => (round(req) === 0 ? [call("a", "run_command", { command: "npm install three" })] : "done"));
+    const bus = new EventBus();
+    const tools = buildTools({ deps: { ...deps(llm, sb), events: bus }, projectId: "p", taskId: "t", repoMap: new RepoMap(), index: new MemoryVectorIndex(), manifest: () => null, previewUrl: () => null, touched: new Set() });
+    await runToolLoop({ llm, model: "m", purpose: "t", system: "s", messages: [{ role: "user", content: "go" }], tools, events: bus, projectId: "p", taskId: "t" });
+    expect(bus.ofType("file.changed").map((e) => e.path)).toContain("package.json");
+  });
+});

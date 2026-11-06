@@ -45,6 +45,8 @@ async function exists(rt: ToolRuntime, path: string): Promise<boolean> {
   }
 }
 
+const DEP_CHANGE = /\b(npm|pnpm|yarn|bun)\s+(i|install|add|remove|rm|uninstall|un|update|up)\b|\bnpx\s+(shadcn|create-)|\bpip\s+install\b/;
+
 export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
   const { deps } = rt;
   const sb = deps.sandbox;
@@ -53,6 +55,14 @@ export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
     const text = `$ ${cmd}\nexit ${r.exitCode}${r.timedOut ? " (timed out)" : ""}\n${r.stdout}${r.stderr ? `\n[stderr]\n${r.stderr}` : ""}`;
     deps.events.emit({ type: "terminal.output", projectId: rt.projectId, taskId: rt.taskId, stream: r.exitCode === 0 ? "stdout" : "stderr", text: clip(text, 4000) });
     return { ...r, text: clip(text) };
+  };
+  // Dependency changes made through the shell update package manifests on disk: report them so the
+  // project's saved files (code view, restores) stay in sync.
+  const manifestsChanged = () => {
+    for (const p of ["package.json", "package-lock.json", "pnpm-lock.yaml", "requirements.txt"]) {
+      deps.events.emit({ type: "file.changed", projectId: rt.projectId, taskId: rt.taskId, path: p, change: "modified" });
+      rt.touched.add(p);
+    }
   };
   const manifestCmd = (key: "test" | "e2e" | "typecheck" | "lint" | "build") => {
     const m = rt.manifest();
@@ -125,7 +135,11 @@ export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
       name: "run_command",
       description: "Run a shell command in the project sandbox (network limited to an allowlist).",
       input: z.object({ command: z.string().min(1).max(4000), timeoutSec: z.number().int().min(1).max(1800).default(300) }),
-      run: async ({ command, timeoutSec }) => (await exec(command, timeoutSec)).text,
+      run: async ({ command, timeoutSec }) => {
+        const out = (await exec(command, timeoutSec)).text;
+        if (DEP_CHANGE.test(command)) manifestsChanged();
+        return out;
+      },
     }),
     defineTool({
       name: "install_package",
@@ -134,7 +148,9 @@ export function buildTools(rt: ToolRuntime): ForgeTool<unknown>[] {
       run: async ({ packages, dev, manager }) => {
         const list = packages.map(shellQuote).join(" ");
         const cmd = manager === "pip" ? `pip install ${list}` : manager === "pnpm" ? `pnpm add ${dev ? "-D " : ""}${list}` : `npm install ${dev ? "--save-dev " : ""}${list}`;
-        return (await exec(cmd, 600)).text;
+        const out = (await exec(cmd, 600)).text;
+        manifestsChanged();
+        return out;
       },
     }),
     defineTool({
