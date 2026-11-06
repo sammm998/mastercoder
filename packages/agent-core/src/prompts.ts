@@ -20,8 +20,10 @@ Working rules:
 - Never present hardcoded demo data as real functionality. Seed data must be clearly labelled as sample data.
 - When done, reply with a short summary of what you built and anything you assumed. Do not call tools after that.`;
 
-export function buildPrompt(spec: Spec, template: string, manifest: TemplateManifestLike | null, direction: string, followUp?: string, history?: string): string {
+export function buildPrompt(spec: Spec, template: string, manifest: TemplateManifestLike | null, direction: string, followUp?: string, history?: string, request?: string): string {
   return [
+    // The plan is a summary; the user's own words carry the details (file paths, data formats, exact copy).
+    request && !followUp ? `## The user's request (every requirement here must be met)\n${request.slice(0, 12_000)}\n` : "",
     history ? `## Earlier in this project\n${history}\n` : "",
     followUp ? `## Follow-up request\n${followUp}\nThe project already exists in the sandbox: read the relevant files first and change them in place. Do not start over or re-scaffold.\n` : "",
     `## Spec\n${JSON.stringify(spec, null, 2)}`,

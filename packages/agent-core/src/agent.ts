@@ -68,7 +68,7 @@ export class BuildAgent {
     private readonly deps: AgentDeps,
     opts: BuildAgentOptions = {},
   ) {
-    this.o = { maxFixIterations: 5, sameErrorLimit: 3, designRounds: 3, designThreshold: 8, maxTurnsPerRound: 40, ...opts };
+    this.o = { maxFixIterations: 5, sameErrorLimit: 3, designRounds: 3, designThreshold: 8, maxTurnsPerRound: 60, ...opts };
   }
 
   private costOf(llm: LLMProvider): number {
@@ -296,7 +296,43 @@ export class BuildAgent {
     // ---------- BUILD ----------
     phase("build");
     team("scoutr", "byggo", "asking", "build", "team.build.ask", { tasks: spec.tasks.length || spec.userStories.length }, "Byggo, can you build it from the plan?");
-    const built = await round(buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined), { phase: "build", description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length });
+    const buildStep = { phase: "build" as const, description: spec.summary, fileCount: spec.entities.length * 3 + spec.screens.length };
+    // A round that ran out of turns continues where it stopped (up to 2 more times).
+    const roundToEnd = async (text: string) => {
+      let r = await round(text, buildStep);
+      let toolCalls = r.toolCalls;
+      for (let i = 0; i < 2 && r.stopReason === "max_turns"; i++) {
+        r = await round("You ran out of steps in the last round. Continue exactly where you stopped and finish this step.", buildStep);
+        toolCalls += r.toolCalls;
+      }
+      return { ...r, toolCalls };
+    };
+    const base0 = buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined, input.prompt);
+    let built: Awaited<ReturnType<typeof roundToEnd>>;
+    const steps = spec.tasks;
+    if (steps.length >= 4 && !input.existingProject) {
+      // Large specs are built step by step: one round per planned task with a fresh context (spec + repo map),
+      // so every step gets a full budget instead of the whole product sharing one.
+      let toolCalls = 0;
+      let last: Awaited<ReturnType<typeof roundToEnd>> | null = null;
+      for (const [i, task] of steps.entries()) {
+        if (await deps.isCancelled?.()) break;
+        team("byggo", "scoutr", "working", "build", "team.build.step", { n: i + 1, total: steps.length, title: task.title }, `Step ${i + 1}/${steps.length}: ${task.title}`);
+        history.splice(0, history.length);
+        last = await roundToEnd(
+          `${base0}\n\n## Now: step ${i + 1} of ${steps.length} — ${task.title}\nSteps already done: ${steps.slice(0, i).map((s) => s.title).join("; ") || "none"}.\nImplement this step completely and working (real logic, no placeholders), building on the files that exist. Run the relevant checks. Reply with a one-line summary when the step works.`,
+        );
+        toolCalls += last.toolCalls;
+      }
+      // Completion pass: every user story and acceptance test must be met by the code.
+      history.splice(0, history.length);
+      const check = await roundToEnd(
+        `${base0}\n\n## Completion check\nGo through every user story and acceptance test above. For each one, check the code actually implements it end to end (open the files). Implement anything missing or stubbed, wire up every button and interaction, then run the checks. Reply with what you verified and what you fixed.`,
+      );
+      built = { ...(last ?? check), toolCalls: toolCalls + check.toolCalls };
+    } else {
+      built = await roundToEnd(base0);
+    }
     phaseDone("build");
     team("byggo", "scoutr", built.toolErrors.length ? "failed" : "done", "build", "team.build.done", { files: touched.size, tools: built.toolCalls }, `Done ✓ ${touched.size} files written with ${built.toolCalls} tool calls — over to Vakt for checks`);
     if (deps.isCancelled && (await deps.isCancelled())) return { status: "cancelled", charged: false, spec, summary: "Cancelled by user", costUsd: cost(), fixIterations: 0 };

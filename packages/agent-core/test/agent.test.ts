@@ -95,8 +95,8 @@ describe("BuildAgent", () => {
       const isNewRound = last?.role === "user" && typeof last.content === "string";
       if (isNewRound) builds++;
       if (!isNewRound) return "Implemented.";
-      // First build round writes a buggy implementation; the fix round corrects it.
-      return builds === 1
+      // Build rounds (one per planned step) write a buggy implementation; the fix round corrects it.
+      return !/quality gates failed/i.test(String(last.content))
         ? [call(`w${r}`, "write_file", { path: "src/math.js", content: "export const add = (a, b) => a - b;\n" })]
         : [call(`f${r}`, "edit_file", { path: "src/math.js", oldText: "a - b", newText: "a + b" })];
     });
@@ -105,6 +105,9 @@ describe("BuildAgent", () => {
     expect(out.status).toBe("succeeded");
     expect(out.charged).toBe(true);
     expect(out.fixIterations).toBe(1);
+    // Planned tasks are built one round each, plus a completion pass and the fix round.
+    expect(builds).toBeGreaterThanOrEqual((out.spec?.tasks.length ?? 0) + 2);
+    expect(d.bus.ofType("team.message").filter((m) => m.key === "team.build.step").length).toBe(out.spec?.tasks.length ?? 0);
     expect(await d.sandbox.readFile("src/math.js")).toContain("a + b");
     const types = d.bus.history.map((e) => e.type);
     expect(types).toContain("plan.ready");

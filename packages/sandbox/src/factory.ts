@@ -17,7 +17,7 @@ export interface SandboxProviderOptions {
  */
 export function hostNetworkEnv(): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && /proxy|^npm_config_|^NODE_EXTRA_CA_CERTS$|^SSL_CERT_FILE$|^REQUESTS_CA_BUNDLE$|^PIP_/i.test(k)) env[k] = v;
+  for (const [k, v] of Object.entries(process.env)) if (v !== undefined && /proxy|^npm_config_|^PLAYWRIGHT_BROWSERS_PATH$|^CHROME_PATH$|^NODE_EXTRA_CA_CERTS$|^SSL_CERT_FILE$|^REQUESTS_CA_BUNDLE$|^PIP_/i.test(k)) env[k] = v;
   if (process.env.HOME) env.npm_config_cache ??= `${process.env.HOME}/.npm`;
   // Vite dev servers reject unknown Host headers; also allow the worker's private hostname (preview proxy).
   if (process.env.RAILWAY_PRIVATE_DOMAIN) env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS = process.env.RAILWAY_PRIVATE_DOMAIN;

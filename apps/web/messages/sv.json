@@ -1337,7 +1337,8 @@
     },
     "build": {
       "ask": "Byggo, kan du bygga det enligt planen? ({tasks, plural, one {# uppgift} other {# uppgifter}})",
-      "done": "Klart ✓ {files, plural, one {# fil} other {# filer}} skrivna i {tools, plural, one {# steg} other {# steg}} — över till Vakt för kontroll"
+      "done": "Klart ✓ {files, plural, one {# fil} other {# filer}} skrivna i {tools, plural, one {# steg} other {# steg}} — över till Vakt för kontroll",
+      "step": "Steg {n}/{total}: {title}"
     },
     "verify": {
       "done": "Klart ✓ {passed} av {total} kvalitetskontroller godkända",

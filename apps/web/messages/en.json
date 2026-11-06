@@ -1337,7 +1337,8 @@
     },
     "build": {
       "ask": "Byggo, can you build it from the plan? ({tasks, plural, one {# task} other {# tasks}})",
-      "done": "Done ✓ {files, plural, one {# file} other {# files}} written in {tools, plural, one {# step} other {# steps}} — over to Vakt for checks"
+      "done": "Done ✓ {files, plural, one {# file} other {# files}} written in {tools, plural, one {# step} other {# steps}} — over to Vakt for checks",
+      "step": "Step {n}/{total}: {title}"
     },
     "verify": {
       "done": "Done ✓ {passed} of {total} quality checks passed",
