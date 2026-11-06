@@ -226,6 +226,11 @@ export class BuildAgent {
 
     // Live preview: start the dev server as soon as there is a UI (scaffold, composed design or an existing
     // project), in the background, so the user watches the site change while the builder works (HMR).
+    if (deps.setup && kind !== "backend") {
+      const prep = await deps.setup.prepare(deps.sandbox).catch(() => ({ packageJsonChanged: false, notes: [] as string[] }));
+      if (prep.packageJsonChanged && manifest?.install) await deps.sandbox.exec(fastInstall(manifest.install), { timeoutMs: 900_000 });
+      for (const n of prep.notes) ev({ type: "message", ...base, role: "system", text: n });
+    }
     let earlyPreview: Promise<string | null> | null = null;
     if (manifest && kind !== "backend") {
       const m = manifest;

@@ -18,6 +18,33 @@ import { runChat } from "./jobs/chat.js";
 import "./mock-llm.js";
 import { createMediaProvider } from "@forge/media";
 import type { BuildQueueDeps } from "./build-queue.js";
+import { PLUGIN_FILE, VISUAL_EDIT_PLUGIN_SOURCE, patchPackageJson, patchViteConfig } from "@forge/visual-edit";
+import type { ProjectSetupPort } from "@forge/agent-core";
+
+/** Vite projects get the visual-edit plugin (source tags + inspector in dev only) so Edit works in the preview. */
+const setup: ProjectSetupPort = {
+  async prepare(sb) {
+    const read = (p: string) => sb.readFile(p).catch(() => null);
+    let config: string | null = null;
+    let path = "vite.config.ts";
+    for (const p of ["vite.config.ts", "vite.config.js", "vite.config.mjs"]) {
+      config = await read(p);
+      if (config !== null) {
+        path = p;
+        break;
+      }
+    }
+    if (config === null) return { packageJsonChanged: false, notes: [] };
+    const patched = patchViteConfig(config);
+    if (patched === null) return { packageJsonChanged: false, notes: [] };
+    await sb.writeFile(PLUGIN_FILE, VISUAL_EDIT_PLUGIN_SOURCE);
+    if (patched !== config) await sb.writeFile(path, patched);
+    const pkg = await read("package.json");
+    const pkgPatched = pkg ? patchPackageJson(pkg) : null;
+    if (pkgPatched) await sb.writeFile("package.json", pkgPatched);
+    return { packageJsonChanged: !!pkgPatched, notes: patched !== config ? ["Visual editing enabled in the preview (Edit)."] : [] };
+  },
+};
 
 /** Kit features added to each template on scaffold (auth apps get Better Auth + Drizzle + RLS helper). */
 const KIT: Record<string, KitFeature[]> = { nextjs: ["auth", "db", "seo"], "vite-react-ts": [], "astro-site": ["seo"], expo: [], fastapi: [], "hono-api": [] };
@@ -175,6 +202,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
             design: design(llm),
             checkpoints: checkpointsPort(j),
             browser,
+            setup,
             ...(d.integrations ? { integrations: { listTools: (pid: string) => d.integrations!.listProjectTools(pid), call: (pid: string, tool: string, input: unknown) => d.integrations!.callProjectTool(pid, tool, input) } } : {}),
             media: {
               generateImage: async (i) => (await runMediaRequest({ taskId: j.taskId, projectId: i.projectId, workspaceId: j.workspaceId, kind: "image", prompt: i.prompt, options: { n: i.n } }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events })).map((a) => ({ artifactId: a.id, url: a.storageKey })),

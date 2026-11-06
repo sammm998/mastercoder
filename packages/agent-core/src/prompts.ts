@@ -15,6 +15,7 @@ Working rules:
 - Every database table has row-level access rules (ENABLE ROW LEVEL SECURITY + policies scoped to the owner).
 - Secrets stay server-side: never reference secret env vars in client code.
 - Use the design tokens (CSS variables in tokens.css) for colors, type, spacing and motion. Honour prefers-reduced-motion.
+- Keep the art direction's motion (scroll reveals, parallax, hover/magnetic effects in src/patterns). Never remove or flatten animations to fix a check; optimise them instead.
 - Write tests for the acceptance criteria. Run run_tests (and run_e2e when available) before finishing.
 - Never present hardcoded demo data as real functionality. Seed data must be clearly labelled as sample data.
 - When done, reply with a short summary of what you built and anything you assumed. Do not call tools after that.`;

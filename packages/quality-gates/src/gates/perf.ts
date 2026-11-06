@@ -5,15 +5,48 @@ function pct(n: number): number {
   return n <= 1 ? Math.round(n * 100) : Math.round(n);
 }
 
+const PROD_PORT = 4789;
+
+/**
+ * Lighthouse must measure what visitors get: a dev server is unminified and un-bundled, so its
+ * performance score is meaningless (and "fixing" it strips the design). When the project has
+ * build + preview scripts, build it and measure the production preview; otherwise fall back to the
+ * dev preview URL.
+ */
+async function productionUrl(ctx: GateContext): Promise<string | null> {
+  const scripts = ctx.project.packageJson?.scripts ?? {};
+  if (!scripts.build || !scripts.preview) return null;
+  const b = await ctx.sb.exec("npm run build", { timeoutMs: 300_000 });
+  if (b.exitCode !== 0) return null;
+  await ctx.sb.exec(`nohup npm run preview -- --host 127.0.0.1 --port ${PROD_PORT} > /tmp/forge-prod-preview.log 2>&1 &`, { timeoutMs: 15_000 });
+  const probe = `node -e "fetch('http://127.0.0.1:${PROD_PORT}/').then(r=>console.log(r.status)).catch(()=>console.log(0))"`;
+  for (let i = 0; i < 30; i++) {
+    const r = await ctx.sb.exec(probe, { timeoutMs: 8_000 });
+    if (/^[23]\d\d$/.test(r.stdout.trim())) return (await ctx.sb.exposePort(PROD_PORT)).url;
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  return null;
+}
+
 export async function lighthouseGate(ctx: GateContext): Promise<GateOutcome> {
   if (!ctx.opts.lighthouse) return skipped("skipped: no lighthouse runner injected (opts.lighthouse)");
   if (!ctx.opts.previewUrl) return skipped("skipped: no previewUrl");
-  const minPerf = ctx.opts.thresholds?.performance ?? 85;
+  const prod = await productionUrl(ctx).catch(() => null);
+  try {
+    return await measure(ctx, prod ?? ctx.opts.previewUrl, !!prod);
+  } finally {
+    if (prod) await ctx.sb.exec(`pkill -f -- "--host 127.0.0.1 --port ${PROD_PORT}" >/dev/null 2>&1 || true`, { timeoutMs: 10_000 }).catch(() => undefined);
+  }
+}
+
+async function measure(ctx: GateContext, url: string, production: boolean): Promise<GateOutcome> {
+  // A dev server can't reach production scores: measure it, but only accessibility blocks there.
+  const minPerf = production ? (ctx.opts.thresholds?.performance ?? 85) : 0;
   const minA11y = ctx.opts.thresholds?.accessibility ?? 90;
-  const scores = await ctx.opts.lighthouse(ctx.opts.previewUrl);
+  const scores = await ctx.opts.lighthouse!(url);
   const perf = pct(scores.performance);
   const a11y = pct(scores.accessibility);
-  const details = `performance ${perf} (>= ${minPerf}), accessibility ${a11y} (>= ${minA11y}) for ${ctx.opts.previewUrl}`;
+  const details = `performance ${perf} (>= ${minPerf}${production ? "" : ", dev server — not enforced"}), accessibility ${a11y} (>= ${minA11y}) for ${production ? "production build" : url}`;
   const findings = [
     ...(perf < minPerf ? [{ rule: "lighthouse/performance", message: `performance score ${perf} < ${minPerf}`, severity: "error" as const }] : []),
     ...(a11y < minA11y ? [{ rule: "lighthouse/accessibility", message: `accessibility score ${a11y} < ${minA11y}`, severity: "error" as const }] : []),
@@ -23,7 +56,8 @@ export async function lighthouseGate(ctx: GateContext): Promise<GateOutcome> {
   if (perf < minPerf)
     fixes.push(
       "Performance: serve images as AVIF/WebP with explicit width/height and lazy loading below the fold, preload the LCP image and fonts (font-display: swap), " +
-        "code-split heavy client components (dynamic import for 3D/animation libs), remove unused JS/CSS, and avoid layout shift from late-loading content.",
+        "code-split heavy client components (dynamic import for 3D/animation libs), remove unused JS/CSS, and avoid layout shift from late-loading content. " +
+        "Keep the design's scroll effects and animations: optimise how they load (CSS/transform-only, lazy-init below the fold), never delete them.",
     );
   if (a11y < minA11y)
     fixes.push(

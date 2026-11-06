@@ -11,13 +11,15 @@
     "./babel": "./src/babel-plugin.ts",
     "./vite": "./src/vite-plugin.ts",
     "./inspector-script": "./src/inspector-script.ts",
-    "./protocol": "./src/protocol.ts"
+    "./protocol": "./src/protocol.ts",
+    "./plugin-bundle": "./src/plugin-bundle.ts"
   },
   "scripts": {
     "build:inspector": "tsx scripts/build-inspector.ts",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "eslint src test scripts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:plugin": "tsx scripts/build-plugin.ts"
   },
   "dependencies": {
     "@babel/parser": "^7.29.0",

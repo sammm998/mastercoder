@@ -24,3 +24,5 @@ export {
   type ParentToInspector,
 } from "./protocol.js";
 export { INSPECTOR_SCRIPT } from "./inspector-script.js";
+export * from "./project-setup.js";
+export { VISUAL_EDIT_PLUGIN_SOURCE } from "./plugin-bundle.js";

@@ -198,9 +198,10 @@ describe("lighthouse and visual-qa", () => {
     const lighthouse = vi.fn(async () => ({ performance: 0.72, accessibility: 95 }));
     const r = await runGates(sb, { gates: ["lighthouse", "visual-qa"], previewUrl: "http://127.0.0.1:3000", lighthouse, visualScore: 7.5 });
     expect(lighthouse).toHaveBeenCalledWith("http://127.0.0.1:3000");
-    expect(r.results[0]).toMatchObject({ passed: false, details: "performance 72 (>= 85), accessibility 95 (>= 90) for http://127.0.0.1:3000" });
-    expect(r.results[0]?.findings.map((f) => f.rule)).toEqual(["lighthouse/performance"]);
-    expect(r.results[0]?.fix).toMatch(/LCP/);
+    // No build/preview scripts: measured on the dev server, where performance is reported but not enforced.
+    expect(r.results[0]).toMatchObject({ passed: true, details: "performance 72 (>= 0, dev server — not enforced), accessibility 95 (>= 90) for http://127.0.0.1:3000" });
+    const badA11y = await runGates(sb, { gates: ["lighthouse"], previewUrl: "http://127.0.0.1:3000", lighthouse: async () => ({ performance: 99, accessibility: 70 }) });
+    expect(badA11y.results[0]?.findings.map((f) => f.rule)).toEqual(["lighthouse/accessibility"]);
     expect(r.results[1]).toMatchObject({ passed: false, details: "visual QA score 7.5 < 8" });
     const ok = await runGates(sb, { gates: ["lighthouse", "visual-qa"], previewUrl: "http://x", lighthouse: async () => ({ performance: 90, accessibility: 0.92 }), visualScore: 8 });
     expect(ok.passed).toBe(true);
@@ -208,6 +209,17 @@ describe("lighthouse and visual-qa", () => {
     expect(skippedRun.results[0]).toMatchObject({ skipped: true, details: "skipped: no previewUrl" });
     await sb.destroy();
   });
+
+  it("measures the production build when the project has build + preview scripts", async () => {
+    const server = `const http=require("http");const a=process.argv;const port=Number(a[a.indexOf("--port")+1]);http.createServer((q,r)=>r.end("prod")).listen(port,"127.0.0.1");`;
+    const sb = await sandboxFromFiles({ "package.json": JSON.stringify({ scripts: { build: "node -e 0", preview: "node prod.cjs" } }), "prod.cjs": server });
+    const urls: string[] = [];
+    const r = await runGates(sb, { gates: ["lighthouse"], previewUrl: "http://127.0.0.1:3000", lighthouse: async (u) => (urls.push(u), { performance: 0.72, accessibility: 95 }) });
+    expect(urls[0]).toMatch(/:4789/);
+    expect(r.results[0]).toMatchObject({ passed: false, details: "performance 72 (>= 85), accessibility 95 (>= 90) for production build" });
+    expect(r.results[0]?.fix).toMatch(/never delete them/);
+    await sb.destroy();
+  }, 60_000);
 
   it("a browser gate that cannot run is reported as skipped with the reason, never as passed", async () => {
     const sb = await sandboxFromFiles({});

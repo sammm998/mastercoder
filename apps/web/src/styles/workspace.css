@@ -1601,6 +1601,10 @@
   transition: width var(--dur-base) var(--ease-out);
 }
 
+.preview-device[data-fluid="true"] {
+  border-radius: 10px;
+}
+
 .preview-device iframe {
   border: 0;
   transform-origin: 0 0;

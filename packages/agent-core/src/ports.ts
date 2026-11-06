@@ -92,6 +92,11 @@ export interface VisualQaResult {
   screenshots?: Array<{ viewport: number; url: string }>;
 }
 
+/** Project setup the platform owns (e.g. the visual-edit plugin). Returns true when package.json changed. */
+export interface ProjectSetupPort {
+  prepare(sandbox: SandboxPort): Promise<{ packageJsonChanged: boolean; notes: string[] }>;
+}
+
 export interface DesignPort {
   artDirection(input: { brief: string; spec: Spec; kind: string; brand?: unknown; direction?: unknown }): Promise<DesignResult>;
   /** Three distinct art directions to choose from before building (name, mood, palette, fonts …). */
@@ -151,6 +156,7 @@ export interface AgentDeps {
   checkpoints?: CheckpointPort;
   media?: MediaPort;
   slides?: SlidesPort;
+  setup?: ProjectSetupPort;
   integrations?: IntegrationsPort;
   docs?: DocsSearchPort;
   browser?: BrowserPort;

@@ -34,7 +34,8 @@
     "@forge/design": "workspace:*",
     "@forge/templates": "workspace:*",
     "@forge/app-kit": "workspace:*",
-    "playwright": "1.63.0"
+    "playwright": "1.63.0",
+    "@forge/visual-edit": "workspace:*"
   },
   "devDependencies": {
     "postgres": "^3.4.5"

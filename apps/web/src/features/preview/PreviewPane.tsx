@@ -65,10 +65,15 @@ export function PreviewPane({
   useEffect(() => {
     const el = stage.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setScale(Math.min(1, (el.clientWidth - 32) / device)));
+    const ro = new ResizeObserver(() => {
+      // Ignore hidden/zero-size moments (inactive tab): a 0 width would otherwise freeze a tiny scale.
+      if (el.clientWidth > 64) setScale(Math.max(0.2, Math.min(1, (el.clientWidth - 32) / device)));
+    });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [device]);
+  }, [device, url]);
+  // Desktop fills the whole canvas at its real width; phone and tablet show a scaled device frame.
+  const fluid = device >= 1440;
 
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
@@ -139,7 +144,7 @@ export function PreviewPane({
             <p className="muted">{t("project.preview.emptyBody")}</p>
           </div>
         ) : (
-          <div className="preview-device" style={{ width: device * scale, height: `calc((100% - 32px))` }}>
+          <div className="preview-device" data-fluid={fluid} style={fluid ? { width: "100%", height: "calc(100% - 32px)" } : { width: device * scale, height: `calc((100% - 32px))` }}>
             <iframe
               key={`${url}#${reloadKey}`}
               ref={frame}
@@ -149,7 +154,7 @@ export function PreviewPane({
               allow="clipboard-write"
               referrerPolicy="no-referrer"
               onLoad={() => setLoaded(true)}
-              style={{ width: device, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+              style={fluid ? { width: "100%", height: "100%" } : { width: device, height: `${100 / scale}%`, transform: `scale(${scale})` }}
             />
           </div>
         )}
