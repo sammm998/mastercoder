@@ -312,8 +312,8 @@ export class BuildAgent {
         if (!previewUrl && earlyPreview) previewUrl = await earlyPreview;
         earlyPreview = null;
         // The builder may have changed scripts or crashed the server: restart it when it no longer answers.
-        if (!previewUrl || !(await this.previewAlive(manifest.port))) {
-          await deps.sandbox.exec(`pkill -f forge-dev-server >/dev/null 2>&1; fuser -k ${manifest.port}/tcp >/dev/null 2>&1 || true`, { timeoutMs: 10_000 });
+        if (!previewUrl || !(await this.previewAlive(devPort(input.projectId)))) {
+          await deps.sandbox.exec(`fuser -k ${devPort(input.projectId)}/tcp >/dev/null 2>&1 || true`, { timeoutMs: 10_000 });
           previewUrl = await this.startPreview(manifest, input);
         }
       }
@@ -398,12 +398,16 @@ export class BuildAgent {
   private async startPreview(manifest: TemplateManifestLike, input: BuildInput): Promise<string | null> {
     const { sandbox, events } = this.deps;
     // FORGE_DEV_HOST (e.g. "::") lets the dev server listen on IPv6 private networks (Railway) for the preview proxy.
-    const dev = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
-    await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > /tmp/forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
+    // Every project gets its own dev port: sandboxes may share a host, and a fixed port (3000, 5173 …)
+    // would show another project's running preview.
+    const port = devPort(input.projectId);
+    const base = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
+    const dev = devCommand(base, manifest.port, port);
+    await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > .forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
     for (let i = 0; i < 120; i++) {
-      if (await this.previewAlive(manifest.port)) {
-        const { url } = await sandbox.exposePort(manifest.port);
-        events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port: manifest.port });
+      if (await this.previewAlive(port)) {
+        const { url } = await sandbox.exposePort(port);
+        events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port });
         return url;
       }
       await new Promise((res) => setTimeout(res, 1000));
@@ -437,4 +441,18 @@ export function fastInstall(cmd: string): string {
 
 function slug(s: string): string {
   return s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "app";
+}
+
+/** Stable per-project dev-server port (20000–39999). */
+export function devPort(projectId: string): number {
+  let h = 0;
+  for (const c of projectId) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return 20000 + (h % 20000);
+}
+
+/** Point a dev command at `port`: rewrite --port/-p flags (or the template's default port) and set PORT. */
+export function devCommand(cmd: string, defaultPort: number, port: number): string {
+  let out = cmd.replace(/(--port[ =]|(?:^|\s)-p\s+)\d+/g, (m) => m.replace(/\d+$/, String(port)));
+  if (out === cmd && defaultPort) out = out.replace(new RegExp(`\\b${defaultPort}\\b`, "g"), String(port));
+  return `PORT=${port} ${out}`;
 }

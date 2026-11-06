@@ -240,3 +240,16 @@ describe("fetch_url", () => {
     for (const u of ["http://localhost:3000", "http://10.0.0.5/", "http://forgeagent-worker.railway.internal:5173"]) await expect(readPage(u)).rejects.toThrow(/public/);
   });
 });
+
+describe("per-project preview ports", () => {
+  it("gives each project its own stable port and rewrites the dev command", async () => {
+    const { devPort, devCommand } = await import("../src/agent.js");
+    const a = devPort("prj_gina3d");
+    expect(devPort("prj_gina3d")).toBe(a);
+    expect(devPort("prj_taxilund")).not.toBe(a);
+    expect(a).toBeGreaterThanOrEqual(20000);
+    expect(devCommand("npm run dev -- --hostname 0.0.0.0 --port 3000", 3000, 23456)).toBe("PORT=23456 npm run dev -- --hostname 0.0.0.0 --port 23456");
+    expect(devCommand("npx vite -p 5173", 5173, 21000)).toBe("PORT=21000 npx vite -p 21000");
+    expect(devCommand("npm run dev", 3000, 22000)).toBe("PORT=22000 npm run dev");
+  });
+});

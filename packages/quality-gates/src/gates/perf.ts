@@ -5,7 +5,7 @@ function pct(n: number): number {
   return n <= 1 ? Math.round(n * 100) : Math.round(n);
 }
 
-const PROD_PORT = 4789;
+
 
 /**
  * Lighthouse must measure what visitors get: a dev server is unminified and un-bundled, so its
@@ -13,7 +13,7 @@ const PROD_PORT = 4789;
  * build + preview scripts, build it and measure the production preview; otherwise fall back to the
  * dev preview URL.
  */
-async function productionUrl(ctx: GateContext): Promise<string | null> {
+async function productionUrl(ctx: GateContext, PROD_PORT: number): Promise<string | null> {
   const scripts = ctx.project.packageJson?.scripts ?? {};
   if (!scripts.build || !scripts.preview) return null;
   const b = await ctx.sb.exec("npm run build", { timeoutMs: 300_000 });
@@ -31,7 +31,9 @@ async function productionUrl(ctx: GateContext): Promise<string | null> {
 export async function lighthouseGate(ctx: GateContext): Promise<GateOutcome> {
   if (!ctx.opts.lighthouse) return skipped("skipped: no lighthouse runner injected (opts.lighthouse)");
   if (!ctx.opts.previewUrl) return skipped("skipped: no previewUrl");
-  const prod = await productionUrl(ctx).catch(() => null);
+  // A fresh port per run: sandboxes may share a host with other projects' previews.
+  const PROD_PORT = 40000 + Math.floor(Math.random() * 9000);
+  const prod = await productionUrl(ctx, PROD_PORT).catch(() => null);
   try {
     return await measure(ctx, prod ?? ctx.opts.previewUrl, !!prod);
   } finally {

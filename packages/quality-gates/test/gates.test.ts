@@ -215,7 +215,7 @@ describe("lighthouse and visual-qa", () => {
     const sb = await sandboxFromFiles({ "package.json": JSON.stringify({ scripts: { build: "node -e 0", preview: "node prod.cjs" } }), "prod.cjs": server });
     const urls: string[] = [];
     const r = await runGates(sb, { gates: ["lighthouse"], previewUrl: "http://127.0.0.1:3000", lighthouse: async (u) => (urls.push(u), { performance: 0.72, accessibility: 95 }) });
-    expect(urls[0]).toMatch(/:4789/);
+    expect(urls[0]).toMatch(/:4\d{4}$/);
     expect(r.results[0]).toMatchObject({ passed: false, details: "performance 72 (>= 85), accessibility 95 (>= 90) for production build" });
     expect(r.results[0]?.fix).toMatch(/never delete them/);
     await sb.destroy();
