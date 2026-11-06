@@ -78,7 +78,7 @@ export async function buildServer(deps: ApiDeps, opts: BuildServerOptions = {}):
     if (store.name !== "db" || !store.head) return reply.code(404).send({ error: "not found" });
     const key = decodeURIComponent((req.params as { "*": string })["*"] ?? "");
     const q = req.query as { exp?: string; sig?: string };
-    if (!verifyFileSignature(key, Number(q.exp), String(q.sig ?? ""), process.env.AUTH_SECRET || "dev-secret")) return reply.code(403).send({ error: "invalid or expired link" });
+    if (!verifyFileSignature(key, Number(q.exp), String(q.sig ?? ""), process.env.FILES_SECRET || process.env.AUTH_SECRET || "dev-secret")) return reply.code(403).send({ error: "invalid or expired link" });
     const meta = await store.head(key);
     if (!meta) return reply.code(404).send({ error: "not found" });
     const body = Buffer.from(await store.get(key));

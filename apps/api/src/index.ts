@@ -24,7 +24,7 @@ async function objectStore(db: Parameters<typeof dbStore>[0]) {
   return createObjectStore();
 }
 function dbStore(db: ConstructorParameters<typeof DbObjectStore>[0]) {
-  return new DbObjectStore(db, { publicBaseUrl: process.env.API_URL || "http://localhost:4000", secret: process.env.AUTH_SECRET || "dev-secret" });
+  return new DbObjectStore(db, { publicBaseUrl: process.env.API_URL || "http://localhost:4000", secret: process.env.FILES_SECRET || process.env.AUTH_SECRET || "dev-secret" });
 }
 
 await runMigrations();
