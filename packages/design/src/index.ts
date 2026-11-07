@@ -23,3 +23,4 @@ export * from "./qa/lighthouse.js";
 export * from "./qa/serve.js";
 export { registerDesignMocks } from "./mock-llm.js";
 export * from "./concept.js";
+export * from "./qa/crawl.js";

@@ -83,3 +83,28 @@ export async function visualQaGate(ctx: GateContext): Promise<GateOutcome> {
       "between surface and accent, make the hero focal point unambiguous, and check 375/768/1440px layouts for overflow before re-scoring.",
   };
 }
+
+/** Every internal page and in-page link works: no 404s, empty pages, dead anchors or uncaught JS errors. */
+export async function linksGate(ctx: GateContext): Promise<GateOutcome> {
+  if (!ctx.opts.crawl) return skipped("skipped: no crawler injected (opts.crawl)");
+  if (!ctx.opts.previewUrl) return skipped("skipped: no previewUrl");
+  const pages = await ctx.opts.crawl(ctx.opts.previewUrl);
+  const broken = pages.filter((p) => !p.ok);
+  const path = (u: string) => {
+    try {
+      return new URL(u).pathname || "/";
+    } catch {
+      return u;
+    }
+  };
+  if (!broken.length) return { passed: true, details: `${pages.length} page(s) visited, every link works`, findings: [] };
+  return {
+    passed: false,
+    details: `${broken.length} of ${pages.length} page(s) broken`,
+    findings: broken.flatMap((p) => p.problems.map((m) => ({ rule: "links/broken", message: `${path(p.url)}: ${m}`, severity: "error" as const }))),
+    fix:
+      "Make every navigation link work like a real site: create the missing pages/routes (with real content), point anchors at sections that exist, " +
+      "add an SPA fallback/router for client-side routes, and fix the JavaScript errors listed:\n" +
+      broken.map((p) => `- ${path(p.url)}: ${p.problems.join("; ")}`).join("\n"),
+  };
+}

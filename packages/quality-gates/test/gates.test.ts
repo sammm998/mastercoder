@@ -242,3 +242,18 @@ describe("gateEvents", () => {
     await sb.destroy();
   });
 });
+
+describe("links gate", () => {
+  it("fails on broken pages with a concrete fix and passes when every link works", async () => {
+    const sb = await sandboxFromFiles({});
+    const bad = await runGates(sb, { gates: ["links"], previewUrl: "http://127.0.0.1:3000", crawl: async () => [
+      { url: "http://127.0.0.1:3000/", ok: true, problems: [] },
+      { url: "http://127.0.0.1:3000/tjanster", ok: false, problems: ["shows a not-found page"] },
+    ] });
+    expect(bad.blockers[0]).toMatchObject({ gate: "links", details: "1 of 2 page(s) broken" });
+    expect(bad.blockers[0]?.fix).toMatch(/\/tjanster: shows a not-found page/);
+    const ok = await runGates(sb, { gates: ["links"], previewUrl: "http://x", crawl: async () => [{ url: "http://x/", ok: true, problems: [] }] });
+    expect(ok.passed).toBe(true);
+    await sb.destroy();
+  });
+});

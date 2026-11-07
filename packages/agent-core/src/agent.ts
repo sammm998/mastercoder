@@ -1,7 +1,7 @@
 import type { ChatMessage, LLMProvider } from "@forge/llm";
-import type { IntentKind } from "@forge/shared";
+import type { EventSink, IntentKind } from "@forge/shared";
 import { getModels, textOf } from "@forge/llm";
-import type { AgentDeps, BuildInput, GateReportLike, TemplateManifestLike } from "./ports.js";
+import type { AgentDeps, BuildInput, GateReportLike, SandboxPort, TemplateManifestLike } from "./ports.js";
 import type { Spec } from "./spec.js";
 import { SpecSchema } from "./spec.js";
 import { plan } from "./planner.js";
@@ -334,7 +334,7 @@ export class BuildAgent {
       // Completion pass: every user story and acceptance test must be met by the code.
       history.splice(0, history.length);
       const check = await roundToEnd(
-        `${base0}\n\n## Completion check\nGo through every user story and acceptance test above. For each one, check the code actually implements it end to end (open the files). Implement anything missing or stubbed, wire up every button and interaction, then run the checks. Reply with what you verified and what you fixed.`,
+        `${base0}\n\n## Completion check\nGo through every user story and acceptance test above. For each one, check the code actually implements it end to end (open the files). Implement anything missing or stubbed, wire up every button and interaction, make every navigation link lead to a real page or section with content, then run the checks. Reply with what you verified and what you fixed.`,
       );
       built = { ...(last ?? check), toolCalls: toolCalls + check.toolCalls };
     } else {
@@ -438,31 +438,13 @@ export class BuildAgent {
     return { status: "succeeded", charged: true, spec, template: templateId, gateReport, designScore, checkpoint, previewUrl: previewUrl ?? undefined, summary, costUsd: cost(), fixIterations: guard.count };
   }
 
-  private async startPreview(manifest: TemplateManifestLike, input: BuildInput): Promise<string | null> {
-    const { sandbox, events } = this.deps;
-    // FORGE_DEV_HOST (e.g. "::") lets the dev server listen on IPv6 private networks (Railway) for the preview proxy.
-    // Every project gets its own dev port: sandboxes may share a host, and a fixed port (3000, 5173 …)
-    // would show another project's running preview.
-    const port = devPort(input.projectId);
-    const base = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
-    const dev = devCommand(base, manifest.port, port);
-    await sandbox.exec(`nohup sh -c ${JSON.stringify(dev)} > .forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
-    for (let i = 0; i < 120; i++) {
-      if (await this.previewAlive(port)) {
-        const { url } = await sandbox.exposePort(port);
-        events.emit({ type: "preview.ready", projectId: input.projectId, taskId: input.taskId, url, port });
-        return url;
-      }
-      await new Promise((res) => setTimeout(res, 1000));
-    }
-    return null;
+  private startPreview(manifest: TemplateManifestLike, input: BuildInput): Promise<string | null> {
+    return startDevPreview(this.deps.sandbox, this.deps.events, manifest, { projectId: input.projectId, taskId: input.taskId });
   }
 
   /** HTTP probe of the dev server on IPv4 and IPv6 loopback, via node (no curl needed in the sandbox). */
-  private async previewAlive(port: number): Promise<boolean> {
-    const js = `const u=["http://127.0.0.1:${port}/","http://[::1]:${port}/"];(async()=>{for(const x of u){try{const r=await fetch(x,{signal:AbortSignal.timeout(4000),redirect:"manual"});if(r.status<500){console.log(r.status);return}}catch{}}console.log(0)})()`;
-    const r = await this.deps.sandbox.exec(`node -e ${JSON.stringify(js)} 2>/dev/null || curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${port}/ || true`, { timeoutMs: 12_000 });
-    return /^[1-4]\d\d$/.test(r.stdout.trim());
+  private previewAlive(port: number): Promise<boolean> {
+    return devServerAlive(this.deps.sandbox, port);
   }
 
   private async summarize(spec: Spec, gates: GateReportLike | undefined, designScore: number | undefined, files: number): Promise<string> {
@@ -498,4 +480,35 @@ export function devCommand(cmd: string, defaultPort: number, port: number): stri
   let out = cmd.replace(/(--port[ =]|(?:^|\s)-p\s+)\d+/g, (m) => m.replace(/\d+$/, String(port)));
   if (out === cmd && defaultPort) out = out.replace(new RegExp(`\\b${defaultPort}\\b`, "g"), String(port));
   return `PORT=${port} ${out}`;
+}
+
+/** HTTP probe of a dev server on IPv4 and IPv6 loopback, via node (no curl needed in the sandbox). */
+export async function devServerAlive(sandbox: SandboxPort, port: number): Promise<boolean> {
+  const js = `const u=["http://127.0.0.1:${port}/","http://[::1]:${port}/"];(async()=>{for(const x of u){try{const r=await fetch(x,{signal:AbortSignal.timeout(4000),redirect:"manual"});if(r.status<500){console.log(r.status);return}}catch{}}console.log(0)})()`;
+  const r = await sandbox.exec(`node -e ${JSON.stringify(js)} 2>/dev/null || curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:${port}/ || true`, { timeoutMs: 12_000 });
+  return /^[1-4]\d\d$/.test(r.stdout.trim());
+}
+
+/**
+ * Start (or reuse) the project's dev server on its own port and announce preview.ready. Used while
+ * building and to bring a finished project's preview back after a worker restart.
+ */
+export async function startDevPreview(sandbox: SandboxPort, events: EventSink, manifest: TemplateManifestLike, ids: { projectId: string; taskId?: string }, waitSec = 120): Promise<string | null> {
+  // FORGE_DEV_HOST (e.g. "::") lets the dev server listen on IPv6 private networks (Railway) for the preview proxy.
+  // Every project gets its own dev port: sandboxes may share a host, and a fixed port (3000, 5173 …)
+  // would show another project's running preview.
+  const port = devPort(ids.projectId);
+  if (!(await devServerAlive(sandbox, port))) {
+    const base = process.env.FORGE_DEV_HOST ? manifest.dev.replace(/0\.0\.0\.0/g, process.env.FORGE_DEV_HOST) : manifest.dev;
+    await sandbox.exec(`nohup sh -c ${JSON.stringify(devCommand(base, manifest.port, port))} > .forge-dev.log 2>&1 &`, { timeoutMs: 15_000 });
+  }
+  for (let i = 0; i < waitSec; i++) {
+    if (await devServerAlive(sandbox, port)) {
+      const { url } = await sandbox.exposePort(port);
+      events.emit({ type: "preview.ready", projectId: ids.projectId, ...(ids.taskId ? { taskId: ids.taskId } : {}), url, port });
+      return url;
+    }
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  return null;
 }

@@ -3,13 +3,14 @@ import { and, eq, projects, deployments, projectFiles } from "@forge/db";
 import { MeteredLLM } from "@forge/llm";
 import { signPreviewToken, type ForgeEventInput } from "@forge/shared";
 import { QUEUES, newId, BuildJobSchema, DeployJobSchema, type BuildJob } from "@forge/shared";
+import { startDevPreview } from "@forge/agent-core";
 import type { AgentDeps, SandboxPort, DesignPort, CheckpointPort, GatesPort, TemplatesPort, BrowserPort } from "@forge/agent-core";
 import { createSandboxProvider, type Sandbox, type SandboxProvider } from "@forge/sandbox";
 import { runGates, type GateName } from "@forge/quality-gates";
 import { selectTemplate, getManifest, templateFiles, isTemplateId } from "@forge/templates";
 import { kitFilesFor, createDbBranchProvider, createDeployProvider, type KitFeature } from "@forge/app-kit";
 import { createCheckpointing } from "./checkpoints.js";
-import { generateDirections, pickDirection, normalizeDirection, ArtDirectionSchema, generateConcept, conceptToText, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
+import { generateDirections, pickDirection, normalizeDirection, ArtDirectionSchema, generateConcept, conceptToText, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse, crawlSite } from "@forge/design";
 import { billingSettler } from "./settle.js";
 import { runBuildJob } from "./jobs/build.js";
 import { runMediaRequest } from "./jobs/media.js";
@@ -98,8 +99,8 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   const e2eEnabled = process.env.FORGE_E2E_GATE === "1";
   const gates: GatesPort = {
     async run(sb, opts) {
-      const names: GateName[] = (opts.gates as GateName[] | undefined) ?? (["typecheck", "lint", "unit", "integration", "semgrep", "gitleaks", "osv", "rls", "auth", "validation", "client-secrets", "lighthouse", "visual-qa"] as GateName[]);
-      const report = await runGates(sb as unknown as Sandbox, { gates: e2eEnabled ? [...names, "e2e"] : names, previewUrl: opts.previewUrl, visualScore: opts.visualScore, lighthouse: opts.previewUrl ? (u) => runLighthouse(u) : undefined });
+      const names: GateName[] = (opts.gates as GateName[] | undefined) ?? (["typecheck", "lint", "unit", "integration", "semgrep", "gitleaks", "osv", "rls", "auth", "validation", "client-secrets", "lighthouse", "visual-qa", "links"] as GateName[]);
+      const report = await runGates(sb as unknown as Sandbox, { gates: e2eEnabled ? [...names, "e2e"] : names, previewUrl: opts.previewUrl, visualScore: opts.visualScore, lighthouse: opts.previewUrl ? (u) => runLighthouse(u) : undefined, crawl: opts.previewUrl ? (u) => crawlSite(u) : undefined });
       if (!e2eEnabled) report.results.push({ gate: "e2e", passed: false, skipped: true, details: "no Playwright browser in the sandbox image (set FORGE_E2E_GATE=1 with a browser-enabled image)", findings: [], durationMs: 0 });
       return report;
     },
@@ -301,6 +302,26 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
     d.events.emit({ type: "checkpoint.created", projectId: i.projectId, checkpointId: cp.id, commit: cp.commitSha, label: `restored: ${cp.label}` });
     return { restored: cp.id };
   }
+
+  // Bring a finished project's preview back (dev servers do not survive a worker restart).
+  d.consume(
+    QUEUES.preview,
+    async (job: Job) => {
+      const { projectId } = job.data as { projectId: string };
+      const sb = await sandboxFor(projectId);
+      const forge = await sb.readFile("forge.json").then((s) => JSON.parse(s) as { dev?: string; port?: number; install?: string }).catch(() => null);
+      const [p] = await d.db.select({ template: projects.template }).from(projects).where(eq(projects.id, projectId));
+      const fallback = p?.template && isTemplateId(p.template) ? getManifest(p.template) : null;
+      const dev = forge?.dev ?? fallback?.dev;
+      const port = forge?.port ?? fallback?.port;
+      if (!dev || !port) return { started: false, reason: "no dev command" };
+      const hasDeps = await sb.exec("test -d node_modules && echo yes || echo no", { timeoutMs: 10_000 });
+      if (hasDeps.stdout.trim() !== "yes" && (forge?.install ?? fallback?.install)) await sb.exec(`${forge?.install ?? fallback?.install} --prefer-offline --no-audit --no-fund --loglevel=error`, { timeoutMs: 900_000 });
+      const url = await startDevPreview(sb as unknown as SandboxPort, d.events, { id: p?.template ?? "project", kind: "app", install: forge?.install ?? "npm install", dev, port } as never, { projectId }, 180);
+      return { started: !!url };
+    },
+    4,
+  );
 
   d.consume(QUEUES.deploy, async (job: Job) => {
     const p = DeployJobSchema.parse(job.data);

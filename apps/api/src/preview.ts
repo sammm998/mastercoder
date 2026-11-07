@@ -19,9 +19,9 @@ function cookieToken(req: IncomingMessage): string | null {
   return m?.[1] ? decodeURIComponent(m[1]) : null;
 }
 
-function page(res: ServerResponse, status: number, title: string, body: string) {
+function page(res: ServerResponse, status: number, title: string, body: string, retry = false) {
   res.writeHead(status, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-  res.end(`<!doctype html><html lang="en"><meta charset="utf-8"><title>${title}</title><body style="font:15px system-ui;display:grid;place-items:center;height:100vh;margin:0;color:#555"><p>${body}</p></body></html>`);
+  res.end(`<!doctype html><html lang="en"><meta charset="utf-8">${retry ? '<meta http-equiv="refresh" content="4">' : ""}<title>${title}</title><body style="font:15px system-ui;display:grid;place-items:center;height:100vh;margin:0;color:#555"><p>${body}</p></body></html>`);
 }
 
 const server = createServer((req, res) => {
@@ -52,7 +52,7 @@ const server = createServer((req, res) => {
       up.pipe(res);
     },
   );
-  upstream.on("error", (e) => page(res, 502, "Starting…", `The app is starting (or the dev server stopped): ${e.message}. Reload in a moment.`));
+  upstream.on("error", () => page(res, 502, "Starting…", "Starting the preview — this page reloads by itself in a few seconds.", true));
   req.pipe(upstream);
 });
 

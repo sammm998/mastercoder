@@ -6,7 +6,7 @@ import { collectFiles, type SourceFile } from "./files.js";
 import { runCommandGate } from "./gates/commands.js";
 import { gitleaksGate, osvGate, semgrepGate } from "./gates/security.js";
 import { authGate, clientSecretsGate, rlsGate, validationGate } from "./gates/static.js";
-import { lighthouseGate, visualQaGate } from "./gates/perf.js";
+import { lighthouseGate, linksGate, visualQaGate } from "./gates/perf.js";
 import type { GateContext, GateOutcome } from "./gates/context.js";
 
 const log = createLogger({ mod: "quality-gates" });
@@ -25,6 +25,7 @@ const RUNNERS: Record<GateName, (ctx: GateContext) => Promise<GateOutcome>> = {
   validation: validationGate,
   "client-secrets": clientSecretsGate,
   lighthouse: lighthouseGate,
+  links: linksGate,
   "visual-qa": visualQaGate,
 };
 
@@ -32,7 +33,7 @@ const RUNNERS: Record<GateName, (ctx: GateContext) => Promise<GateOutcome>> = {
  * Run quality/security/performance gates against the project in `sandbox` (/workspace).
  * A gate that throws fails closed (blocker) with the error in `details`.
  */
-const ENVIRONMENT_GATES = new Set<GateName>(["lighthouse", "visual-qa", "e2e"]);
+const ENVIRONMENT_GATES = new Set<GateName>(["lighthouse", "visual-qa", "e2e", "links"]);
 
 export async function runGates(sandbox: Sandbox, opts: RunGatesOptions = {}): Promise<GateReport> {
   const gates = opts.gates ?? [...GATE_NAMES];

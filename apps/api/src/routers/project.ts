@@ -92,6 +92,14 @@ export const projectRouter = router({
     return { id };
   }),
 
+  /** Restart a finished project's dev server (e.g. after a worker restart). Deduplicated per project. */
+  ensurePreview: authedProcedure.input(z.object({ projectId: z.string() })).mutation(async ({ ctx, input }) => {
+    await requireProject(ctx, input.projectId, "project.read");
+    const bucket = Math.floor(Date.now() / 60_000);
+    await ctx.deps.queue.add(QUEUES.preview, "ensure", { projectId: input.projectId }, { jobId: `preview-${input.projectId}-${bucket}` });
+    return { ok: true };
+  }),
+
   importGithub: authedProcedure
     .input(z.object({ workspaceId: z.string(), repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/), branch: z.string().max(100).default("main") }))
     .mutation(async ({ ctx, input }) => {

@@ -15,6 +15,7 @@ export const GATE_NAMES = [
   "client-secrets",
   "lighthouse",
   "visual-qa",
+  "links",
 ] as const;
 export type GateName = (typeof GATE_NAMES)[number];
 
@@ -55,6 +56,8 @@ export interface RunGatesOptions {
   gates?: GateName[];
   previewUrl?: string;
   lighthouse?: (url: string) => Promise<LighthouseScores>;
+  /** Browser crawl of the preview: every internal page/anchor with the problems found (links gate). */
+  crawl?: (url: string) => Promise<Array<{ url: string; ok: boolean; problems: string[] }>>;
   visualScore?: number;
   /** Extensions (not in the base contract). */
   /** Use semgrep/gitleaks/osv-scanner binaries when found in the sandbox or host PATH (default true). */

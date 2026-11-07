@@ -97,6 +97,15 @@ export function ProjectWorkspace({ projectId, initialTab = "preview" }: { projec
   const remix = useMutation(trpc.project.remix.mutationOptions({ onSuccess: (r) => router.push(`/app/p/${r.id}`) }));
 
   const preview = useMemo(() => latest(events, "preview.ready"), [events]);
+  // Dev servers don't survive a worker restart: when a project has had a preview, ask the worker once per
+  // visit to bring it back (it reuses a running server, so this is cheap).
+  const ensurePreview = useMutation(trpc.project.ensurePreview.mutationOptions());
+  const ensured = useRef(false);
+  useEffect(() => {
+    if (ensured.current || !preview || !project.data) return;
+    ensured.current = true;
+    ensurePreview.mutate({ projectId });
+  }, [preview, project.data, projectId, ensurePreview]);
   const focusTask = useMemo(() => currentTaskId(events), [events]);
   const runs = useMemo(() => teamRuns(events), [events]);
   const run = focusTask ? runs.get(focusTask) : undefined;

@@ -16,6 +16,7 @@ Working rules:
 - Secrets stay server-side: never reference secret env vars in client code.
 - Use the design tokens (CSS variables in tokens.css) for colors, type, spacing and motion. Honour prefers-reduced-motion.
 - Websites: build the design concept faithfully and make the site unique to this business. The composed scaffold supplies tokens, components and motion patterns (src/patterns) to reuse; its default section order and layout are placeholders, not the design.
+- Work like a senior developer shipping to production: every navigation link leads to a real page or section with real content (no dead links, no "coming soon"), client-side routes use a router, forms validate and give feedback, and the site works on mobile.
 - Keep the art direction's motion (scroll reveals, parallax, hover/magnetic effects in src/patterns). Never remove or flatten animations to fix a check; optimise them instead.
 - Write tests for the acceptance criteria. Run run_tests (and run_e2e when available) before finishing.
 - Never present hardcoded demo data as real functionality. Seed data must be clearly labelled as sample data.
