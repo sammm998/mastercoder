@@ -1,6 +1,6 @@
 import { Queue, Worker, type Job } from "bullmq";
 import { Redis } from "ioredis";
-import { connect, runMigrations, userAgents, DbObjectStore } from "@forge/db";
+import { connect, runMigrations, userAgents, DbObjectStore, knowledgeContext } from "@forge/db";
 import { createLLM, MeteredLLM } from "@forge/llm";
 import { QUEUES, createLogger, createObjectStore, MediaJobSchema, SlidesJobSchema, TranscriptionJobSchema, MeetingBotJobSchema, AgentRunJobSchema, ScanJobSchema } from "@forge/shared";
 import { initTracing, createErrorReporter, monitorTick, createAlertSink, httpCheck, withSpan } from "@forge/observability";
@@ -17,6 +17,8 @@ import { runTranscription, runMeetingBot } from "./jobs/meetings.js";
 import { syncAgentSchedules } from "./scheduler.js";
 import { ConnectionToolExecutor } from "./agent-tools.js";
 import { registerBuildQueue } from "./build-queue.js";
+import { runKnowledgeIngest } from "./jobs/knowledge.js";
+import "./knowledge-mock.js";
 
 const log = createLogger({ service: "agent-worker" });
 const tracing = initTracing("agent-worker");
@@ -52,6 +54,7 @@ const agents = new AgentService({
   runner: createAgentRunner(new MeteredLLM(llm, usage)),
   tools: toolExecutor,
   memory: new DrizzleMemoryStore(db),
+  knowledge: (workspaceId, query) => knowledgeContext(db, workspaceId, query),
   usage,
   onFailure: (a) => log.warn("agent run failed", a),
 });
@@ -89,6 +92,9 @@ consume(QUEUES.transcription, async (job) => {
   await events.flush();
   return { requirements: r.extraction.requirements.length };
 }, 2);
+// Company knowledge base: crawl a website / chunk pasted text, then refresh the company profile.
+consume(QUEUES.knowledge, async (job) => runKnowledgeIngest(db, new MeteredLLM(llm, usage, { workspaceId: (job.data as { workspaceId?: string }).workspaceId }), (job.data as { sourceId: string }).sourceId), 2);
+
 const botQueue = new Queue(QUEUES.meetingBot, { connection });
 consume(QUEUES.meetingBot, async (job) => {
   const p = MeetingBotJobSchema.parse(job.data);

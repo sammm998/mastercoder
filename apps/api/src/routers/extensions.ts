@@ -2,6 +2,7 @@ import { mediaRouter, slidesRouter } from "./studio.js";
 import { agentsRouter } from "./agents.js";
 import { meetingsRouter } from "./meetings.js";
 import { integrationsRouter } from "./integrations.js";
+import { knowledgeRouter } from "./knowledge.js";
 import { deployRouter } from "./deploy.js";
 import { billingRouter } from "./billing.js";
 import { adminRouter } from "./admin.js";
@@ -13,6 +14,7 @@ export const extensionRouters = {
   agents: agentsRouter,
   meetings: meetingsRouter,
   integrations: integrationsRouter,
+  knowledge: knowledgeRouter,
   deploy: deployRouter,
   billing: billingRouter,
   admin: adminRouter,

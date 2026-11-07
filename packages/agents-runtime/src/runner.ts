@@ -15,6 +15,8 @@ export interface RunContext {
   email?: EmailPort;
   /** Knowledge search over def.knowledge (handbooks etc.). */
   now?: () => Date;
+  /** The workspace's company knowledge (profile + facts relevant to this run). */
+  companyKnowledge?: string;
 }
 
 export interface RunState {
@@ -89,6 +91,7 @@ export function systemPrompt(ctx: RunContext): string {
     `You are "${d.name}", an autonomous agent built with Forge.`,
     d.instructions,
     d.recipients.length ? `Default recipients: ${d.recipients.join(", ")}` : "",
+    ctx.companyKnowledge ? `About the company you work for (use these facts; never contradict them):\n${ctx.companyKnowledge}` : "",
     `Irreversible actions (sending, posting, paying, deleting) may pause for human approval; if an action is rejected, do not retry it — explain what you would have done.`,
     chat
       ? `You are chatting with the user. Reply conversationally in the user's language, using markdown where it helps. Use your tools when the question needs them.`

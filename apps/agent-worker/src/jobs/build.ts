@@ -2,7 +2,7 @@ import { MeteredLLM, type LLMProvider } from "@forge/llm";
 import { BuildAgent, type AgentDeps, type BuildOutcome, type SandboxPort } from "@forge/agent-core";
 import { BuildJobSchema, type BuildJob, type IntentKind } from "@forge/shared";
 import { withSpan, spanEventRecorder } from "@forge/observability";
-import { desc, eq, projects, projectFiles, tasks, type Db } from "@forge/db";
+import { desc, eq, projects, projectFiles, tasks, knowledgeContext, type Db } from "@forge/db";
 import { DbUsageSink, WorkerEventSink, markTaskRunning, settleTask, type Settler, type TaskOutcome } from "../runtime.js";
 
 /** Non-code deliverables handled by dedicated pipelines (media, slides, agent builder, Q&A). */
@@ -66,6 +66,7 @@ export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outc
         const ports = await d.agentPorts(job, sandbox);
         const [project] = await d.db.select().from(projects).where(eq(projects.id, job.projectId));
         const ctx = await projectHistory(d.db, job.projectId, job.taskId);
+        const knowledge = await knowledgeContext(d.db, job.workspaceId, job.prompt).catch(() => "");
         build = await new BuildAgent({ ...ports, llm, events: d.events, usage, sandbox, isCancelled: () => d.isCancelled(job.taskId) }).run({
           taskId: job.taskId,
           projectId: job.projectId,
@@ -78,6 +79,7 @@ export async function runBuildJob(raw: unknown, d: BuildJobDeps): Promise<{ outc
           // A project that already has files is a follow-up even if its first build did not finish.
           existingProject: Boolean(project?.template) || ctx.fileCount > 0,
           history: ctx.text || undefined,
+          knowledge: knowledge || undefined,
           wantsDesignOptions: DESIGN_OPTIONS.test(job.prompt),
           designDirection: job.designDirection,
         });

@@ -183,6 +183,8 @@ export interface BuildInput {
   existingProject?: boolean;
   /** Earlier requests in this project (oldest first), so follow-ups are understood in context. */
   history?: string;
+  /** The workspace's company knowledge (profile + relevant facts) — context for everything built. */
+  knowledge?: string;
   /** The user asked to see design proposals first: show 3 directions and wait for a choice. */
   wantsDesignOptions?: boolean;
   /** The direction the user picked from the proposals. */

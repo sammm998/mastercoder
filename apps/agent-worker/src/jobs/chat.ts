@@ -1,4 +1,4 @@
-import { desc, eq, projects, projectFiles, tasks, type Db } from "@forge/db";
+import { desc, eq, projects, projectFiles, tasks, knowledgeContext, type Db } from "@forge/db";
 import { getModels, textOf, type LLMProvider } from "@forge/llm";
 import type { BuildJob, EventSink } from "@forge/shared";
 
@@ -12,7 +12,9 @@ export async function runChat(job: BuildJob, d: { db: Db; llm: LLMProvider; even
   const [project] = await d.db.select().from(projects).where(eq(projects.id, job.projectId));
   const files = await d.db.select({ path: projectFiles.path }).from(projectFiles).where(eq(projectFiles.projectId, job.projectId));
   const recent = await d.db.select({ prompt: tasks.prompt, status: tasks.status, intents: tasks.intents }).from(tasks).where(eq(tasks.projectId, job.projectId)).orderBy(desc(tasks.createdAt)).limit(8);
+  const knowledge = await knowledgeContext(d.db, job.workspaceId, job.prompt).catch(() => "");
   const context = [
+    knowledge ? `Company knowledge:\n${knowledge}` : "",
     `Project: ${project?.name ?? "?"} (template: ${project?.template ?? "none yet"})`,
     `Files (${files.length}): ${files.slice(0, 60).map((f) => f.path).join(", ") || "none"}`,
     `Recent requests:\n${recent.filter((r) => r.prompt !== job.prompt).map((r) => `- [${r.status}] ${r.prompt.slice(0, 160)}`).join("\n") || "- none"}`,

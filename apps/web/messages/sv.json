@@ -1354,5 +1354,36 @@
     "chat": {
       "reply": "Här är mitt svar."
     }
+  },
+  "knowledge": {
+    "title": "Företagskunskap",
+    "lede": "Lär Scoutr om ditt företag. Allt du lägger till här används som kontext när Scoutr bygger appar, hemsidor och dokument eller svarar i chatten — och av dina agenter.",
+    "addLabel": "Lägg till kunskap",
+    "fromUrl": "Webbplats",
+    "fromText": "Text",
+    "urlLabel": "Webbadress",
+    "crawl": "Läs in webbplatsen",
+    "textTitle": "Rubrik",
+    "textTitlePh": "t.ex. Prislista 2026",
+    "textBody": "Text",
+    "textBodyPh": "Klistra in vad som helst: tjänster, priser, tonläge, vanliga frågor, policyer…",
+    "addText": "Lägg till text",
+    "hint": "Scoutr läser upp till 40 sidor av webbplatsen (bara publika sidor) och skriver en företagsprofil som du kan redigera.",
+    "pages": "{count, plural, one {# sida} other {# sidor}}",
+    "textSource": "inklistrad text",
+    "recrawl": "Läs in igen",
+    "removeConfirm": "Ta bort ”{title}” från kunskapsbasen?",
+    "profile": "Företagsprofil (används alltid som kontext)",
+    "editedByYou": "Redigerad av dig",
+    "generated": "Skriven av Scoutr utifrån dina källor — redigera fritt",
+    "building": "Läser dina källor… profilen dyker upp här om en minut.",
+    "noProfile": "Lägg till en webbplats eller text för att skapa företagsprofilen.",
+    "saveProfile": "Spara profil",
+    "status": {
+      "queued": "I kö",
+      "crawling": "Läser…",
+      "ready": "Klar",
+      "failed": "Misslyckades"
+    }
   }
 }

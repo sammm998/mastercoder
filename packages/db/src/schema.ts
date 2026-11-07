@@ -373,3 +373,40 @@ export const storedObjects = pgTable("stored_objects", {
   body: bytea("body").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Company knowledge base: sources a workspace trains Scoutr on (a website crawl or pasted text). */
+export const knowledgeSources = pgTable("knowledge_sources", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull(), // url | text
+  title: text("title").notNull(),
+  url: text("url"),
+  status: text("status").notNull().default("queued"), // queued | crawling | ready | failed
+  pages: integer("pages").notNull().default(0),
+  error: text("error"),
+  createdBy: text("created_by").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Searchable chunks of knowledge (Postgres full-text search, language-agnostic 'simple' config). */
+export const knowledgeChunks = pgTable(
+  "knowledge_chunks",
+  {
+    id: text("id").primaryKey(),
+    sourceId: text("source_id").notNull().references(() => knowledgeSources.id, { onDelete: "cascade" }),
+    workspaceId: text("workspace_id").notNull(),
+    url: text("url"),
+    title: text("title").notNull().default(""),
+    content: text("content").notNull(),
+  },
+  (t) => [index("knowledge_chunks_ws_idx").on(t.workspaceId)],
+);
+
+/** The workspace's company profile: an editable summary of the knowledge base, always given as context. */
+export const knowledgeProfiles = pgTable("knowledge_profiles", {
+  workspaceId: text("workspace_id").primaryKey().references(() => workspaces.id, { onDelete: "cascade" }),
+  profile: text("profile").notNull(),
+  generatedBy: text("generated_by").notNull().default("llm"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

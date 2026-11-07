@@ -102,7 +102,7 @@ export class BuildAgent {
     } else {
       const hint = input.intents.find((i) => i.hint)?.hint;
       const templateHint = deps.templates.select(kind, hint);
-      const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, kind, templateHint });
+      const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, knowledge: input.knowledge, kind, templateHint });
       spec = p.spec;
       extraCost += p.costUsd;
     }
@@ -165,7 +165,7 @@ export class BuildAgent {
       phase("design");
       team("scoutr", "pixel", "asking", "design", "team.design.ask", {}, "Pixel, can you set the art direction?");
       // A design-engine failure never ends the build: the builder designs from the plan instead.
-      const d = await deps.design.artDirection({ brief: input.prompt, spec, kind, brand: input.brand, direction: input.designDirection }).catch((e: unknown) => {
+      const d = await deps.design.artDirection({ brief: input.knowledge ? `${input.prompt}\n\nAbout the company:\n${input.knowledge.slice(0, 2500)}` : input.prompt, spec, kind, brand: input.brand, direction: input.designDirection }).catch((e: unknown) => {
         const msg = e instanceof Error ? e.message : String(e);
         ev({ type: "message", ...base, role: "system", text: `Design engine failed, continuing without it: ${msg.slice(0, 800)}` });
         team("pixel", "byggo", "failed", "design", "team.design.fallback", {}, "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan.");
@@ -287,7 +287,7 @@ export class BuildAgent {
           docs = hits.map((h) => `${h.title} ${h.url}\n${h.snippet}`).join("\n\n");
         }
         if (d.strategy === "replan") {
-          const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, kind, templateHint: templateId, failureContext: failureText.slice(0, 4000) });
+          const p = await plan(deps.llm, { prompt: input.prompt, intents: input.intents, projectContext: input.existingProject ? input.history : undefined, knowledge: input.knowledge, kind, templateHint: templateId, failureContext: failureText.slice(0, 4000) });
           spec = p.spec;
           extraCost += p.costUsd;
           ev({ type: "plan.ready", ...base, spec, requiresApproval: false });
@@ -311,7 +311,7 @@ export class BuildAgent {
       }
       return { ...r, toolCalls };
     };
-    const base0 = buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined, input.prompt);
+    const base0 = buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined, input.prompt, input.knowledge);
     let built: Awaited<ReturnType<typeof roundToEnd>>;
     // A bespoke design concept is built first, as its own step: the scaffold's default sections are only a toolkit.
     const steps = designDirection.includes("Design concept") && !input.existingProject

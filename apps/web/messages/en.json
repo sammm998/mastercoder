@@ -1354,5 +1354,36 @@
     "chat": {
       "reply": "Here's my answer."
     }
+  },
+  "knowledge": {
+    "title": "Company knowledge",
+    "lede": "Teach Scoutr about your company. Everything you add here is used as context whenever Scoutr builds apps, sites, documents or answers in chat — and by your agents.",
+    "addLabel": "Add knowledge",
+    "fromUrl": "Website",
+    "fromText": "Text",
+    "urlLabel": "Website address",
+    "crawl": "Read website",
+    "textTitle": "Title",
+    "textTitlePh": "e.g. Price list 2026",
+    "textBody": "Text",
+    "textBodyPh": "Paste anything: services, prices, tone of voice, FAQs, policies…",
+    "addText": "Add text",
+    "hint": "Scoutr reads up to 40 pages of the site (public pages only) and writes a company profile you can edit.",
+    "pages": "{count, plural, one {# page} other {# pages}}",
+    "textSource": "pasted text",
+    "recrawl": "Read again",
+    "removeConfirm": "Remove “{title}” from the knowledge base?",
+    "profile": "Company profile (always used as context)",
+    "editedByYou": "Edited by you",
+    "generated": "Written by Scoutr from your sources — edit freely",
+    "building": "Reading your sources… the profile appears here in a minute.",
+    "noProfile": "Add a website or text to create the company profile.",
+    "saveProfile": "Save profile",
+    "status": {
+      "queued": "Queued",
+      "crawling": "Reading…",
+      "ready": "Ready",
+      "failed": "Failed"
+    }
   }
 }

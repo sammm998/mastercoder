@@ -33,6 +33,8 @@ export interface AgentServiceDeps {
   onFailure?: AgentFailureAlert;
   /** Called when a run pauses for approval (e.g. notify the workspace). */
   onApprovalRequested?: (a: { approvalId: string; agentId: string; workspaceId: string; action: string }) => Promise<void> | void;
+  /** Company knowledge for the run (workspace profile + passages relevant to the input). */
+  knowledge?: (workspaceId: string, query: string) => Promise<string>;
 }
 
 export interface RunRecord {
@@ -61,8 +63,14 @@ export class AgentService {
     return r?.s ?? 0;
   }
 
-  private ctx(agent: { id: string; workspaceId: string }, def: AgentDefinition, runId: string, trigger: string, input: unknown): RunContext {
-    return { workspaceId: agent.workspaceId, agentId: agent.id, runId, trigger, input, def, tools: this.d.tools, memory: this.d.memory, email: this.d.email };
+  private ctx(agent: { id: string; workspaceId: string }, def: AgentDefinition, runId: string, trigger: string, input: unknown, companyKnowledge?: string): RunContext {
+    return { workspaceId: agent.workspaceId, agentId: agent.id, runId, trigger, input, def, tools: this.d.tools, memory: this.d.memory, email: this.d.email, ...(companyKnowledge ? { companyKnowledge } : {}) };
+  }
+
+  private async knowledgeFor(workspaceId: string, def: AgentDefinition, input: unknown): Promise<string | undefined> {
+    if (!this.d.knowledge) return undefined;
+    const q = `${def.name} ${def.instructions.slice(0, 400)} ${typeof input === "string" ? input : JSON.stringify(input ?? "")}`.slice(0, 2000);
+    return (await this.d.knowledge(workspaceId, q).catch(() => "")) || undefined;
   }
 
   private async persist(runId: string, agent: { id: string; workspaceId: string }, r: RunResult, prevLog: LogEntry[] = []): Promise<RunRecord> {
@@ -91,7 +99,7 @@ export class AgentService {
     const runId = newId("run");
     await this.d.db.insert(agentRuns).values({ id: runId, agentId, version: agent.version, trigger, status: "running", input: input as object });
     try {
-      return await this.persist(runId, agent, await this.d.runner.run(this.ctx(agent, def, runId, trigger, input)));
+      return await this.persist(runId, agent, await this.d.runner.run(this.ctx(agent, def, runId, trigger, input, await this.knowledgeFor(agent.workspaceId, def, input))));
     } catch (e) {
       const r: RunResult = { status: "failed", output: (e as Error).message, costUsd: 0, log: [{ at: new Date().toISOString(), kind: "error", message: (e as Error).message }], state: null, pending: null, toolsCalled: [] };
       return this.persist(runId, agent, r);
@@ -107,7 +115,7 @@ export class AgentService {
     if (!ap || ap.status === "pending") throw new ForgeError("APPROVAL_REQUIRED", "Approval not decided yet");
     const { agent, def } = await this.load(run.agentId);
     await this.d.db.update(agentRuns).set({ status: "running" }).where(eq(agentRuns.id, runId));
-    const r = await this.d.runner.resume(this.ctx(agent, def, runId, run.trigger, run.input), run.state as RunState, { approved: ap.status === "approved", by: ap.decidedBy ?? undefined });
+    const r = await this.d.runner.resume(this.ctx(agent, def, runId, run.trigger, run.input, await this.knowledgeFor(agent.workspaceId, def, run.input)), run.state as RunState, { approved: ap.status === "approved", by: ap.decidedBy ?? undefined });
     return this.persist(runId, agent, r, run.log as LogEntry[]);
   }
 

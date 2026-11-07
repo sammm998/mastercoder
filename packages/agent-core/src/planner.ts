@@ -23,11 +23,14 @@ export interface PlanInput {
   failureContext?: string;
   /** Earlier requests and the current files when this is a follow-up in an existing project. */
   projectContext?: string;
+  /** The company's knowledge base (profile + relevant facts). */
+  knowledge?: string;
 }
 
 export async function plan(llm: LLMProvider, input: PlanInput): Promise<{ spec: Spec; costUsd: number }> {
   const user = [
     input.projectContext ? `This is a FOLLOW-UP in an existing project. Keep what exists and plan only the change the request asks for (keep the same kind, template and title unless the user asks otherwise).\n${input.projectContext}` : "",
+    input.knowledge ? `## Company knowledge (use these real facts — names, services, prices, tone, contact details — instead of placeholders)\n${input.knowledge}` : "",
     `Request:\n${input.prompt}`,
     `Detected intents: ${input.intents.map((i) => `${i.kind}${i.hint ? `(${i.hint})` : ""}`).join(", ") || "none"}`,
     `Primary kind: ${input.kind}${input.templateHint ? `; template: ${input.templateHint}` : ""}`,

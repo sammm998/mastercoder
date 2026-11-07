@@ -1,5 +1,6 @@
 "use client";
 
+import { KnowledgeBase } from "@/features/knowledge/KnowledgeBase";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -310,6 +311,7 @@ export default function SettingsPage() {
           <dd className="mono">{workspace.region}</dd>
         </dl>
       </header>
+      <KnowledgeBase workspaceId={workspace.id} canManage={workspace.role === "owner" || workspace.role === "admin"} />
       <div className="split">
         <div className="stack-lg">
           <Team />

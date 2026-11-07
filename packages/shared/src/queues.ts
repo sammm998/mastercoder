@@ -12,6 +12,7 @@ export const QUEUES = {
   deploy: "forge-deploy",
   scan: "forge-scan",
   preview: "forge-preview",
+  knowledge: "forge-knowledge",
 } as const;
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
 
