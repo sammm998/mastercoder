@@ -1,6 +1,6 @@
 import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from "node:http";
 import { connect as netConnect } from "node:net";
-import { verifyPreviewToken, previewHostHeader, createLogger } from "@forge/shared";
+import { verifyPreviewToken, previewHostHeader, embeddableCookie, createLogger } from "@forge/shared";
 
 /**
  * Preview proxy: a separate origin (its own domain) that serves the live dev server of a project's
@@ -40,7 +40,7 @@ const server = createServer((req, res) => {
   // Never forward this origin's cookies (the preview token) to the generated app.
   const { cookie: _cookie, ...fwd } = req.headers;
   const upstream = httpRequest(
-    { host: target.hostname, port: target.port || 80, method: req.method, path: url.pathname + url.search, headers: { ...fwd, host: previewHostHeader(target) } },
+    { host: target.hostname, port: target.port || 80, method: req.method, path: url.pathname + url.search, headers: { ...fwd, host: previewHostHeader(target), "x-forwarded-host": String(req.headers.host ?? ""), "x-forwarded-proto": "https" } },
     (up) => {
       const headers = { ...up.headers };
       // The preview is shown inside the workspace iframe: drop the app's framing restrictions
@@ -48,6 +48,10 @@ const server = createServer((req, res) => {
       delete headers["content-security-policy"];
       delete headers["content-security-policy-report-only"];
       delete headers["x-frame-options"];
+      // The app runs inside the workspace iframe (a third-party context): its cookies (sessions from
+      // sign-in) must be SameSite=None; Secure; Partitioned or the browser drops them.
+      const sc = headers["set-cookie"];
+      if (sc) headers["set-cookie"] = (Array.isArray(sc) ? sc : [sc]).map(embeddableCookie);
       res.writeHead(up.statusCode ?? 502, headers);
       up.pipe(res);
     },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { signPreviewToken, verifyPreviewToken, previewHostHeader } from "../src/index.js";
+import { signPreviewToken, verifyPreviewToken, previewHostHeader, embeddableCookie } from "../src/index.js";
 
 describe("preview tokens", () => {
   it("round-trips, rejects tampering, wrong secrets, expiry and non-http targets", () => {
@@ -20,5 +20,12 @@ describe("previewHostHeader", () => {
   it("presents the proxy as localhost on the dev server's port (dev servers reject foreign Host headers)", () => {
     expect(previewHostHeader(new URL("http://forgeagent-worker.railway.internal:5173"))).toBe("localhost:5173");
     expect(previewHostHeader(new URL("http://[fd12::1]:4321/"))).toBe("localhost:4321");
+  });
+});
+
+describe("embeddableCookie", () => {
+  it("rewrites app session cookies so they survive in the preview iframe", () => {
+    expect(embeddableCookie("better-auth.session_token=abc; Path=/; HttpOnly; SameSite=Lax; Domain=localhost")).toBe("better-auth.session_token=abc; Path=/; HttpOnly; SameSite=None; Secure; Partitioned");
+    expect(embeddableCookie("a=1; Secure; SameSite=Strict; Max-Age=60")).toBe("a=1; Max-Age=60; SameSite=None; Secure; Partitioned");
   });
 });

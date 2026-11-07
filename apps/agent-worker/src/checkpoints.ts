@@ -20,7 +20,7 @@ export function createCheckpointing(db: Db, dbBranches: DbBranchProvider) {
 
   /** Durable copy of source files for the editor, remix and export. */
   async function mirrorFiles(sandbox: SandboxPort, projectId: string) {
-    const files = (await sandbox.listFiles(".", { recursive: true })).filter((f) => !/(^|\/)(node_modules|\.git|\.next|dist|\.venv|__pycache__)(\/|$)/.test(f)).slice(0, 2000);
+    const files = (await sandbox.listFiles(".", { recursive: true })).filter((f) => !/(^|\/)(node_modules|\.git|\.next|dist|\.venv|__pycache__)(\/|$)|(^|\/)\.env(\.local)?$/.test(f)).slice(0, 2000);
     for (const path of files) {
       const content = await sandbox.readFile(path).catch(() => null);
       if (content === null || content.length > 500_000 || content.includes("\u0000")) continue;

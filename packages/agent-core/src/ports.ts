@@ -98,7 +98,7 @@ export interface VisualQaResult {
 
 /** Project setup the platform owns (e.g. the visual-edit plugin). Returns true when package.json changed. */
 export interface ProjectSetupPort {
-  prepare(sandbox: SandboxPort): Promise<{ packageJsonChanged: boolean; notes: string[] }>;
+  prepare(sandbox: SandboxPort, ctx: { projectId: string }): Promise<{ packageJsonChanged: boolean; notes: string[] }>;
 }
 
 export interface DesignPort {

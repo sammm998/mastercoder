@@ -45,6 +45,28 @@ export class PgCloneBranchProvider implements DbBranchProvider {
     this.sqlClient = null;
   }
 
+  /**
+   * A login role that owns the app's database and nothing else (no superuser, no BYPASSRLS), so the
+   * generated app connects with least privilege. Idempotent; also re-applied after a branch restore.
+   * Returns the app's connection URL.
+   */
+  async ensureAppRole(database: string, role: string, password: string): Promise<string> {
+    if (!/^[a-z_][a-z0-9_]{0,62}$/.test(role) || !/^[a-z_][a-z0-9_]{0,62}$/.test(database)) throw new Error("Invalid role or database name");
+    if (!/^[A-Za-z0-9_-]{16,128}$/.test(password)) throw new Error("Invalid password");
+    const exists = await this.sql`select 1 from pg_roles where rolname = ${role}`;
+    if (!exists.length) await this.sql.unsafe(`create role "${role}" login nosuperuser nocreatedb nocreaterole nobypassrls password '${password}'`);
+    else await this.sql.unsafe(`alter role "${role}" with login nosuperuser nobypassrls password '${password}'`);
+    if (!(await this.exists(database))) await this.createDatabase(database);
+    await this.sql.unsafe(`alter database "${database}" owner to "${role}"`);
+    await this.sql.unsafe(`revoke connect on database "${database}" from public`);
+    await this.sql.unsafe(`grant connect on database "${database}" to "${role}"`);
+    const u = new URL(this.adminUrl);
+    u.username = role;
+    u.password = password;
+    u.pathname = `/${database}`;
+    return u.toString();
+  }
+
   /** Connection URL for a database on the same server as the admin connection. */
   urlFor(database: string): string {
     const u = new URL(this.adminUrl);

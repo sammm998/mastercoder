@@ -19,11 +19,13 @@ import { runChat } from "./jobs/chat.js";
 import "./mock-llm.js";
 import { createMediaProvider } from "@forge/media";
 import type { BuildQueueDeps } from "./build-queue.js";
+import { createHmac } from "node:crypto";
+import { PgCloneBranchProvider } from "@forge/app-kit";
 import { PLUGIN_FILE, VISUAL_EDIT_PLUGIN_SOURCE, patchPackageJson, patchViteConfig } from "@forge/visual-edit";
 import type { ProjectSetupPort } from "@forge/agent-core";
 
 /** Vite projects get the visual-edit plugin (source tags + inspector in dev only) so Edit works in the preview. */
-const setup: ProjectSetupPort = {
+const visualEditSetup: ProjectSetupPort = {
   async prepare(sb) {
     const read = (p: string) => sb.readFile(p).catch(() => null);
     let config: string | null = null;
@@ -76,6 +78,13 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
         await sb.writeFile(f.path, m ? Uint8Array.from(Buffer.from(m[1]!, "base64")) : f.content);
       }
       if (saved.length) d.log.info("sandbox restored from saved files", { projectId, files: saved.length });
+    }
+    // Every command (agent tools, gates, dev server) runs with the app's managed .env loaded, so
+    // migrations, tests and the preview all use the project's own database and auth secret.
+    if (!(sb as { __envWrapped?: boolean }).__envWrapped) {
+      const exec0 = sb.exec.bind(sb);
+      sb.exec = (cmd, o) => exec0(`set -a; [ -f .env ] && . ./.env >/dev/null 2>&1; set +a; ${cmd}`, o);
+      (sb as { __envWrapped?: boolean }).__envWrapped = true;
     }
     live.set(projectId, sb);
     return sb;
@@ -158,6 +167,54 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
 
   const cps = createCheckpointing(d.db, dbBranches);
 
+  /**
+   * The app's runtime environment in its sandbox: a real Postgres database with its own least-privilege
+   * role (per project), an auth secret and the public preview URL, written to a managed block in .env.
+   * Secrets are derived (HMAC) from the platform secret, so nothing extra is stored.
+   */
+  const secretBase = process.env.FILES_SECRET || process.env.AUTH_SECRET || "dev-secret";
+  const derive = (purpose: string, projectId: string) => createHmac("sha256", secretBase).update(`${purpose}:${projectId}`).digest("base64url").slice(0, 40);
+  const appEnv = async (projectId: string): Promise<Record<string, string>> => {
+    const env: Record<string, string> = { BETTER_AUTH_SECRET: derive("auth", projectId), NODE_ENV: "development" };
+    const pub = process.env.PREVIEW_PUBLIC_URL?.replace(/\/$/, "");
+    if (pub) Object.assign(env, { BETTER_AUTH_URL: pub, APP_URL: pub, NEXT_PUBLIC_APP_URL: pub, PUBLIC_URL: pub });
+    if (dbBranches instanceof PgCloneBranchProvider) {
+      const root = await cps.ensureProjectDb(projectId);
+      if (root) {
+        const url = await dbBranches.ensureAppRole(root, `${root}_app`.slice(0, 60), derive("db", projectId));
+        Object.assign(env, { DATABASE_URL: url, DATABASE_MIGRATION_URL: url });
+      }
+    }
+    return env;
+  };
+  const appEnvSetup = async (sb: SandboxPort, projectId: string) => {
+    const env = await appEnv(projectId);
+    const block = ["# >>> forge managed (database + auth for the preview) — do not edit", ...Object.entries(env).map(([k, v]) => `${k}=${JSON.stringify(v)}`), "# <<< forge managed"].join("\n");
+    const cur = await sb.readFile(".env").catch(() => "");
+    const rest = cur.replace(/# >>> forge managed[\s\S]*?# <<< forge managed\n?/g, "").trim();
+    await sb.writeFile(".env", `${block}\n${rest ? `${rest}\n` : ""}`);
+    const gi = await sb.readFile(".gitignore").catch(() => "");
+    if (!/^\.env$/m.test(gi)) await sb.writeFile(".gitignore", `${gi.trimEnd()}\n.env\n`.trimStart());
+    return env;
+  };
+  const setupPort: ProjectSetupPort = {
+    async prepare(sb, ctx) {
+      const notes: string[] = [];
+      const env = await appEnvSetup(sb, ctx.projectId).catch((e: Error) => (notes.push(`App database/env not configured: ${e.message.slice(0, 200)}`), null));
+      if (env?.DATABASE_URL) {
+        notes.push("A private Postgres database is connected (DATABASE_URL in .env); sign-up and data work in the preview.");
+        // Apply the app's migrations to its database (no-op when there are none yet).
+        const pkg = await sb.readFile("package.json").catch(() => "");
+        if (/"db:migrate"\s*:/.test(pkg)) {
+          const m = await sb.exec("test -d node_modules && npm run db:migrate 2>&1 | tail -20", { timeoutMs: 180_000 });
+          if (m.exitCode !== 0) notes.push(`Database migrations did not apply yet: ${(m.stdout + m.stderr).slice(-300)}`);
+        }
+      }
+      const ve = await visualEditSetup.prepare(sb, ctx);
+      return { packageJsonChanged: ve.packageJsonChanged, notes: [...notes, ...ve.notes] };
+    },
+  };
+
   // Preview links: the agent sees the dev server's internal URL; users get a signed link to the preview
   // proxy (its own origin), which forwards to this worker over the private network.
   const previewBase = process.env.PREVIEW_PUBLIC_URL?.replace(/\/$/, "");
@@ -177,7 +234,8 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
   // checkpoints), so the editor and file tree update while the build runs.
   const sink = d.events as { onEvent?: (fn: (e: { type: string; projectId: string; path?: string; change?: string }) => void) => () => void };
   sink.onEvent?.((e) => {
-    if (e.type !== "file.changed" || !e.path || /(^|\/)(node_modules|\.git|dist|\.next)(\/|$)/.test(e.path)) return;
+    // .env holds the app's database credentials: it stays in the sandbox and never reaches saved files.
+    if (e.type !== "file.changed" || !e.path || /(^|\/)(node_modules|\.git|dist|\.next)(\/|$)|(^|\/)\.env(\.local)?$/.test(e.path)) return;
     const sb = live.get(e.projectId);
     if (!sb) return;
     const path = e.path;
@@ -274,7 +332,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
             design: design(llm, j),
             checkpoints: checkpointsPort(j),
             browser,
-            setup,
+            setup: setupPort,
             ...(d.integrations ? { integrations: { listTools: (pid: string) => d.integrations!.listProjectTools(pid), call: (pid: string, tool: string, input: unknown) => d.integrations!.callProjectTool(pid, tool, input) } } : {}),
             media: {
               generateImage: async (i) => (await runMediaRequest({ taskId: j.taskId, projectId: i.projectId, workspaceId: j.workspaceId, kind: "image", prompt: i.prompt, options: { n: i.n } }, { db: d.db, provider: media, store: d.store, usage: d.usage, events: d.events })).map((a) => ({ artifactId: a.id, url: a.storageKey })),
@@ -317,6 +375,7 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
       if (!dev || !port) return { started: false, reason: "no dev command" };
       const hasDeps = await sb.exec("test -d node_modules && echo yes || echo no", { timeoutMs: 10_000 });
       if (hasDeps.stdout.trim() !== "yes" && (forge?.install ?? fallback?.install)) await sb.exec(`${forge?.install ?? fallback?.install} --prefer-offline --no-audit --no-fund --loglevel=error`, { timeoutMs: 900_000 });
+      await setupPort.prepare(sb as unknown as SandboxPort, { projectId }).catch(() => undefined);
       const url = await startDevPreview(sb as unknown as SandboxPort, d.events, { id: p?.template ?? "project", kind: "app", install: forge?.install ?? "npm install", dev, port } as never, { projectId }, 180);
       return { started: !!url };
     },

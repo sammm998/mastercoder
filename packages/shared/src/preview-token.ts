@@ -41,3 +41,12 @@ export function verifyPreviewToken(token: string, secret: string, nowSec = Math.
 export function previewHostHeader(target: URL): string {
   return `localhost:${target.port || (target.protocol === "https:" ? 443 : 80)}`;
 }
+
+/**
+ * Make an app cookie (e.g. its sign-in session) work inside the cross-site preview iframe over the
+ * proxy's https origin: SameSite=None; Secure; Partitioned, without a Domain that would not match.
+ */
+export function embeddableCookie(c: string): string {
+  const parts = c.split(";").map((p) => p.trim()).filter((p) => p && !/^(samesite|secure|partitioned|domain)(=|$)/i.test(p));
+  return [...parts, "SameSite=None", "Secure", "Partitioned"].join("; ");
+}
