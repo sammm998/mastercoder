@@ -269,3 +269,24 @@ describe("dependency changes from the shell", () => {
     expect(bus.ofType("file.changed").map((e) => e.path)).toContain("package.json");
   });
 });
+
+describe("bespoke website design", () => {
+  it("builds the design concept as its own first step, with the concept in the builder prompt", async () => {
+    const prompts: string[] = [];
+    const llm = new MockLLMProvider().on("agent.build", (req) => {
+      const last = req.messages[req.messages.length - 1];
+      if (last?.role === "user" && typeof last.content === "string") {
+        prompts.push(last.content);
+        return [call(`w${prompts.length}`, "write_file", { path: "src/math.js", content: "export const add = (a, b) => a + b;\n" })];
+      }
+      return "Done.";
+    });
+    const d = deps(llm, previewSandbox());
+    const design = { artDirection: async () => ({ directionName: "Ugnsvarm", tokensCss: ":root{}", tokens: {}, concept: 'Design concept "Ugnsvarm": a bakery counter\nSections (in this order — this replaces the scaffold\'s default sections):\n  1. today — bread' }) };
+    const out = await new BuildAgent({ ...d, design } as AgentDeps).run({ ...input, intents: [{ kind: "website" as const, confidence: 0.9, summary: "site" }], prompt: "Hemsida för ett bageri" });
+    expect(out.status).toBe("succeeded");
+    expect(prompts[0]).toMatch(/step 1 of \d+ — Implement the design concept/);
+    expect(prompts[0]).toMatch(/Design concept "Ugnsvarm"/);
+    expect(d.bus.ofType("team.message").some((m) => m.key === "team.design.concept")).toBe(true);
+  });
+});

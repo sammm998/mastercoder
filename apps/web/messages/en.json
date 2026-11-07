@@ -1333,7 +1333,8 @@
       "done": "Done ✓ art direction “{direction}”, {files, plural, one {# file} other {# files}} composed — back to you, Scoutr",
       "fallback": "Pixel hit a snag with the art direction, so Byggo will design it directly from the plan.",
       "propose": "Pixel, can you sketch three design directions to choose from?",
-      "proposed": "Here are {count} directions — pick the one you like and I'll build it."
+      "proposed": "Here are {count} directions — pick the one you like and I'll build it.",
+      "concept": "Concept ready: {concept}"
     },
     "build": {
       "ask": "Byggo, can you build it from the plan? ({tasks, plural, one {# task} other {# tasks}})",

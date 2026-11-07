@@ -223,6 +223,10 @@ export class BuildAgent {
           touched.add(a.path);
           ev({ type: "file.changed", ...base, path: a.path, change: "created" });
         }
+        if (d.concept) {
+          designDirection += `\n\n${d.concept}`;
+          team("pixel", "byggo", "done", "design", "team.design.concept", { concept: d.concept.split("\n")[0]!.slice(0, 160) }, d.concept.split("\n")[0]!.slice(0, 200));
+        }
         if (d.assets?.length) designDirection += `\nGenerated images in the project (use them where they fit, with descriptive alt text): ${d.assets.map((a) => `${a.path} — ${a.description}`).join("; ")}`;
         ev({ type: "message", ...base, role: "system", text: `Art direction: ${d.directionName}` });
         team("pixel", "scoutr", "done", "design", "team.design.done", { direction: d.directionName, files: Object.keys(d.files ?? {}).length }, `Done ✓ art direction "${d.directionName}"${d.files ? `, composed ${Object.keys(d.files).length} files` : ""} — back to you, Scoutr`);
@@ -309,8 +313,11 @@ export class BuildAgent {
     };
     const base0 = buildPrompt(spec, templateId, manifest, designDirection, input.existingProject ? input.prompt : undefined, input.existingProject ? input.history : undefined, input.prompt);
     let built: Awaited<ReturnType<typeof roundToEnd>>;
-    const steps = spec.tasks;
-    if (steps.length >= 4 && !input.existingProject) {
+    // A bespoke design concept is built first, as its own step: the scaffold's default sections are only a toolkit.
+    const steps = designDirection.includes("Design concept") && !input.existingProject
+      ? [{ id: "design-concept", title: "Implement the design concept: replace the scaffold's default sections with the concept's own layout, hero and signature interaction", dependsOn: [] }, ...spec.tasks]
+      : spec.tasks;
+    if ((steps.length >= 4 || steps[0]?.id === "design-concept") && !input.existingProject) {
       // Large specs are built step by step: one round per planned task with a fresh context (spec + repo map),
       // so every step gets a full budget instead of the whole product sharing one.
       let toolCalls = 0;

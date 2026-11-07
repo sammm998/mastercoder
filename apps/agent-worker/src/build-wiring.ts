@@ -9,7 +9,7 @@ import { runGates, type GateName } from "@forge/quality-gates";
 import { selectTemplate, getManifest, templateFiles, isTemplateId } from "@forge/templates";
 import { kitFilesFor, createDbBranchProvider, createDeployProvider, type KitFeature } from "@forge/app-kit";
 import { createCheckpointing } from "./checkpoints.js";
-import { generateDirections, pickDirection, normalizeDirection, ArtDirectionSchema, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
+import { generateDirections, pickDirection, normalizeDirection, ArtDirectionSchema, generateConcept, conceptToText, tokensFromDirection, tokensToCss, composeLanding, composePortfolio, generateContent, analyzePage, runLighthouse } from "@forge/design";
 import { billingSettler } from "./settle.js";
 import { runBuildJob } from "./jobs/build.js";
 import { runMediaRequest } from "./jobs/media.js";
@@ -142,8 +142,11 @@ export async function wireBuild(d: BuildQueueDeps): Promise<void> {
         const content = await generateContent(llm, briefIn);
         files = briefIn.kind === "portfolio" ? composePortfolio({ brief: briefIn, direction: dir, content }) : composeLanding({ brief: briefIn, direction: dir, content });
       }
-      const assets = kind === "website" && !media.isMock ? await siteImages(brief, dir, j).catch(() => []) : [];
-      return { directionName: dir.name, tokensCss, tokens: tokensFromDirection(dir) as unknown as Record<string, unknown>, files, assets };
+      const [assets, concept] = await Promise.all([
+        kind === "website" && !media.isMock ? siteImages(brief, dir, j).catch(() => []) : Promise.resolve([]),
+        kind === "website" ? generateConcept(llm, briefIn, dir).then(conceptToText).catch(() => undefined) : Promise.resolve(undefined),
+      ]);
+      return { directionName: dir.name, tokensCss, tokens: tokensFromDirection(dir) as unknown as Record<string, unknown>, files, assets, concept };
     },
     async visualQa(url) {
       const r = await analyzePage(url);

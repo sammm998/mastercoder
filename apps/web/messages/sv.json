@@ -1333,7 +1333,8 @@
       "done": "Klart ✓ konstnärlig riktning ”{direction}”, {files, plural, one {# fil} other {# filer}} komponerade — tillbaka till dig, Scoutr",
       "fallback": "Pixel stötte på problem med formspråket, så Byggo designar direkt utifrån planen.",
       "propose": "Pixel, kan du ta fram tre designriktningar att välja mellan?",
-      "proposed": "Här är {count} riktningar — välj den du gillar så bygger jag den."
+      "proposed": "Här är {count} riktningar — välj den du gillar så bygger jag den.",
+      "concept": "Koncept klart: {concept}"
     },
     "build": {
       "ask": "Byggo, kan du bygga det enligt planen? ({tasks, plural, one {# uppgift} other {# uppgifter}})",

@@ -2,6 +2,7 @@
  * Rule-based mock handlers for every LLM purpose used by @forge/design, so LLM_PROVIDER=mock works
  * end-to-end. Outputs are deterministic, curated/heuristic and labeled as such — never model output.
  */
+import { ruleConcept } from "./concept.js";
 import { registerMockHandler, type ChatMessage, type CompletionRequest } from "@forge/llm";
 import { mockCopy } from "./compose/content.js";
 import { curatedDirections } from "./curated.js";
@@ -35,6 +36,12 @@ export function registerDesignMocks(): void {
   registerMockHandler("design.copy", (req) => {
     const brief = DesignBriefSchema.parse(tagged(req, "brief"));
     return JSON.stringify(mockCopy(brief));
+  });
+  registerMockHandler("design.concept", (req) => {
+    const brief = DesignBriefSchema.parse(tagged(req, "brief"));
+    const dir = tagged(req, "art_direction") as { name?: string; mood?: string; typography?: { display?: string; body?: string }; motion?: { language?: string; description?: string } };
+    const direction = { name: dir.name ?? "Direction", mood: dir.mood ?? "", typography: { display: { family: dir.typography?.display ?? "Inter" }, body: { family: dir.typography?.body ?? "Inter" } }, motion: { language: dir.motion?.language ?? "calm", description: dir.motion?.description ?? "" } };
+    return JSON.stringify({ ...ruleConcept(brief, direction as never), generatedBy: "mock-designer (rule-based)" });
   });
   registerMockHandler("design.critic", (req) => {
     const metrics = tagged(req, "heuristics");
